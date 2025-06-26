@@ -10,6 +10,7 @@ import {
   Briefcase,
   Heart
 } from "lucide-react";
+import isabelPhoto from "@assets/image_1750905829090.png";
 
 export default function QuemSomos() {
   return (
@@ -66,7 +67,7 @@ export default function QuemSomos() {
             
             <div className="flex justify-center">
               <img 
-                src="@assets/image_1750905829090.png" 
+                src={isabelPhoto} 
                 alt="Isabel Cunha - Especialista em RH" 
                 className="w-96 h-96 rounded-2xl object-cover shadow-2xl"
               />
