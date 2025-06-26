@@ -9,6 +9,7 @@ import Servicos from "@/pages/Servicos";
 import Contato from "@/pages/Contato";
 import Login from "@/pages/Login";
 import AreaCandidato from "@/pages/AreaCandidato";
+import PerfilCandidato from "@/pages/PerfilCandidato";
 import AreaEmpresa from "@/pages/AreaEmpresa";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/contato" component={Contato} />
       <Route path="/login" component={Login} />
       <Route path="/candidato" component={AreaCandidato} />
+      <Route path="/candidato/perfil" component={PerfilCandidato} />
       <Route path="/empresa" component={AreaEmpresa} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin-login" component={AdminLogin} />

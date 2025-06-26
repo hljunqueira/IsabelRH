@@ -21,7 +21,18 @@ import {
   Send,
   Edit,
   Eye,
-  Calendar
+  Calendar,
+  LogOut,
+  Settings,
+  Upload,
+  Star,
+  Award,
+  BookOpen,
+  Languages,
+  Cake,
+  Phone,
+  Mail,
+  MapPinIcon
 } from "lucide-react";
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
 
@@ -55,9 +66,34 @@ export default function AreaCandidato() {
 
   const [profileData, setProfileData] = useState({
     nome: "",
+    email: "",
     telefone: "",
+    celular: "",
     linkedin: "",
+    github: "",
+    portfolio: "",
+    endereco: "",
+    cidade: "",
+    estado: "",
+    cep: "",
+    dataNascimento: "",
+    estadoCivil: "",
+    genero: "",
+    pcd: "não",
+    nivelEscolaridade: "",
+    curso: "",
+    instituicao: "",
+    anoFormacao: "",
+    idiomas: [] as string[],
+    habilidades: [] as string[],
+    experiencias: [] as any[],
+    certificacoes: [] as any[],
+    objetivoProfissional: "",
+    pretensaoSalarial: "",
+    disponibilidade: "",
+    modalidadeTrabalho: "",
     areasInteresse: [] as string[],
+    curriculoUrl: "",
   });
 
   // Fetch candidate profile
@@ -181,8 +217,32 @@ export default function AreaCandidato() {
                   Bem-vindo(a), {candidato?.nome || user.usuario.email}
                 </p>
               </div>
-              <div className="w-16 h-16 bg-isabel-orange rounded-full flex items-center justify-center">
-                <User className="text-white h-8 w-8" />
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => setLocation("/candidato/perfil")}
+                  variant="outline"
+                  className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Perfil Completo
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    localStorage.removeItem("auth-user");
+                    toast({ title: "Logout realizado com sucesso!" });
+                    setLocation("/login");
+                  }}
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+                
+                <div className="w-16 h-16 bg-isabel-orange rounded-full flex items-center justify-center">
+                  <User className="text-white h-8 w-8" />
+                </div>
               </div>
             </div>
           </div>

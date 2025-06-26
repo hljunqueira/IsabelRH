@@ -29,7 +29,9 @@ import {
   PieChart,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  LogOut,
+  Shield
 } from "lucide-react";
 import type { Candidato, Empresa, Vaga, Servico, Proposta, Relatorio } from "@shared/schema";
 
@@ -242,8 +244,30 @@ export default function Admin() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-isabel-blue">Área Administrativa</h1>
-            <p className="text-gray-600 mt-2">Gerencie candidatos, empresas e serviços de consultoria</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-isabel-blue">Área Administrativa</h1>
+                <p className="text-gray-600 mt-2">Gerencie candidatos, empresas e serviços de consultoria</p>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => {
+                    localStorage.removeItem("auth-user");
+                    toast({ title: "Logout realizado com sucesso!" });
+                    setLocation("/login");
+                  }}
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+                
+                <div className="w-16 h-16 bg-isabel-blue rounded-full flex items-center justify-center">
+                  <Shield className="text-white h-8 w-8" />
+                </div>
+              </div>
+            </div>
           </div>
 
           <Tabs defaultValue="dashboard" className="space-y-6">

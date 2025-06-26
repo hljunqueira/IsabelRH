@@ -21,7 +21,9 @@ import {
   Edit, 
   Trash2,
   Eye,
-  MapPin
+  MapPin,
+  LogOut,
+  Settings
 } from "lucide-react";
 import type { Empresa, Vaga, Candidatura } from "@shared/schema";
 
@@ -198,8 +200,23 @@ export default function AreaEmpresa() {
                   {empresa?.nome || "Gerencie suas vagas e candidatos"}
                 </p>
               </div>
-              <div className="w-16 h-16 bg-isabel-blue rounded-full flex items-center justify-center">
-                <Building className="text-white h-8 w-8" />
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => {
+                    localStorage.removeItem("auth-user");
+                    toast({ title: "Logout realizado com sucesso!" });
+                    setLocation("/login");
+                  }}
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </Button>
+                
+                <div className="w-16 h-16 bg-isabel-blue rounded-full flex items-center justify-center">
+                  <Building className="text-white h-8 w-8" />
+                </div>
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { UserRoundCheck, Building, Eye, EyeOff } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import logoImage from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
 
 export default function Login() {
@@ -32,6 +33,11 @@ export default function Login() {
     telefone: "",
     linkedin: "",
     areasInteresse: [] as string[],
+    cidade: "",
+    estado: "",
+    escolaridade: "",
+    experiencia: "",
+    objetivos: "",
     // Empresa fields
     nomeEmpresa: "",
     cnpj: "",
@@ -386,28 +392,111 @@ export default function Login() {
 
                     {/* Candidato specific fields */}
                     {registerData.tipo === "candidato" && (
-                      <>
-                        <div>
-                          <Label htmlFor="nome">Nome completo *</Label>
-                          <Input
-                            id="nome"
-                            type="text"
-                            value={registerData.nome}
-                            onChange={(e) => setRegisterData(prev => ({ ...prev, nome: e.target.value }))}
-                            placeholder="Digite seu nome completo"
-                            required
-                          />
-                        </div>
+                      <div className="space-y-4 border-t pt-4">
+                        <h3 className="text-lg font-semibold text-isabel-blue">Dados Pessoais</h3>
                         
-                        <div>
-                          <Label htmlFor="telefone">Telefone</Label>
-                          <Input
-                            id="telefone"
-                            type="tel"
-                            value={registerData.telefone}
-                            onChange={(e) => setRegisterData(prev => ({ ...prev, telefone: e.target.value }))}
-                            placeholder="(48) 99999-9999"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="nome">Nome completo *</Label>
+                            <Input
+                              id="nome"
+                              type="text"
+                              value={registerData.nome}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, nome: e.target.value }))}
+                              placeholder="Digite seu nome completo"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="telefone">Telefone/Celular *</Label>
+                            <Input
+                              id="telefone"
+                              type="tel"
+                              value={registerData.telefone || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, telefone: e.target.value }))}
+                              placeholder="(48) 99999-9999"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="cidade">Cidade *</Label>
+                            <Input
+                              id="cidade"
+                              type="text"
+                              value={registerData.cidade || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, cidade: e.target.value }))}
+                              placeholder="Sua cidade"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="estado">Estado *</Label>
+                            <Select 
+                              value={registerData.estado || ""} 
+                              onValueChange={(value) => setRegisterData(prev => ({ ...prev, estado: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o estado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="SC">Santa Catarina</SelectItem>
+                                <SelectItem value="SP">São Paulo</SelectItem>
+                                <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                                <SelectItem value="MG">Minas Gerais</SelectItem>
+                                <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                                <SelectItem value="PR">Paraná</SelectItem>
+                                <SelectItem value="BA">Bahia</SelectItem>
+                                <SelectItem value="GO">Goiás</SelectItem>
+                                <SelectItem value="PE">Pernambuco</SelectItem>
+                                <SelectItem value="CE">Ceará</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="escolaridade">Escolaridade *</Label>
+                            <Select 
+                              value={registerData.escolaridade || ""} 
+                              onValueChange={(value) => setRegisterData(prev => ({ ...prev, escolaridade: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione sua escolaridade" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ensino-fundamental">Ensino Fundamental</SelectItem>
+                                <SelectItem value="ensino-medio">Ensino Médio</SelectItem>
+                                <SelectItem value="tecnico">Técnico</SelectItem>
+                                <SelectItem value="superior-incompleto">Superior Incompleto</SelectItem>
+                                <SelectItem value="superior-completo">Superior Completo</SelectItem>
+                                <SelectItem value="pos-graduacao">Pós-graduação</SelectItem>
+                                <SelectItem value="mestrado">Mestrado</SelectItem>
+                                <SelectItem value="doutorado">Doutorado</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="experiencia">Experiência Profissional *</Label>
+                            <Select 
+                              value={registerData.experiencia || ""} 
+                              onValueChange={(value) => setRegisterData(prev => ({ ...prev, experiencia: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione sua experiência" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sem-experiencia">Sem experiência</SelectItem>
+                                <SelectItem value="ate-1-ano">Até 1 ano</SelectItem>
+                                <SelectItem value="1-3-anos">1 a 3 anos</SelectItem>
+                                <SelectItem value="3-5-anos">3 a 5 anos</SelectItem>
+                                <SelectItem value="5-10-anos">5 a 10 anos</SelectItem>
+                                <SelectItem value="mais-10-anos">Mais de 10 anos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                         
                         <div>
@@ -415,12 +504,24 @@ export default function Login() {
                           <Input
                             id="linkedin"
                             type="url"
-                            value={registerData.linkedin}
+                            value={registerData.linkedin || ""}
                             onChange={(e) => setRegisterData(prev => ({ ...prev, linkedin: e.target.value }))}
-                            placeholder="linkedin.com/in/seu-perfil"
+                            placeholder="https://linkedin.com/in/seu-perfil"
                           />
                         </div>
-                      </>
+                        
+                        <div>
+                          <Label htmlFor="objetivos">Objetivos Profissionais *</Label>
+                          <Textarea
+                            id="objetivos"
+                            value={registerData.objetivos || ""}
+                            onChange={(e) => setRegisterData(prev => ({ ...prev, objetivos: e.target.value }))}
+                            placeholder="Descreva brevemente seus objetivos profissionais..."
+                            rows={3}
+                            required
+                          />
+                        </div>
+                      </div>
                     )}
 
                     {/* Empresa specific fields */}
