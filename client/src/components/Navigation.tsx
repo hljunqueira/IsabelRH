@@ -65,6 +65,11 @@ export default function Navigation() {
                   Login
                 </Button>
               </Link>
+              <Link href="/admin-login">
+                <Button variant="ghost" size="sm" className="text-isabel-orange hover:text-isabel-orange/80">
+                  Admin
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -107,6 +112,15 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Login
+              </Button>
+            </Link>
+            <Link href="/admin-login">
+              <Button 
+                variant="ghost" 
+                className="w-full mt-2 text-isabel-orange hover:text-isabel-orange/80"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Admin
               </Button>
             </Link>
           </div>
