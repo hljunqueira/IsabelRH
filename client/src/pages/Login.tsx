@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
@@ -88,6 +89,8 @@ export default function Login() {
     senha: "",
   });
 
+  const { login: authLogin } = useAuth();
+
   const loginMutation = useMutation({
     mutationFn: async (data: typeof loginData) => {
       // Verificar se são credenciais de teste
@@ -133,13 +136,16 @@ export default function Login() {
       const response = await apiRequest("POST", "/api/auth/login", data);
       return await response.json();
     },
-    onSuccess: (data) => {
-      localStorage.setItem("auth-user", JSON.stringify(data));
+    onSuccess: async (data) => {
+      // Atualizar o contexto de autenticação
+      await authLogin(loginData.email, loginData.senha);
+      
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo(a) de volta!",
       });
       
+      // Redirecionar após atualizar o contexto
       if (data.usuario.tipo === "candidato") {
         setLocation("/candidato");
       } else if (data.usuario.tipo === "empresa") {
