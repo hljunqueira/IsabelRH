@@ -58,6 +58,12 @@ export default function AreaEmpresa() {
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  
+  const handleLogout = () => {
+    logout();
+    toast({ title: "Logout realizado com sucesso!" });
+    setLocation("/");
+  };
 
   useEffect(() => {
     if (!user || user.usuario.tipo !== "empresa") {
@@ -348,7 +354,7 @@ export default function AreaEmpresa() {
               </div>
             </div>
             <Button 
-              onClick={logout}
+              onClick={handleLogout}
               variant="outline"
               className="flex items-center space-x-2"
             >

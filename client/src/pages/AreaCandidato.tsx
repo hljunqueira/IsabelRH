@@ -55,6 +55,12 @@ export default function AreaCandidato() {
       setLocation("/login");
     }
   }, [setLocation]);
+  
+  const handleLogout = () => {
+    logout();
+    toast({ title: "Logout realizado com sucesso!" });
+    setLocation("/");
+  };
 
   const [profileData, setProfileData] = useState({
     nome: "",
@@ -344,7 +350,7 @@ export default function AreaCandidato() {
               </div>
             </div>
             <Button 
-              onClick={logout}
+              onClick={handleLogout}
               variant="outline"
               className="flex items-center space-x-2"
             >
