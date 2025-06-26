@@ -302,7 +302,7 @@ export default function Servicos() {
                 Solicitar Consultoria
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-isabel-blue bg-[#55de00]">
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-isabel-blue bg-[#000000]">
               <a href="https://wa.me/5548996332952" target="_blank" rel="noopener noreferrer" className="flex items-center">
                 WhatsApp Direto
               </a>
