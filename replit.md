@@ -129,6 +129,7 @@ Changelog:
 - June 26, 2025. Updated WhatsApp button styling and text on contact page
 - June 26, 2025. Replaced generic user icon with Isabel Cunha's professional photo as logo on login page, matching Navigation component styling
 - June 26, 2025. Created comprehensive administrative dashboard with user management, service tracking, proposal system, and business analytics
+- June 26, 2025. Integrated admin login into main login page and added test users for easy system testing
 ```
 
 ## User Preferences
