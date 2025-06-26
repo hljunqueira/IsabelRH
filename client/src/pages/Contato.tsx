@@ -254,16 +254,16 @@ export default function Contato() {
             Precisa de uma resposta rápida?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
-            Entre em contato direto via WhatsApp para atendimento imediato
+            Entre em contato conosco e descubra como podemos ajudar sua empresa a encontrar os melhores talentos!
           </p>
           <a 
             href="https://wa.me/5548996332952?text=Olá! Gostaria de saber mais sobre os serviços de RH da Isabel Cunha." 
             target="_blank" 
             rel="noopener noreferrer"
           >
-            <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white">
+            <Button size="lg" className="bg-isabel-orange hover:bg-isabel-orange/90 text-white">
               <MessageCircle className="mr-2 h-5 w-5" />
-              Falar no WhatsApp
+              Solicitar Consultoria
             </Button>
           </a>
         </div>

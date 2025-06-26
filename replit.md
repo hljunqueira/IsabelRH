@@ -91,6 +91,8 @@ The application uses a dual-mode approach where Vite handles client-side develop
 ```
 Changelog:
 - June 26, 2025. Initial setup
+- June 26, 2025. Updated "Quem Somos" page photo and added Instagram icon to navigation
+- June 26, 2025. Updated WhatsApp button styling and text on contact page
 ```
 
 ## User Preferences
