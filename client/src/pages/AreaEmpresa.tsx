@@ -40,7 +40,8 @@ import {
   Linkedin,
   Target,
   Award,
-  TrendingUp
+  TrendingUp,
+  AlertCircle
 } from "lucide-react";
 import type { Empresa, Vaga, Candidatura, Candidato } from "@shared/schema";
 import Layout from "@/components/Layout";
@@ -255,7 +256,26 @@ export default function AreaEmpresa() {
     updateProfileMutation.mutate(profileData);
   };
 
+  // Verifica se o perfil está completo
+  const isProfileComplete = () => {
+    return profileData.nome && 
+           profileData.telefone && 
+           profileData.cidade && 
+           profileData.estado && 
+           profileData.endereco &&
+           profileData.descricao;
+  };
+
   const handleJobCreate = () => {
+    if (!isProfileComplete()) {
+      toast({
+        title: "Perfil incompleto",
+        description: "Por favor, complete seu perfil empresarial antes de publicar vagas.",
+        variant: "destructive",
+      });
+      setActiveTab("perfil");
+      return;
+    }
     createJobMutation.mutate(newJobData);
   };
 
@@ -822,11 +842,34 @@ export default function AreaEmpresa() {
 
             {/* Jobs Tab */}
             <TabsContent value="vagas" className="space-y-6">
+              {!isProfileComplete() && (
+                <Card className="bg-amber-50 border-amber-300 p-4">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <div>
+                      <p className="font-medium text-amber-800">Perfil incompleto</p>
+                      <p className="text-sm text-amber-700">Complete seu perfil empresarial para publicar vagas.</p>
+                      <Button 
+                        size="sm" 
+                        variant="link" 
+                        className="text-amber-700 underline p-0 h-auto"
+                        onClick={() => setActiveTab("perfil")}
+                      >
+                        Completar perfil agora
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+              
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Minhas Vagas</h2>
                 <Dialog open={showJobModal} onOpenChange={setShowJobModal}>
                   <DialogTrigger asChild>
-                    <Button className="bg-isabel-blue hover:bg-isabel-blue/90">
+                    <Button 
+                      className="bg-isabel-blue hover:bg-isabel-blue/90"
+                      disabled={!isProfileComplete()}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Nova Vaga
                     </Button>
