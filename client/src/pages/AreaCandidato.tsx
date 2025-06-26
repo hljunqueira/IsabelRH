@@ -51,6 +51,7 @@ export default function AreaCandidato() {
   const [, setLocation] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showRetakeTest, setShowRetakeTest] = useState(false);
   
   useEffect(() => {
     if (!user || user.usuario.tipo !== "candidato") {
@@ -1075,7 +1076,7 @@ export default function AreaCandidato() {
                   </p>
                 </div>
                 
-                {candidato?.perfilDisc ? (
+                {candidato?.perfilDisc && !showRetakeTest ? (
                   <Card className="p-6">
                     <div className="flex items-center space-x-4 mb-4">
                       <Brain className="h-8 w-8 text-green-500" />
@@ -1091,13 +1092,22 @@ export default function AreaCandidato() {
                         )}
                       </div>
                     </div>
-                    <Button 
-                      onClick={() => setActiveTab("perfil")}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Ver detalhes do perfil
-                    </Button>
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={() => setActiveTab("perfil")}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Ver detalhes do perfil
+                      </Button>
+                      <Button 
+                        onClick={() => setShowRetakeTest(true)}
+                        variant="secondary"
+                        className="w-full"
+                      >
+                        Refazer o teste
+                      </Button>
+                    </div>
                   </Card>
                 ) : (
                   <TesteDISC 
@@ -1106,6 +1116,7 @@ export default function AreaCandidato() {
                       queryClient.invalidateQueries({ 
                         queryKey: [`/api/candidatos/${user?.usuario?.id}`] 
                       });
+                      setShowRetakeTest(false);
                     }}
                   />
                 )}
