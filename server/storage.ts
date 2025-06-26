@@ -94,11 +94,17 @@ export class MemStorage implements IStorage {
   }
 
   async createCandidato(insertCandidato: InsertCandidato): Promise<Candidato> {
+    const id = crypto.randomUUID();
     const candidato: Candidato = {
       ...insertCandidato,
+      id,
       criadoEm: new Date(),
+      telefone: insertCandidato.telefone ?? null,
+      linkedin: insertCandidato.linkedin ?? null,
+      curriculoUrl: insertCandidato.curriculoUrl ?? null,
+      areasInteresse: insertCandidato.areasInteresse ?? null,
     };
-    this.candidatos.set(candidato.id, candidato);
+    this.candidatos.set(id, candidato);
     return candidato;
   }
 
@@ -116,11 +122,15 @@ export class MemStorage implements IStorage {
   }
 
   async createEmpresa(insertEmpresa: InsertEmpresa): Promise<Empresa> {
+    const id = crypto.randomUUID();
     const empresa: Empresa = {
       ...insertEmpresa,
+      id,
       criadoEm: new Date(),
+      cnpj: insertEmpresa.cnpj ?? null,
+      setor: insertEmpresa.setor ?? null,
     };
-    this.empresas.set(empresa.id, empresa);
+    this.empresas.set(id, empresa);
     return empresa;
   }
 
@@ -151,6 +161,7 @@ export class MemStorage implements IStorage {
       ...insertVaga,
       id,
       publicadoEm: new Date(),
+      requisitos: insertVaga.requisitos ?? null,
     };
     this.vagas.set(id, vaga);
     return vaga;
@@ -200,6 +211,9 @@ export class MemStorage implements IStorage {
       ...insertTalento,
       id,
       criadoEm: new Date(),
+      telefone: insertTalento.telefone ?? null,
+      curriculoUrl: insertTalento.curriculoUrl ?? null,
+      areaInteresse: insertTalento.areaInteresse ?? null,
     };
     this.bancoTalentos.set(id, talento);
     return talento;
@@ -215,6 +229,7 @@ export class MemStorage implements IStorage {
       ...insertContato,
       id,
       criadoEm: new Date(),
+      empresa: insertContato.empresa ?? null,
     };
     this.contatos.set(id, contato);
     return contato;
