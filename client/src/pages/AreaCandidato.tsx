@@ -42,6 +42,7 @@ import {
   Trash2
 } from "lucide-react";
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
+import TesteDISC from "@/components/TesteDISC";
 
 export default function AreaCandidato() {
   const { user, logout } = useAuth();
@@ -361,10 +362,11 @@ export default function AreaCandidato() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
               <TabsTrigger value="vagas">Vagas Disponíveis</TabsTrigger>
+              <TabsTrigger value="disc">Teste DISC</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -1058,6 +1060,55 @@ export default function AreaCandidato() {
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            {/* DISC Test Tab */}
+            <TabsContent value="disc" className="space-y-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-6 text-center">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Avaliação de Perfil Comportamental DISC
+                  </h2>
+                  <p className="text-gray-600">
+                    Descubra seu perfil comportamental e aumente suas chances de encontrar a vaga ideal
+                  </p>
+                </div>
+                
+                {candidato?.perfilDisc ? (
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <Brain className="h-8 w-8 text-green-500" />
+                      <div>
+                        <h3 className="text-lg font-semibold">Teste já realizado</h3>
+                        <p className="text-gray-600">
+                          Seu perfil: <span className="font-semibold">{candidato.perfilDisc}</span>
+                        </p>
+                        {candidato.dataTesteDISC && (
+                          <p className="text-sm text-gray-500">
+                            Realizado em: {new Date(candidato.dataTesteDISC).toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => setActiveTab("perfil")}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Ver detalhes do perfil
+                    </Button>
+                  </Card>
+                ) : (
+                  <TesteDISC 
+                    candidatoId={user?.usuario?.id || ''} 
+                    onTesteConcluido={() => {
+                      queryClient.invalidateQueries({ 
+                        queryKey: [`/api/candidatos/${user?.usuario?.id}`] 
+                      });
+                    }}
+                  />
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
