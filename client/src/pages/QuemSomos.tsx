@@ -69,7 +69,7 @@ export default function QuemSomos() {
               <img 
                 src={isabelPhoto} 
                 alt="Isabel Cunha - Especialista em RH" 
-                className="w-96 h-96 rounded-2xl object-cover shadow-2xl"
+                className="w-96 h-96 rounded-2xl object-cover object-top shadow-2xl"
               />
             </div>
           </div>
