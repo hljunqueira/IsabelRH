@@ -157,7 +157,7 @@ export default function BancoTalentos() {
             <div className="w-20 h-20 bg-isabel-orange rounded-full flex items-center justify-center mx-auto mb-6">
               <Users className="text-white h-10 w-10" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">Banco de Talentos</h1>
+            <h1 className="text-4xl font-bold mb-4 text-[#2b3245]">Banco de Talentos</h1>
             <p className="text-xl max-w-3xl mx-auto text-[#2b3245]">
               Faça parte do nosso banco de talentos e seja contactado para oportunidades 
               exclusivas que combinam com seu perfil profissional
