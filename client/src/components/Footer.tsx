@@ -67,8 +67,8 @@ export default function Footer() {
         </div>
         
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-          <p>&copy; 2024 Isabel Cunha RH. Todos os direitos reservados.</p>
-          <p className="text-sm mt-2">Desenvolvido com ❤️ para transformar o RH brasileiro</p>
+          <p>&copy; 2025 Isabel Cunha RH. Todos os direitos reservados.</p>
+          <p className="text-sm mt-2">Desenvolvido com ❤️ para transformar o RH brasileiro. Dev Henrique Junqueira</p>
         </div>
       </div>
     </footer>
