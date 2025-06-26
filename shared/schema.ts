@@ -191,12 +191,10 @@ export const insertUsuarioSchema = createInsertSchema(usuarios).omit({
 });
 
 export const insertCandidatoSchema = createInsertSchema(candidatos).omit({
-  id: true,
   criadoEm: true,
 });
 
 export const insertEmpresaSchema = createInsertSchema(empresas).omit({
-  id: true,
   criadoEm: true,
 });
 

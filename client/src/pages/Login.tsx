@@ -14,6 +14,25 @@ import { UserRoundCheck, Building, Eye, EyeOff } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import logoImage from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
 
+// Função para formatar CNPJ
+const formatCNPJ = (value: string) => {
+  const cnpj = value.replace(/\D/g, '');
+  if (cnpj.length <= 2) return cnpj;
+  if (cnpj.length <= 5) return `${cnpj.slice(0, 2)}.${cnpj.slice(2)}`;
+  if (cnpj.length <= 8) return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5)}`;
+  if (cnpj.length <= 12) return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8)}`;
+  return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
+};
+
+// Função para formatar telefone
+const formatPhone = (value: string) => {
+  const phone = value.replace(/\D/g, '');
+  if (phone.length <= 2) return phone;
+  if (phone.length <= 6) return `(${phone.slice(0, 2)}) ${phone.slice(2)}`;
+  if (phone.length <= 10) return `(${phone.slice(0, 2)}) ${phone.slice(2, 6)}-${phone.slice(6)}`;
+  return `(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7, 11)}`;
+};
+
 export default function Login() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -414,8 +433,9 @@ export default function Login() {
                               id="telefone"
                               type="tel"
                               value={registerData.telefone || ""}
-                              onChange={(e) => setRegisterData(prev => ({ ...prev, telefone: e.target.value }))}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, telefone: formatPhone(e.target.value) }))}
                               placeholder="(48) 99999-9999"
+                              maxLength={15}
                               required
                             />
                           </div>
@@ -545,8 +565,9 @@ export default function Login() {
                             id="cnpj"
                             type="text"
                             value={registerData.cnpj}
-                            onChange={(e) => setRegisterData(prev => ({ ...prev, cnpj: e.target.value }))}
+                            onChange={(e) => setRegisterData(prev => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))}
                             placeholder="00.000.000/0000-00"
+                            maxLength={18}
                           />
                         </div>
                         
