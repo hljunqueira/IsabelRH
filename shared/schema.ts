@@ -6,7 +6,8 @@ import {
   timestamp, 
   varchar,
   pgEnum,
-  boolean 
+  boolean,
+  integer 
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -53,6 +54,7 @@ export const candidatos = pgTable("candidatos", {
   modalidadeTrabalho: varchar("modalidade_trabalho", { length: 100 }),
   curriculoUrl: varchar("curriculo_url", { length: 500 }),
   areasInteresse: text("areas_interesse").array(),
+  fotoPerfil: varchar("foto_perfil", { length: 500 }),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -83,6 +85,7 @@ export const empresas = pgTable("empresas", {
   anoFundacao: varchar("ano_fundacao", { length: 4 }),
   contato: varchar("contato", { length: 255 }),
   cargoContato: varchar("cargo_contato", { length: 100 }),
+  logoEmpresa: varchar("logo_empresa", { length: 500 }),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -92,6 +95,19 @@ export const vagas = pgTable("vagas", {
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao").notNull(),
   requisitos: text("requisitos"),
+  area: varchar("area", { length: 100 }),
+  nivel: varchar("nivel", { length: 50 }), // Júnior, Pleno, Sênior, Gerencial
+  tipoContrato: varchar("tipo_contrato", { length: 50 }), // CLT, PJ, Estágio, Temporário
+  modalidade: varchar("modalidade", { length: 50 }), // Presencial, Remoto, Híbrido
+  salario: varchar("salario", { length: 100 }),
+  beneficios: text("beneficios").array(),
+  cidade: varchar("cidade", { length: 100 }),
+  estado: varchar("estado", { length: 50 }),
+  cargaHoraria: varchar("carga_horaria", { length: 50 }),
+  responsabilidades: text("responsabilidades"),
+  diferenciais: text("diferenciais"),
+  status: varchar("status", { length: 20 }).default("ativa"), // ativa, pausada, encerrada
+  dataEncerramento: timestamp("data_encerramento"),
   publicadoEm: timestamp("publicado_em").defaultNow().notNull(),
 });
 
@@ -99,7 +115,16 @@ export const candidaturas = pgTable("candidaturas", {
   id: uuid("id").primaryKey().defaultRandom(),
   vagaId: uuid("vaga_id").references(() => vagas.id).notNull(),
   candidatoId: uuid("candidato_id").references(() => candidatos.id).notNull(),
+  status: varchar("status", { length: 50 }).default("candidatado"), // candidatado, triagem, entrevista, teste, aprovado, reprovado
+  etapa: varchar("etapa", { length: 100 }).default("Análise de currículo"),
+  observacoes: text("observacoes"),
+  pontuacao: integer("pontuacao"), // 1-10 para ranking
+  dataTriagem: timestamp("data_triagem"),
+  dataEntrevista: timestamp("data_entrevista"),
+  feedbackEmpresa: text("feedback_empresa"),
+  motivoReprovacao: text("motivo_reprovacao"),
   dataCandidatura: timestamp("data_candidatura").defaultNow().notNull(),
+  ultimaAtualizacao: timestamp("ultima_atualizacao").defaultNow().notNull(),
 });
 
 export const bancoTalentos = pgTable("banco_talentos", {

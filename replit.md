@@ -130,6 +130,12 @@ Changelog:
 - June 26, 2025. Replaced generic user icon with Isabel Cunha's professional photo as logo on login page, matching Navigation component styling
 - June 26, 2025. Created comprehensive administrative dashboard with user management, service tracking, proposal system, and business analytics
 - June 26, 2025. Integrated admin login into main login page and added test users for easy system testing
+- June 26, 2025. Enhanced company area with extensive profile fields (25+ fields including corporate data, mission/vision, benefits)
+- June 26, 2025. Improved job posting modal with comprehensive details (area, level, contract type, benefits, responsibilities)
+- June 26, 2025. Added advanced candidate management system with application tracking and status management
+- June 26, 2025. Consolidated candidate profile into single unified interface removing redundancy between "Meu Perfil" and "Perfil Completo"
+- June 26, 2025. Added avatar upload functionality for candidates and logo upload for companies
+- June 26, 2025. Enhanced database schema with photo/logo storage and advanced job/candidate tracking fields
 ```
 
 ## User Preferences

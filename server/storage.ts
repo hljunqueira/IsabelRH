@@ -126,13 +126,37 @@ export class MemStorage implements IStorage {
   async createCandidato(insertCandidato: InsertCandidato): Promise<Candidato> {
     const id = crypto.randomUUID();
     const candidato: Candidato = {
-      ...insertCandidato,
       id,
-      criadoEm: new Date(),
+      nome: insertCandidato.nome,
       telefone: insertCandidato.telefone ?? null,
+      celular: insertCandidato.celular ?? null,
       linkedin: insertCandidato.linkedin ?? null,
+      github: insertCandidato.github ?? null,
+      portfolio: insertCandidato.portfolio ?? null,
+      endereco: insertCandidato.endereco ?? null,
+      cidade: insertCandidato.cidade ?? null,
+      estado: insertCandidato.estado ?? null,
+      cep: insertCandidato.cep ?? null,
+      dataNascimento: insertCandidato.dataNascimento ?? null,
+      genero: insertCandidato.genero ?? null,
+      estadoCivil: insertCandidato.estadoCivil ?? null,
+      pcd: insertCandidato.pcd ?? null,
+      nivelEscolaridade: insertCandidato.nivelEscolaridade ?? null,
+      curso: insertCandidato.curso ?? null,
+      instituicao: insertCandidato.instituicao ?? null,
+      anoFormacao: insertCandidato.anoFormacao ?? null,
+      idiomas: insertCandidato.idiomas ?? null,
+      habilidades: insertCandidato.habilidades ?? null,
+      experiencias: insertCandidato.experiencias ?? null,
+      certificacoes: insertCandidato.certificacoes ?? null,
+      objetivoProfissional: insertCandidato.objetivoProfissional ?? null,
+      pretensaoSalarial: insertCandidato.pretensaoSalarial ?? null,
+      disponibilidade: insertCandidato.disponibilidade ?? null,
+      modalidadeTrabalho: insertCandidato.modalidadeTrabalho ?? null,
       curriculoUrl: insertCandidato.curriculoUrl ?? null,
       areasInteresse: insertCandidato.areasInteresse ?? null,
+      fotoPerfil: insertCandidato.fotoPerfil ?? null,
+      criadoEm: new Date(),
     };
     this.candidatos.set(id, candidato);
     return candidato;
@@ -154,11 +178,34 @@ export class MemStorage implements IStorage {
   async createEmpresa(insertEmpresa: InsertEmpresa): Promise<Empresa> {
     const id = crypto.randomUUID();
     const empresa: Empresa = {
-      ...insertEmpresa,
       id,
-      criadoEm: new Date(),
+      nome: insertEmpresa.nome,
+      telefone: insertEmpresa.telefone ?? null,
+      celular: insertEmpresa.celular ?? null,
+      linkedin: insertEmpresa.linkedin ?? null,
+      endereco: insertEmpresa.endereco ?? null,
+      cidade: insertEmpresa.cidade ?? null,
+      estado: insertEmpresa.estado ?? null,
+      cep: insertEmpresa.cep ?? null,
       cnpj: insertEmpresa.cnpj ?? null,
+      razaoSocial: insertEmpresa.razaoSocial ?? null,
+      nomeFantasia: insertEmpresa.nomeFantasia ?? null,
+      inscricaoEstadual: insertEmpresa.inscricaoEstadual ?? null,
       setor: insertEmpresa.setor ?? null,
+      porte: insertEmpresa.porte ?? null,
+      website: insertEmpresa.website ?? null,
+      descricao: insertEmpresa.descricao ?? null,
+      missao: insertEmpresa.missao ?? null,
+      visao: insertEmpresa.visao ?? null,
+      valores: insertEmpresa.valores ?? null,
+      beneficios: insertEmpresa.beneficios ?? null,
+      cultura: insertEmpresa.cultura ?? null,
+      numeroFuncionarios: insertEmpresa.numeroFuncionarios ?? null,
+      anoFundacao: insertEmpresa.anoFundacao ?? null,
+      contato: insertEmpresa.contato ?? null,
+      cargoContato: insertEmpresa.cargoContato ?? null,
+      logoEmpresa: insertEmpresa.logoEmpresa ?? null,
+      criadoEm: new Date(),
     };
     this.empresas.set(id, empresa);
     return empresa;
@@ -188,10 +235,22 @@ export class MemStorage implements IStorage {
   async createVaga(insertVaga: InsertVaga): Promise<Vaga> {
     const id = crypto.randomUUID();
     const vaga: Vaga = {
-      ...insertVaga,
       id,
-      publicadoEm: new Date(),
+      titulo: insertVaga.titulo,
+      descricao: insertVaga.descricao,
+      empresaId: insertVaga.empresaId,
+      cidade: insertVaga.cidade ?? null,
+      estado: insertVaga.estado ?? null,
       requisitos: insertVaga.requisitos ?? null,
+      area: insertVaga.area ?? null,
+      nivel: insertVaga.nivel ?? null,
+      tipoContrato: insertVaga.tipoContrato ?? null,
+      salario: insertVaga.salario ?? null,
+      beneficios: insertVaga.beneficios ?? null,
+      status: insertVaga.status ?? null,
+      dataEncerramento: insertVaga.dataEncerramento ?? null,
+      responsabilidades: insertVaga.responsabilidades ?? null,
+      publicadoEm: new Date(),
     };
     this.vagas.set(id, vaga);
     return vaga;

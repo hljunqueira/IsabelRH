@@ -6,9 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { 
@@ -23,7 +26,6 @@ import {
   Eye,
   Calendar,
   LogOut,
-  Settings,
   Upload,
   Star,
   Award,
@@ -32,34 +34,24 @@ import {
   Cake,
   Phone,
   Mail,
-  MapPinIcon
+  MapPinIcon,
+  Camera,
+  Save,
+  X,
+  Plus,
+  Trash2
 } from "lucide-react";
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
 
 export default function AreaCandidato() {
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Check authentication
-  const [user, setUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
   
   useEffect(() => {
-    const storedUser = localStorage.getItem("auth-user");
-    if (!storedUser) {
-      setLocation("/login");
-      return;
-    }
-    
-    try {
-      const userData = JSON.parse(storedUser);
-      if (userData.usuario.tipo !== "candidato") {
-        setLocation("/login");
-        return;
-      }
-      setUser(userData);
-    } catch (error) {
+    if (!user || user.usuario.tipo !== "candidato") {
       setLocation("/login");
     }
   }, [setLocation]);
@@ -77,23 +69,23 @@ export default function AreaCandidato() {
     estado: "",
     cep: "",
     dataNascimento: "",
-    estadoCivil: "",
     genero: "",
-    pcd: "não",
+    pcd: "",
     nivelEscolaridade: "",
     curso: "",
     instituicao: "",
     anoFormacao: "",
     idiomas: [] as string[],
     habilidades: [] as string[],
-    experiencias: [] as any[],
-    certificacoes: [] as any[],
+    experiencias: "",
+    certificacoes: "",
     objetivoProfissional: "",
     pretensaoSalarial: "",
     disponibilidade: "",
     modalidadeTrabalho: "",
-    areasInteresse: [] as string[],
     curriculoUrl: "",
+    areasInteresse: [] as string[],
+    fotoPerfil: "",
   });
 
   // Fetch candidate profile
@@ -104,10 +96,11 @@ export default function AreaCandidato() {
 
   // Fetch available jobs
   const { data: vagas = [], isLoading: loadingVagas } = useQuery({
-    queryKey: ["/api/vagas"],
+    queryKey: ['/api/vagas'],
+    enabled: !!user?.usuario?.id,
   });
 
-  // Fetch user applications
+  // Fetch my applications
   const { data: candidaturas = [], isLoading: loadingCandidaturas } = useQuery({
     queryKey: [`/api/candidaturas/candidato/${user?.usuario?.id}`],
     enabled: !!user?.usuario?.id,
@@ -136,7 +129,7 @@ export default function AreaCandidato() {
   });
 
   // Apply to job mutation
-  const applyToJobMutation = useMutation({
+  const applyJobMutation = useMutation({
     mutationFn: async (vagaId: string) => {
       return await apiRequest("POST", "/api/candidaturas", {
         vagaId,
@@ -147,40 +140,105 @@ export default function AreaCandidato() {
       queryClient.invalidateQueries({ queryKey: [`/api/candidaturas/candidato/${user.usuario.id}`] });
       toast({
         title: "Candidatura enviada!",
-        description: "Sua candidatura foi registrada com sucesso.",
+        description: "Sua candidatura foi enviada com sucesso.",
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Erro na candidatura",
-        description: error.message || "Tente novamente mais tarde.",
+        title: "Erro ao enviar candidatura",
+        description: "Tente novamente mais tarde.",
         variant: "destructive",
       });
     },
   });
 
-  // Update profile data when candidato is loaded
+  // Load profile data when candidato is loaded
   useEffect(() => {
     if (candidato) {
       setProfileData({
         nome: candidato.nome || "",
+        email: user?.usuario?.email || "",
         telefone: candidato.telefone || "",
+        celular: candidato.celular || "",
         linkedin: candidato.linkedin || "",
+        github: candidato.github || "",
+        portfolio: candidato.portfolio || "",
+        endereco: candidato.endereco || "",
+        cidade: candidato.cidade || "",
+        estado: candidato.estado || "",
+        cep: candidato.cep || "",
+        dataNascimento: candidato.dataNascimento || "",
+        genero: candidato.genero || "",
+        pcd: candidato.pcd || "",
+        nivelEscolaridade: candidato.nivelEscolaridade || "",
+        curso: candidato.curso || "",
+        instituicao: candidato.instituicao || "",
+        anoFormacao: candidato.anoFormacao || "",
+        idiomas: candidato.idiomas || [],
+        habilidades: candidato.habilidades || [],
+        experiencias: candidato.experiencias || "",
+        certificacoes: candidato.certificacoes || "",
+        objetivoProfissional: candidato.objetivoProfissional || "",
+        pretensaoSalarial: candidato.pretensaoSalarial || "",
+        disponibilidade: candidato.disponibilidade || "",
+        modalidadeTrabalho: candidato.modalidadeTrabalho || "",
+        curriculoUrl: candidato.curriculoUrl || "",
         areasInteresse: candidato.areasInteresse || [],
+        fotoPerfil: candidato.fotoPerfil || "",
       });
     }
-  }, [candidato]);
+  }, [candidato, user]);
 
   const handleProfileSave = () => {
     updateProfileMutation.mutate(profileData);
   };
 
-  const handleApplyToJob = (vagaId: string) => {
-    applyToJobMutation.mutate(vagaId);
+  const handleJobApply = (vagaId: string) => {
+    if (isAlreadyApplied(vagaId)) {
+      toast({
+        title: "Já candidatado",
+        description: "Você já se candidatou para esta vaga.",
+        variant: "destructive",
+      });
+      return;
+    }
+    applyJobMutation.mutate(vagaId);
   };
 
   const isAlreadyApplied = (vagaId: string) => {
-    return candidaturas.some((c: Candidatura) => c.vagaId === vagaId);
+    return Array.isArray(candidaturas) && candidaturas.some((c: Candidatura) => c.vagaId === vagaId);
+  };
+
+  const addHabilidade = (habilidade: string) => {
+    if (habilidade && !profileData.habilidades.includes(habilidade)) {
+      setProfileData(prev => ({
+        ...prev,
+        habilidades: [...prev.habilidades, habilidade]
+      }));
+    }
+  };
+
+  const removeHabilidade = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      habilidades: prev.habilidades.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addIdioma = (idioma: string) => {
+    if (idioma && !profileData.idiomas.includes(idioma)) {
+      setProfileData(prev => ({
+        ...prev,
+        idiomas: [...prev.idiomas, idioma]
+      }));
+    }
+  };
+
+  const removeIdioma = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      idiomas: prev.idiomas.filter((_, i) => i !== index)
+    }));
   };
 
   const addAreaInteresse = (area: string) => {
@@ -192,105 +250,250 @@ export default function AreaCandidato() {
     }
   };
 
-  const removeAreaInteresse = (area: string) => {
+  const removeAreaInteresse = (index: number) => {
     setProfileData(prev => ({
       ...prev,
-      areasInteresse: prev.areasInteresse.filter(a => a !== area)
+      areasInteresse: prev.areasInteresse.filter((_, i) => i !== index)
     }));
   };
 
-  if (!user) {
-    return <div>Carregando...</div>;
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'foto' | 'curriculo') => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // In a real app, you would upload to a cloud storage service
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (type === 'foto') {
+          setProfileData(prev => ({ ...prev, fotoPerfil: result }));
+        } else {
+          setProfileData(prev => ({ ...prev, curriculoUrl: result }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  if (loadingProfile) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (
     <Layout>
-      <div className="min-h-screen bg-isabel-accent py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto p-6 space-y-6">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={profileData.fotoPerfil} alt={profileData.nome} />
+                  <AvatarFallback className="bg-isabel-orange text-white text-lg">
+                    {profileData.nome ? profileData.nome.charAt(0).toUpperCase() : 'C'}
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                  <label className="absolute -bottom-2 -right-2 bg-isabel-blue text-white rounded-full p-1 cursor-pointer hover:bg-isabel-blue/80">
+                    <Camera className="h-4 w-4" />
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'foto')}
+                    />
+                  </label>
+                )}
+              </div>
               <div>
-                <h1 className="text-3xl font-bold text-isabel-blue">Área do Candidato</h1>
-                <p className="text-gray-600 mt-2">
-                  Bem-vindo(a), {candidato?.nome || user.usuario.email}
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Área do Candidato
+                </h1>
+                <p className="text-gray-600">
+                  Bem-vindo(a), {profileData.nome || user?.usuario?.email}
                 </p>
               </div>
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={() => setLocation("/candidato/perfil")}
-                  variant="outline"
-                  className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Perfil Completo
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    localStorage.removeItem("auth-user");
-                    toast({ title: "Logout realizado com sucesso!" });
-                    setLocation("/login");
-                  }}
-                  variant="outline"
-                  className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </Button>
-                
-                <div className="w-16 h-16 bg-isabel-orange rounded-full flex items-center justify-center">
-                  <User className="text-white h-8 w-8" />
-                </div>
-              </div>
             </div>
+            <Button 
+              onClick={logout}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
+            </Button>
           </div>
 
-          <Tabs defaultValue="perfil" className="space-y-6">
+          {/* Navigation Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
               <TabsTrigger value="vagas">Vagas Disponíveis</TabsTrigger>
-              <TabsTrigger value="candidaturas">Minhas Candidaturas</TabsTrigger>
             </TabsList>
 
-            {/* Profile Tab */}
-            <TabsContent value="perfil">
+            {/* Dashboard Tab */}
+            <TabsContent value="dashboard" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Candidaturas Enviadas</CardTitle>
+                    <Send className="h-4 w-4 text-isabel-blue" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{Array.isArray(candidaturas) ? candidaturas.length : 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Total de candidaturas
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Vagas Disponíveis</CardTitle>
+                    <Briefcase className="h-4 w-4 text-isabel-orange" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{Array.isArray(vagas) ? vagas.length : 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Oportunidades ativas
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Perfil Completo</CardTitle>
+                    <User className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">85%</div>
+                    <p className="text-xs text-muted-foreground">
+                      Completude do perfil
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Applications */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-isabel-blue">Informações do Perfil</CardTitle>
-                    <Button
-                      variant={isEditing ? "outline" : "default"}
-                      onClick={() => setIsEditing(!isEditing)}
-                      className={isEditing ? "" : "bg-isabel-orange hover:bg-isabel-orange/90"}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      {isEditing ? "Cancelar" : "Editar"}
-                    </Button>
+                  <CardTitle>Minhas Candidaturas Recentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Array.isArray(candidaturas) && candidaturas.length > 0 ? (
+                      candidaturas.slice(0, 5).map((candidatura: Candidatura) => {
+                        const vaga = Array.isArray(vagas) ? vagas.find((v: Vaga) => v.id === candidatura.vagaId) : null;
+                        return (
+                          <div key={candidatura.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{vaga?.titulo || "Vaga não encontrada"}</h4>
+                              <p className="text-sm text-gray-600">
+                                Candidatado em {new Date(candidatura.dataCandidatura).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Badge variant="secondary">
+                              {candidatura.status || "Pendente"}
+                            </Badge>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8">
+                        <Send className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600">Nenhuma candidatura enviada ainda</p>
+                        <Button 
+                          onClick={() => setActiveTab("vagas")}
+                          className="mt-4 bg-isabel-blue hover:bg-isabel-blue/90"
+                        >
+                          Ver Vagas Disponíveis
+                        </Button>
+                      </div>
+                    )}
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Profile Tab */}
+            <TabsContent value="perfil" className="space-y-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <User className="h-5 w-5" />
+                    <span>Meu Perfil</span>
+                  </CardTitle>
+                  {!isEditing ? (
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={handleProfileSave}
+                        disabled={updateProfileMutation.isPending}
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {updateProfileMutation.isPending ? "Salvando..." : "Salvar"}
+                      </Button>
+                      <Button 
+                        onClick={() => setIsEditing(false)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {loadingProfile ? (
-                    <div className="space-y-4">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Tabs defaultValue="pessoais" className="w-full">
+                    <TabsList className="grid w-full grid-cols-6">
+                      <TabsTrigger value="pessoais">Pessoais</TabsTrigger>
+                      <TabsTrigger value="endereco">Endereço</TabsTrigger>
+                      <TabsTrigger value="formacao">Formação</TabsTrigger>
+                      <TabsTrigger value="experiencia">Experiência</TabsTrigger>
+                      <TabsTrigger value="habilidades">Habilidades</TabsTrigger>
+                      <TabsTrigger value="objetivos">Objetivos</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="pessoais" className="space-y-4 mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="nome">Nome Completo</Label>
+                          <Label htmlFor="nome">Nome Completo *</Label>
                           <Input
                             id="nome"
                             value={profileData.nome}
                             onChange={(e) => setProfileData(prev => ({ ...prev, nome: e.target.value }))}
                             disabled={!isEditing}
-                            placeholder="Digite seu nome completo"
+                            placeholder="Seu nome completo"
                           />
                         </div>
-                        
+                        <div>
+                          <Label htmlFor="email">E-mail</Label>
+                          <Input
+                            id="email"
+                            value={profileData.email}
+                            disabled={true}
+                            placeholder="seu@email.com"
+                          />
+                        </div>
                         <div>
                           <Label htmlFor="telefone">Telefone</Label>
                           <Input
@@ -298,273 +501,516 @@ export default function AreaCandidato() {
                             value={profileData.telefone}
                             onChange={(e) => setProfileData(prev => ({ ...prev, telefone: e.target.value }))}
                             disabled={!isEditing}
+                            placeholder="(48) 3000-0000"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="celular">Celular</Label>
+                          <Input
+                            id="celular"
+                            value={profileData.celular}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, celular: e.target.value }))}
+                            disabled={!isEditing}
                             placeholder="(48) 99999-9999"
                           />
                         </div>
+                        <div>
+                          <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                          <Input
+                            id="dataNascimento"
+                            type="date"
+                            value={profileData.dataNascimento}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, dataNascimento: e.target.value }))}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="genero">Gênero</Label>
+                          <Select 
+                            value={profileData.genero} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, genero: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="masculino">Masculino</SelectItem>
+                              <SelectItem value="feminino">Feminino</SelectItem>
+                              <SelectItem value="outro">Outro</SelectItem>
+                              <SelectItem value="nao_informar">Prefiro não informar</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="pcd">Pessoa com Deficiência</Label>
+                          <Select 
+                            value={profileData.pcd} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, pcd: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nao">Não</SelectItem>
+                              <SelectItem value="sim">Sim</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="linkedin">LinkedIn</Label>
+                          <Input
+                            id="linkedin"
+                            value={profileData.linkedin}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, linkedin: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="linkedin.com/in/seu-perfil"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="github">GitHub</Label>
+                          <Input
+                            id="github"
+                            value={profileData.github}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, github: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="github.com/seu-usuario"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="portfolio">Portfólio</Label>
+                          <Input
+                            id="portfolio"
+                            value={profileData.portfolio}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, portfolio: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="www.seuportfolio.com"
+                          />
+                        </div>
                       </div>
+                      
+                      {isEditing && (
+                        <div>
+                          <Label>Currículo (PDF)</Label>
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => handleFileUpload(e, 'curriculo')}
+                              className="flex-1"
+                            />
+                            <Upload className="h-4 w-4 text-gray-400" />
+                          </div>
+                          {profileData.curriculoUrl && (
+                            <p className="text-sm text-green-600 mt-1">Currículo carregado com sucesso</p>
+                          )}
+                        </div>
+                      )}
+                    </TabsContent>
 
+                    <TabsContent value="endereco" className="space-y-4 mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <Label htmlFor="endereco">Endereço</Label>
+                          <Input
+                            id="endereco"
+                            value={profileData.endereco}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, endereco: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="Rua, número, bairro"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="cidade">Cidade</Label>
+                          <Input
+                            id="cidade"
+                            value={profileData.cidade}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, cidade: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="Florianópolis"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="estado">Estado</Label>
+                          <Select 
+                            value={profileData.estado} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, estado: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SC">Santa Catarina</SelectItem>
+                              <SelectItem value="SP">São Paulo</SelectItem>
+                              <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                              <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                              <SelectItem value="PR">Paraná</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="cep">CEP</Label>
+                          <Input
+                            id="cep"
+                            value={profileData.cep}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, cep: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="88000-000"
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="formacao" className="space-y-4 mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="nivelEscolaridade">Nível de Escolaridade</Label>
+                          <Select 
+                            value={profileData.nivelEscolaridade} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, nivelEscolaridade: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ensino_medio">Ensino Médio</SelectItem>
+                              <SelectItem value="ensino_tecnico">Ensino Técnico</SelectItem>
+                              <SelectItem value="ensino_superior">Ensino Superior</SelectItem>
+                              <SelectItem value="pos_graduacao">Pós-Graduação</SelectItem>
+                              <SelectItem value="mestrado">Mestrado</SelectItem>
+                              <SelectItem value="doutorado">Doutorado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="curso">Curso</Label>
+                          <Input
+                            id="curso"
+                            value={profileData.curso}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, curso: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="Nome do curso"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="instituicao">Instituição</Label>
+                          <Input
+                            id="instituicao"
+                            value={profileData.instituicao}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, instituicao: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="Nome da instituição"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="anoFormacao">Ano de Formação</Label>
+                          <Input
+                            id="anoFormacao"
+                            value={profileData.anoFormacao}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, anoFormacao: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="2024"
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <Label htmlFor="linkedin">LinkedIn</Label>
-                        <Input
-                          id="linkedin"
-                          value={profileData.linkedin}
-                          onChange={(e) => setProfileData(prev => ({ ...prev, linkedin: e.target.value }))}
+                        <Label htmlFor="certificacoes">Certificações</Label>
+                        <Textarea
+                          id="certificacoes"
+                          value={profileData.certificacoes}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, certificacoes: e.target.value }))}
                           disabled={!isEditing}
-                          placeholder="linkedin.com/in/seu-perfil"
+                          placeholder="Liste suas certificações, cursos complementares..."
+                          rows={3}
                         />
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="experiencia" className="space-y-4 mt-6">
+                      <div>
+                        <Label htmlFor="experiencias">Experiência Profissional</Label>
+                        <Textarea
+                          id="experiencias"
+                          value={profileData.experiencias}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, experiencias: e.target.value }))}
+                          disabled={!isEditing}
+                          placeholder="Descreva sua experiência profissional, cargos ocupados, principais responsabilidades..."
+                          rows={6}
+                        />
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="habilidades" className="space-y-4 mt-6">
+                      <div>
+                        <Label>Habilidades Técnicas</Label>
+                        <div className="space-y-2">
+                          {isEditing && (
+                            <div className="flex space-x-2">
+                              <Select onValueChange={addHabilidade}>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Adicionar habilidade" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="JavaScript">JavaScript</SelectItem>
+                                  <SelectItem value="Python">Python</SelectItem>
+                                  <SelectItem value="React">React</SelectItem>
+                                  <SelectItem value="Node.js">Node.js</SelectItem>
+                                  <SelectItem value="SQL">SQL</SelectItem>
+                                  <SelectItem value="Marketing Digital">Marketing Digital</SelectItem>
+                                  <SelectItem value="Excel Avançado">Excel Avançado</SelectItem>
+                                  <SelectItem value="Adobe Photoshop">Adobe Photoshop</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.habilidades.map((habilidade, index) => (
+                              <Badge key={index} variant="secondary" className="flex items-center space-x-1">
+                                <span>{habilidade}</span>
+                                {isEditing && (
+                                  <X 
+                                    className="h-3 w-3 cursor-pointer" 
+                                    onClick={() => removeHabilidade(index)}
+                                  />
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label>Idiomas</Label>
+                        <div className="space-y-2">
+                          {isEditing && (
+                            <div className="flex space-x-2">
+                              <Select onValueChange={addIdioma}>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Adicionar idioma" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Inglês - Básico">Inglês - Básico</SelectItem>
+                                  <SelectItem value="Inglês - Intermediário">Inglês - Intermediário</SelectItem>
+                                  <SelectItem value="Inglês - Avançado">Inglês - Avançado</SelectItem>
+                                  <SelectItem value="Inglês - Fluente">Inglês - Fluente</SelectItem>
+                                  <SelectItem value="Espanhol - Básico">Espanhol - Básico</SelectItem>
+                                  <SelectItem value="Espanhol - Intermediário">Espanhol - Intermediário</SelectItem>
+                                  <SelectItem value="Espanhol - Avançado">Espanhol - Avançado</SelectItem>
+                                  <SelectItem value="Francês - Básico">Francês - Básico</SelectItem>
+                                  <SelectItem value="Alemão - Básico">Alemão - Básico</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.idiomas.map((idioma, index) => (
+                              <Badge key={index} variant="outline" className="flex items-center space-x-1">
+                                <span>{idioma}</span>
+                                {isEditing && (
+                                  <X 
+                                    className="h-3 w-3 cursor-pointer" 
+                                    onClick={() => removeIdioma(index)}
+                                  />
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="objetivos" className="space-y-4 mt-6">
+                      <div>
+                        <Label htmlFor="objetivoProfissional">Objetivo Profissional</Label>
+                        <Textarea
+                          id="objetivoProfissional"
+                          value={profileData.objetivoProfissional}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, objetivoProfissional: e.target.value }))}
+                          disabled={!isEditing}
+                          placeholder="Descreva seus objetivos profissionais, carreira desejada..."
+                          rows={4}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="pretensaoSalarial">Pretensão Salarial</Label>
+                          <Input
+                            id="pretensaoSalarial"
+                            value={profileData.pretensaoSalarial}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, pretensaoSalarial: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="R$ 5.000 - R$ 8.000"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="disponibilidade">Disponibilidade</Label>
+                          <Select 
+                            value={profileData.disponibilidade} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, disponibilidade: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="imediata">Imediata</SelectItem>
+                              <SelectItem value="15_dias">15 dias</SelectItem>
+                              <SelectItem value="30_dias">30 dias</SelectItem>
+                              <SelectItem value="60_dias">60 dias</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="modalidadeTrabalho">Modalidade de Trabalho</Label>
+                          <Select 
+                            value={profileData.modalidadeTrabalho} 
+                            onValueChange={(value) => setProfileData(prev => ({ ...prev, modalidadeTrabalho: value }))}
+                            disabled={!isEditing}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="presencial">Presencial</SelectItem>
+                              <SelectItem value="remoto">Remoto</SelectItem>
+                              <SelectItem value="hibrido">Híbrido</SelectItem>
+                              <SelectItem value="qualquer">Qualquer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div>
                         <Label>Áreas de Interesse</Label>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {profileData.areasInteresse.map((area, index) => (
-                            <Badge 
-                              key={index}
-                              variant="secondary"
-                              className="bg-isabel-orange/10 text-isabel-orange"
-                            >
-                              {area}
-                              {isEditing && (
-                                <button
-                                  onClick={() => removeAreaInteresse(area)}
-                                  className="ml-2 text-isabel-orange hover:text-red-500"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </Badge>
-                          ))}
-                        </div>
-                        {isEditing && (
-                          <div className="mt-3 flex gap-2">
-                            <Input
-                              placeholder="Digite uma área de interesse"
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  addAreaInteresse(e.currentTarget.value);
-                                  e.currentTarget.value = '';
-                                }
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={(e) => {
-                                const input = (e.target as HTMLElement).parentElement?.querySelector('input');
-                                if (input?.value) {
-                                  addAreaInteresse(input.value);
-                                  input.value = '';
-                                }
-                              }}
-                            >
-                              Adicionar
-                            </Button>
+                        <div className="space-y-2">
+                          {isEditing && (
+                            <div className="flex space-x-2">
+                              <Select onValueChange={addAreaInteresse}>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Adicionar área de interesse" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                                  <SelectItem value="Marketing">Marketing</SelectItem>
+                                  <SelectItem value="Vendas">Vendas</SelectItem>
+                                  <SelectItem value="Financeiro">Financeiro</SelectItem>
+                                  <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
+                                  <SelectItem value="Design">Design</SelectItem>
+                                  <SelectItem value="Educação">Educação</SelectItem>
+                                  <SelectItem value="Saúde">Saúde</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.areasInteresse.map((area, index) => (
+                              <Badge key={index} variant="default" className="flex items-center space-x-1">
+                                <span>{area}</span>
+                                {isEditing && (
+                                  <X 
+                                    className="h-3 w-3 cursor-pointer" 
+                                    onClick={() => removeAreaInteresse(index)}
+                                  />
+                                )}
+                              </Badge>
+                            ))}
                           </div>
-                        )}
-                      </div>
-
-                      {isEditing && (
-                        <div className="flex gap-4">
-                          <Button
-                            onClick={handleProfileSave}
-                            disabled={updateProfileMutation.isPending}
-                            className="bg-isabel-blue hover:bg-isabel-blue/90"
-                          >
-                            {updateProfileMutation.isPending ? "Salvando..." : "Salvar Alterações"}
-                          </Button>
                         </div>
-                      )}
-                    </>
-                  )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Available Jobs Tab */}
-            <TabsContent value="vagas">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-isabel-blue">Vagas Disponíveis</h2>
-                  <Badge variant="outline" className="text-isabel-orange border-isabel-orange">
-                    {vagas.length} vagas encontradas
-                  </Badge>
+            {/* Jobs Tab */}
+            <TabsContent value="vagas" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Vagas Disponíveis</h2>
+              </div>
+
+              {loadingVagas ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
+                  ))}
                 </div>
-
-                {loadingVagas ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2, 3, 4].map(i => (
-                      <Card key={i} className="animate-pulse">
-                        <CardContent className="p-6">
-                          <div className="h-4 bg-gray-200 rounded mb-4"></div>
-                          <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                          <div className="h-8 bg-gray-200 rounded"></div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : vagas.length === 0 ? (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Briefcase className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                        Nenhuma vaga disponível no momento
-                      </h3>
-                      <p className="text-gray-500">
-                        Novas oportunidades serão publicadas em breve. Continue acompanhando!
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {vagas.map((vaga: Vaga) => (
-                      <Card key={vaga.id} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <CardTitle className="text-isabel-blue flex items-start justify-between">
-                            <span>{vaga.titulo}</span>
-                            {isAlreadyApplied(vaga.id) && (
-                              <Badge className="bg-green-100 text-green-800">
-                                Candidatado
-                              </Badge>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            <div className="flex items-center text-gray-600">
-                              <Building className="mr-2 h-4 w-4" />
-                              <span className="text-sm">Empresa parceira</span>
-                            </div>
-                            
-                            <div className="flex items-center text-gray-600">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              <span className="text-sm">
-                                Publicado em {new Date(vaga.publicadoEm).toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-
-                            <p className="text-gray-700 text-sm line-clamp-3">
-                              {vaga.descricao}
-                            </p>
-
-                            {vaga.requisitos && (
-                              <div>
-                                <h4 className="font-semibold text-isabel-blue text-sm mb-1">
-                                  Requisitos:
-                                </h4>
-                                <p className="text-gray-600 text-sm line-clamp-2">
-                                  {vaga.requisitos}
-                                </p>
+              ) : (
+                <div className="space-y-4">
+                  {Array.isArray(vagas) && vagas.length > 0 ? (
+                    vagas.map((vaga: Vaga) => (
+                      <Card key={vaga.id} className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-semibold mb-2">{vaga.titulo}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                              <div className="flex items-center space-x-1">
+                                <Building className="h-4 w-4" />
+                                <span>Empresa</span>
                               </div>
-                            )}
-
-                            <div className="flex gap-2 pt-3">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                Ver Detalhes
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleApplyToJob(vaga.id)}
-                                disabled={isAlreadyApplied(vaga.id) || applyToJobMutation.isPending}
-                                className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90"
-                              >
-                                <Send className="mr-2 h-4 w-4" />
-                                {isAlreadyApplied(vaga.id) ? "Candidatado" : "Candidatar-se"}
-                              </Button>
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="h-4 w-4" />
+                                <span>{vaga.cidade}, {vaga.estado}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Briefcase className="h-4 w-4" />
+                                <span>{vaga.modalidade}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>Publicado em {new Date(vaga.publicadoEm).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            <p className="text-gray-700 mb-4 line-clamp-2">{vaga.descricao}</p>
+                            <div className="flex items-center space-x-4 text-sm">
+                              <span className="font-medium">Salário: {vaga.salario || "A combinar"}</span>
+                              <span className="text-gray-500">•</span>
+                              <span className="text-gray-500">Nível: {vaga.nivel}</span>
                             </div>
                           </div>
-                        </CardContent>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
+                            <Button 
+                              onClick={() => handleJobApply(vaga.id)}
+                              disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
+                              className={isAlreadyApplied(vaga.id) ? "" : "bg-isabel-blue hover:bg-isabel-blue/90"}
+                              variant={isAlreadyApplied(vaga.id) ? "outline" : "default"}
+                              size="sm"
+                            >
+                              {isAlreadyApplied(vaga.id) ? (
+                                <>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Já Candidatado
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="h-4 w-4 mr-2" />
+                                  {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
                       </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Applications Tab */}
-            <TabsContent value="candidaturas">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-isabel-blue">Minhas Candidaturas</h2>
-                  <Badge variant="outline" className="text-isabel-blue border-isabel-blue">
-                    {candidaturas.length} candidaturas
-                  </Badge>
-                </div>
-
-                {loadingCandidaturas ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map(i => (
-                      <Card key={i} className="animate-pulse">
-                        <CardContent className="p-6">
-                          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                          <div className="h-3 bg-gray-200 rounded"></div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : candidaturas.length === 0 ? (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <FileText className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-600 mb-2">
-                        Você ainda não se candidatou a nenhuma vaga
-                      </h3>
-                      <p className="text-gray-500 mb-4">
-                        Explore as vagas disponíveis e candidate-se às oportunidades que mais combinam com seu perfil.
+                    ))
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Nenhuma vaga disponível</h3>
+                      <p className="text-gray-600">
+                        Não há vagas disponíveis no momento. Volte em breve para conferir novas oportunidades.
                       </p>
-                      <Button 
-                        onClick={() => {
-                          const tabsList = document.querySelector('[role="tablist"]');
-                          const vagasTab = tabsList?.querySelector('[value="vagas"]') as HTMLElement;
-                          vagasTab?.click();
-                        }}
-                        className="bg-isabel-orange hover:bg-isabel-orange/90"
-                      >
-                        Ver Vagas Disponíveis
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-4">
-                    {candidaturas.map((candidatura: Candidatura) => {
-                      const vaga = vagas.find((v: Vaga) => v.id === candidatura.vagaId);
-                      return (
-                        <Card key={candidatura.id}>
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-isabel-blue mb-2">
-                                  {vaga?.titulo || "Vaga não encontrada"}
-                                </h3>
-                                <div className="flex items-center text-gray-600 mb-2">
-                                  <Clock className="mr-2 h-4 w-4" />
-                                  <span className="text-sm">
-                                    Candidatura enviada em {new Date(candidatura.dataCandidatura).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </div>
-                                {vaga && (
-                                  <p className="text-gray-700 text-sm line-clamp-2">
-                                    {vaga.descricao}
-                                  </p>
-                                )}
-                              </div>
-                              <Badge className="bg-isabel-blue text-white">
-                                Em Análise
-                              </Badge>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                    </Card>
+                  )}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
