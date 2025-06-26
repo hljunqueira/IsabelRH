@@ -10,7 +10,7 @@ import {
   Briefcase,
   Heart
 } from "lucide-react";
-import isabelPhoto from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
+import isabelPhoto from "@assets/image_1750906880114.png";
 
 export default function QuemSomos() {
   return (
