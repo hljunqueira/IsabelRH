@@ -15,6 +15,7 @@ import AreaEmpresa from "@/pages/AreaEmpresa";
 import Admin from "@/pages/Admin";
 import AdminLogin from "@/pages/AdminLogin";
 import BancoTalentos from "@/pages/BancoTalentos";
+import SeedData from "@/pages/SeedData";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/banco-talentos" component={BancoTalentos} />
+      <Route path="/seed-data" component={SeedData} />
       <Route component={NotFound} />
     </Switch>
   );

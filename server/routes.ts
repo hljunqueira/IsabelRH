@@ -512,6 +512,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Temporary endpoint to seed test data
+  app.post("/api/seed-test-data", async (req, res) => {
+    try {
+      // Check if data already exists
+      const existingCandidatos = await storage.getAllCandidatos();
+      if (existingCandidatos.length > 0) {
+        return res.status(400).json({ message: "Dados de teste já existem" });
+      }
+
+      // Create test candidates
+      const candidatos = [];
+      
+      // João Silva - Developer
+      const joaoUser = await storage.createUsuario({
+        email: 'joao.silva@email.com',
+        senha: await bcrypt.hash('senha123', 10),
+        tipo: 'candidato'
+      });
+      
+      const joao = await storage.createCandidato({
+        id: joaoUser.id,
+        nome: 'João Carlos Silva',
+        telefone: '(47) 98765-4321',
+        cidade: 'Blumenau',
+        estado: 'SC',
+        linkedin: 'https://linkedin.com/in/joaosilva',
+        github: 'https://github.com/joaosilva',
+        portfolio: 'https://joaosilva.dev',
+        sobre: 'Desenvolvedor Full Stack com 5 anos de experiência em React, Node.js e PostgreSQL.',
+        experiencia: 'Desenvolvedor Sênior na Tech Solutions (2020-presente)',
+        educacao: 'Bacharelado em Ciência da Computação - FURB (2014-2018)',
+        habilidades: 'JavaScript, TypeScript, React, Node.js, PostgreSQL',
+        fotoPerfil: 'https://ui-avatars.com/api/?name=Joao+Silva&background=0D8ABC&color=fff',
+        perfilDisc: 'dominante',
+        pontuacaoD: 85,
+        pontuacaoI: 65,
+        pontuacaoS: 45,
+        pontuacaoC: 75,
+        dataTesteDISC: new Date('2024-01-15')
+      });
+      candidatos.push(joao);
+
+      // Maria Santos - HR
+      const mariaUser = await storage.createUsuario({
+        email: 'maria.santos@email.com',
+        senha: await bcrypt.hash('senha123', 10),
+        tipo: 'candidato'
+      });
+      
+      const maria = await storage.createCandidato({
+        id: mariaUser.id,
+        nome: 'Maria Fernanda Santos',
+        telefone: '(47) 99876-5432',
+        cidade: 'Joinville',
+        estado: 'SC',
+        linkedin: 'https://linkedin.com/in/mariasantos',
+        sobre: 'Analista de RH com especialização em Recrutamento e Seleção.',
+        experiencia: 'Analista de RH Sênior - Grupo Industrial ABC (2019-presente)',
+        educacao: 'Psicologia - UNIVILLE (2012-2016)',
+        habilidades: 'Recrutamento e Seleção, Gestão de Talentos',
+        fotoPerfil: 'https://ui-avatars.com/api/?name=Maria+Santos&background=FF6B6B&color=fff',
+        perfilDisc: 'influente',
+        pontuacaoD: 55,
+        pontuacaoI: 90,
+        pontuacaoS: 75,
+        pontuacaoC: 60,
+        dataTesteDISC: new Date('2024-01-20')
+      });
+      candidatos.push(maria);
+
+      // Create test companies
+      const empresas = [];
+      
+      // Tech Solutions
+      const techUser = await storage.createUsuario({
+        email: 'rh@techsolutions.com.br',
+        senha: await bcrypt.hash('senha123', 10),
+        tipo: 'empresa'
+      });
+      
+      const techSolutions = await storage.createEmpresa({
+        id: techUser.id,
+        nome: 'Tech Solutions Brasil',
+        cnpj: '12.345.678/0001-90',
+        telefone: '(47) 3333-4444',
+        site: 'https://techsolutions.com.br',
+        linkedin: 'https://linkedin.com/company/techsolutions',
+        sobre: 'Empresa líder em soluções tecnológicas para o mercado B2B.',
+        endereco: 'Rua das Palmeiras, 123',
+        cidade: 'Blumenau',
+        estado: 'SC',
+        cep: '89010-000',
+        nomeResponsavel: 'Ana Paula Mendes',
+        emailResponsavel: 'ana.mendes@techsolutions.com.br',
+        cargoResponsavel: 'Gerente de RH',
+        numeroFuncionarios: '150',
+        setorAtuacao: 'Tecnologia da Informação',
+        missao: 'Transformar negócios através da tecnologia',
+        visao: 'Ser referência nacional em desenvolvimento de software',
+        valores: 'Inovação, Qualidade, Ética',
+        logoEmpresa: 'https://ui-avatars.com/api/?name=Tech+Solutions&background=1E40AF&color=fff'
+      });
+      empresas.push(techSolutions);
+
+      // Create test jobs
+      const vagas = [];
+      
+      const vaga1 = await storage.createVaga({
+        empresaId: techSolutions.id,
+        titulo: 'Desenvolvedor Full Stack Sênior',
+        descricao: 'Buscamos desenvolvedor Full Stack experiente para liderar projetos.',
+        requisitos: '5+ anos de experiência, React, Node.js, PostgreSQL',
+        beneficios: ['Vale Alimentação', 'Vale Refeição', 'Plano de Saúde', 'Home Office'],
+        salario: 'R$ 12.000 - R$ 18.000',
+        cidade: 'Blumenau',
+        estado: 'SC',
+        tipoContrato: 'CLT',
+        area: 'Tecnologia',
+        nivel: 'senior',
+        modalidade: 'hibrido',
+        dataPublicacao: new Date(),
+        ativo: true
+      });
+      vagas.push(vaga1);
+
+      const vaga2 = await storage.createVaga({
+        empresaId: techSolutions.id,
+        titulo: 'Analista de RH Pleno',
+        descricao: 'Vaga para profissional de RH com foco em recrutamento.',
+        requisitos: 'Experiência em R&S, Excel avançado',
+        beneficios: ['Vale Alimentação', 'Plano de Saúde', 'Gympass'],
+        salario: 'R$ 4.000 - R$ 6.000',
+        cidade: 'Blumenau',
+        estado: 'SC',
+        tipoContrato: 'CLT',
+        area: 'Recursos Humanos',
+        nivel: 'pleno',
+        modalidade: 'presencial',
+        dataPublicacao: new Date(),
+        ativo: true
+      });
+      vagas.push(vaga2);
+
+      // Create test applications
+      await storage.createCandidatura({
+        vagaId: vaga1.id,
+        candidatoId: joao.id,
+        dataCandidatura: new Date(),
+        status: 'em_analise',
+        compatibilidadeDisc: 85
+      });
+
+      await storage.createCandidatura({
+        vagaId: vaga2.id,
+        candidatoId: maria.id,
+        dataCandidatura: new Date(),
+        status: 'em_analise',
+        compatibilidadeDisc: 92
+      });
+
+      res.json({
+        message: "Dados de teste criados com sucesso!",
+        candidatos: candidatos.length,
+        empresas: empresas.length,
+        vagas: vagas.length
+      });
+    } catch (error) {
+      console.error("Erro ao criar dados de teste:", error);
+      res.status(500).json({ message: "Erro ao criar dados de teste" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
