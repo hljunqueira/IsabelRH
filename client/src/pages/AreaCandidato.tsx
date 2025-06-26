@@ -39,7 +39,8 @@ import {
   Save,
   X,
   Plus,
-  Trash2
+  Trash2,
+  Brain
 } from "lucide-react";
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
 import TesteDISC from "@/components/TesteDISC";
