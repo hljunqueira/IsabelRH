@@ -15,6 +15,8 @@ import {
   UserPlus
 } from "lucide-react";
 
+import GNjPnSHd4wX4gM2H2En8qf from "@assets/GNjPnSHd4wX4gM2H2En8qf.png";
+
 export default function Home() {
   return (
     <Layout>
@@ -59,7 +61,7 @@ export default function Home() {
             </div>
             <div className="flex justify-center">
               <img 
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                src={GNjPnSHd4wX4gM2H2En8qf} 
                 alt="Isabel Cunha - Especialista em RH" 
                 className="w-80 h-80 rounded-full object-cover shadow-2xl border-8 border-white"
               />
@@ -67,7 +69,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Services Preview */}
       <section className="py-20 bg-isabel-accent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -165,7 +166,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Mission, Vision, Values */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -219,7 +219,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* User Areas CTA */}
       <section className="py-20 bg-gradient-to-br from-isabel-accent to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
