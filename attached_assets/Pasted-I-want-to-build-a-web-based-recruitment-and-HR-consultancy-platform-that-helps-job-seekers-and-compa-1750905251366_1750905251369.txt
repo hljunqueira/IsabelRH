@@ -1,0 +1,82 @@
+I want to build a web-based recruitment and HR consultancy platform that helps job seekers and companies connect through a curated talent pool, internal job listings, and strategic people development services. It should feel clean, professional, and mobile-friendly, and be fully localized for Brazilian Portuguese (pt-BR).
+
+Project Name:
+Isabel Cunha RH
+
+Target Audience:
+• Profissionais em busca de recolocação no mercado
+• Empresas que precisam estruturar ou reforçar seus times
+• RHs que desejam serviços personalizados de consultoria, treinamento e recrutamento
+
+Core Features and Pages:
+✅ Homepage
+• Apresentação da consultoria e diferenciais
+• CTA para acessar área de candidatos ou empresas
+• Destaques: +20 anos de experiência, DISC, atendimento humanizado
+
+✅ Quem Somos
+• História da Isabel Cunha
+• Linha do tempo com evolução de carreira
+• Missão, valores, propósitos
+
+✅ Serviços
+• Cards com os principais serviços:
+
+Recrutamento e Seleção
+
+Consultoria Estratégica de RH
+
+Análise Comportamental (DISC)
+
+Treinamentos sob medida
+• Botões de “Solicitar Atendimento”
+
+✅ Área do Candidato (com login)
+• Formulário de cadastro com nome, e-mail, telefone, LinkedIn, áreas de interesse e currículo
+• Listagem de vagas com botão “Candidatar-se”
+• Dados armazenados em Supabase
+
+✅ Área da Empresa (com login)
+• Cadastro da empresa: nome, setor, CNPJ
+• Painel para publicar vagas (título, descrição, requisitos)
+• Histórico de vagas criadas
+
+✅ Banco de Talentos (público)
+• Formulário público para envio de currículo
+• Campos básicos para captação rápida e eficaz
+
+✅ Login
+• Autenticação com e-mail e senha via Supabase
+• Usuários são diferenciados como “candidato” ou “empresa”
+
+✅ Contato
+• Formulário com nome, e-mail e mensagem
+• Links diretos para Instagram, WhatsApp e LinkedIn
+
+Tech Stack (Recommended Defaults):
+• Frontend: Vite, TypeScript, React, shadcn/ui components, and Tailwind CSS
+• Backend & Storage: Supabase (auth + database)
+• Auth: Email/password login, com campo “tipo de usuário” (candidato ou empresa)
+
+Database Schema (Supabase):
+• usuarios: email, senha, tipo
+• candidatos: nome, telefone, LinkedIn, currículo, áreas de interesse
+• empresas: nome, CNPJ, setor
+• vagas: empresa_id, título, descrição, requisitos
+• candidaturas: vínculo entre candidatos e vagas
+
+Design Preferences:
+• Font: Inter
+• Colors:
+
+Primary: #F27D30
+
+Accent: #1A4364
+
+Background: white
+
+Text: #1F2937
+• Layout: Mobile-first, UI com espaçamento, cards, e experiência acessível e clara
+
+Optional AI Feature:
+Nenhum por enquanto. O sistema é 100% orientado a cadastro, listagem e interação humana direta.

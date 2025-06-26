@@ -1,0 +1,96 @@
+// Isabel Cunha RH App
+// Plataforma completa (frontend + backend) em português brasileiro
+
+// Estrutura base com Vite + React + Tailwind + shadcn/ui + Supabase (auth + banco de dados)
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Toaster } from '@/components/ui/sonner'
+import Home from './pages/Home'
+import QuemSomos from './pages/QuemSomos'
+import Servicos from './pages/Servicos'
+import Contato from './pages/Contato'
+import AreaCandidato from './pages/AreaCandidato'
+import AreaEmpresa from './pages/AreaEmpresa'
+import BancoTalentos from './pages/BancoTalentos'
+import Login from './pages/Login'
+
+export default function App() {
+  return (
+    <Router>
+      <div className="font-inter bg-white text-gray-800">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/quem-somos" element={<QuemSomos />} />
+          <Route path="/servicos" element={<Servicos />} />
+          <Route path="/contato" element={<Contato />} />
+          <Route path="/candidato" element={<AreaCandidato />} />
+          <Route path="/empresa" element={<AreaEmpresa />} />
+          <Route path="/banco-talentos" element={<BancoTalentos />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+        <Toaster position="top-right" />
+      </div>
+    </Router>
+  )
+}
+
+// Estrutura das tabelas no Supabase:
+
+// Tabela: usuarios
+// - id (uuid, PK)
+// - email (text, único)
+// - senha (auth padrão do Supabase)
+// - tipo (enum: "candidato", "empresa")
+
+// Tabela: candidatos
+// - id (uuid, PK, FK para usuarios.id)
+// - nome (text)
+// - telefone (text)
+// - linkedin (text)
+// - curriculo_url (text, opcional)
+// - area_interesse (text[])
+// - criado_em (timestamp)
+
+// Tabela: empresas
+// - id (uuid, PK, FK para usuarios.id)
+// - nome (text)
+// - cnpj (text)
+// - setor (text)
+// - criado_em (timestamp)
+
+// Tabela: vagas
+// - id (uuid, PK)
+// - empresa_id (uuid, FK para empresas.id)
+// - titulo (text)
+// - descricao (text)
+// - requisitos (text)
+// - publicado_em (timestamp)
+
+// Tabela: candidaturas
+// - id (uuid, PK)
+// - vaga_id (uuid, FK para vagas.id)
+// - candidato_id (uuid, FK para candidatos.id)
+// - data_candidatura (timestamp)
+
+// Design Tokens:
+// - Cor Primária: #F27D30
+// - Cor Secundária: #1A4364
+// - Fundo: #FFFFFF
+// - Textos: #1F2937 (cinza escuro)
+
+// Cada página usará os componentes de UI do shadcn e Tailwind CSS para layout responsivo
+// Banco de Talentos e Vitrine de Vagas são internos, sem integração com sistemas externos
+
+// Todas as páginas e formulários estão em pt-BR, com foco em acessibilidade e experiência mobile
+
+/*
+  Arquivos esperados em ./pages:
+  - Home.tsx: Introdução, links para áreas de candidato/empresa, destaque dos serviços
+  - QuemSomos.tsx: História da Isabel Cunha, missão, valores
+  - Servicos.tsx: Cards de serviços oferecidos com ícones e botões de ação
+  - Contato.tsx: Formulário com nome, e-mail, mensagem + links sociais
+  - AreaCandidato.tsx: Formulário de cadastro de candidato + listagem de vagas abertas
+  - AreaEmpresa.tsx: Cadastro de empresa + formulário para publicar vagas + histórico de vagas
+  - BancoTalentos.tsx: Página pública para envio de currículo com campos básicos
+  - Login.tsx: Login com email/senha, usando Supabase auth
+*/
