@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { UserRoundCheck, Menu, X } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
 import { useState } from "react";
+import logoImage from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -22,8 +23,12 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center">
-            <div className="w-10 h-10 bg-isabel-orange rounded-full flex items-center justify-center">
-              <UserRoundCheck className="text-white h-6 w-6" />
+            <div className="w-10 h-10 rounded-full overflow-hidden">
+              <img 
+                src={logoImage} 
+                alt="Isabel Cunha RH" 
+                className="w-10 h-10 object-cover"
+              />
             </div>
             <span className="ml-2 text-xl font-bold text-isabel-blue">Isabel Cunha RH</span>
             <a 
