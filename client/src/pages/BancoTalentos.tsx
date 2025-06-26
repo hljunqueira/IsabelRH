@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
+import logoImage from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
 import { 
   Users, 
   Upload, 
@@ -154,8 +155,12 @@ export default function BancoTalentos() {
       <section className="py-20 bg-gradient-to-br from-isabel-blue to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-isabel-orange rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="text-white h-10 w-10" />
+            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-6">
+              <img 
+                src={logoImage} 
+                alt="Isabel Cunha RH" 
+                className="w-20 h-20 object-cover"
+              />
             </div>
             <h1 className="text-4xl font-bold mb-4 text-[#2b3245]">Banco de Talentos</h1>
             <p className="text-xl max-w-3xl mx-auto text-[#2b3245]">

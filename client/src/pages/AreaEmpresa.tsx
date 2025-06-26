@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import type { Empresa, Vaga, Candidatura, Candidato } from "@shared/schema";
 import Layout from "@/components/Layout";
+import TalentosCompativeis from "@/components/TalentosCompativeis";
 
 export default function AreaEmpresa() {
   const { user, logout } = useAuth();
@@ -110,7 +111,7 @@ export default function AreaEmpresa() {
   });
 
   // Fetch company profile
-  const { data: empresa, isLoading: loadingProfile } = useQuery({
+  const { data: empresa, isLoading: loadingProfile } = useQuery<Empresa>({
     queryKey: [`/api/empresas/${user?.usuario?.id}`],
     enabled: !!user?.usuario?.id,
   });
@@ -130,10 +131,10 @@ export default function AreaEmpresa() {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<Empresa>) => {
-      return await apiRequest("PUT", `/api/empresas/${user.usuario.id}`, data);
+      return await apiRequest("PUT", `/api/empresas/${user?.usuario?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/empresas/${user.usuario.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/empresas/${user?.usuario?.id}`] });
       toast({
         title: "Perfil atualizado!",
         description: "Informações da empresa foram salvas com sucesso.",
@@ -1256,7 +1257,14 @@ export default function AreaEmpresa() {
                   Candidatos - {selectedVaga?.titulo}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              
+              <Tabs defaultValue="aplicados" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="aplicados">Candidatos Aplicados</TabsTrigger>
+                  <TabsTrigger value="banco-talentos">Banco de Talentos Compatíveis</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="aplicados" className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline">
@@ -1367,7 +1375,12 @@ export default function AreaEmpresa() {
                     </Card>
                   ))}
                 </div>
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="banco-talentos" className="space-y-4">
+                  <TalentosCompativeis vagaArea={selectedVaga?.area} />
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>

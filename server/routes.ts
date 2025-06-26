@@ -269,6 +269,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get compatible talents for a specific job area
+  app.get("/api/banco-talentos/compativel/:area", async (req, res) => {
+    try {
+      const { area } = req.params;
+      const todosTalentos = await storage.getAllBancoTalentos();
+      
+      // Filter talents that match the job area
+      const talentosCompativeis = todosTalentos.filter(talento => 
+        talento.areaInteresse?.toLowerCase() === area.toLowerCase()
+      );
+      
+      res.json(talentosCompativeis);
+    } catch (error) {
+      console.error("Get compatible talents error:", error);
+      res.status(500).json({ message: "Erro ao buscar talentos compatíveis" });
+    }
+  });
+
   // Contato routes
   app.post("/api/contatos", async (req, res) => {
     try {
