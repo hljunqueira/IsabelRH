@@ -11,7 +11,8 @@ import {
   insertContatoSchema,
   insertServicoSchema,
   insertPropostaSchema,
-  insertRelatorioSchema
+  insertRelatorioSchema,
+  insertTestesDiscSchema
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 
@@ -470,6 +471,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get relatorios error:", error);
       res.status(500).json({ message: "Erro ao buscar relatórios" });
+    }
+  });
+
+  // DISC Testing routes
+  app.post("/api/testes-disc", async (req, res) => {
+    try {
+      const testeData = insertTestesDiscSchema.parse(req.body);
+      const teste = await storage.createTesteDISC(testeData);
+      
+      // Update candidato with DISC profile
+      await storage.updateCandidatoDISC(testeData.candidatoId, {
+        perfilDisc: testeData.perfilDominante,
+        pontuacaoD: testeData.pontuacaoD,
+        pontuacaoI: testeData.pontuacaoI,
+        pontuacaoS: testeData.pontuacaoS,
+        pontuacaoC: testeData.pontuacaoC,
+        dataTesteDISC: new Date()
+      });
+      
+      res.json(teste);
+    } catch (error) {
+      console.error("Create teste DISC error:", error);
+      res.status(400).json({ message: "Erro ao salvar teste DISC" });
+    }
+  });
+
+  app.get("/api/testes-disc/candidato/:candidatoId", async (req, res) => {
+    try {
+      const { candidatoId } = req.params;
+      const teste = await storage.getTesteDISCByCandidato(candidatoId);
+      if (teste) {
+        res.json(teste);
+      } else {
+        res.status(404).json({ message: "Teste DISC não encontrado" });
+      }
+    } catch (error) {
+      console.error("Get teste DISC error:", error);
+      res.status(500).json({ message: "Erro ao buscar teste DISC" });
     }
   });
 

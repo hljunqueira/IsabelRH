@@ -133,11 +133,11 @@ export default function AreaCandidato() {
     mutationFn: async (vagaId: string) => {
       return await apiRequest("POST", "/api/candidaturas", {
         vagaId,
-        candidatoId: user.usuario.id,
+        candidatoId: user?.usuario.id || '',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/candidaturas/candidato/${user.usuario.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/candidaturas/candidato/${user?.usuario.id || ''}`] });
       toast({
         title: "Candidatura enviada!",
         description: "Sua candidatura foi enviada com sucesso.",

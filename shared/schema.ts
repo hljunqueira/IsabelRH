@@ -15,6 +15,8 @@ import { z } from "zod";
 export const tipoUsuarioEnum = pgEnum('tipo_usuario', ['candidato', 'empresa', 'admin']);
 export const statusConsultoriaEnum = pgEnum('status_consultoria', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
 export const tipoServicoEnum = pgEnum('tipo_servico', ['recrutamento', 'selecao', 'consultoria_rh', 'treinamento', 'avaliacao']);
+export const tipoDiscEnum = pgEnum('tipo_disc', ['dominante', 'influente', 'estavel', 'conscencioso']);
+export const prioridadeEnum = pgEnum('prioridade', ['baixa', 'media', 'alta', 'urgente']);
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -55,6 +57,13 @@ export const candidatos = pgTable("candidatos", {
   curriculoUrl: varchar("curriculo_url", { length: 500 }),
   areasInteresse: text("areas_interesse").array(),
   fotoPerfil: varchar("foto_perfil", { length: 500 }),
+  // Teste DISC
+  perfilDisc: tipoDiscEnum("perfil_disc"),
+  pontuacaoD: integer("pontuacao_d").default(0),
+  pontuacaoI: integer("pontuacao_i").default(0),
+  pontuacaoS: integer("pontuacao_s").default(0),
+  pontuacaoC: integer("pontuacao_c").default(0),
+  dataTesteDISC: timestamp("data_teste_disc"),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 
@@ -123,6 +132,12 @@ export const candidaturas = pgTable("candidaturas", {
   dataEntrevista: timestamp("data_entrevista"),
   feedbackEmpresa: text("feedback_empresa"),
   motivoReprovacao: text("motivo_reprovacao"),
+  // Filtros avançados e matching
+  compatibilidadeDisc: integer("compatibilidade_disc"), // % de compatibilidade DISC
+  compatibilidadeSkills: integer("compatibilidade_skills"), // % de compatibilidade habilidades
+  compatibilidadeLocalizacao: boolean("compatibilidade_localizacao").default(true),
+  prioridade: prioridadeEnum("prioridade").default("media"),
+  tagsFiltros: text("tags_filtros").array(), // tags para filtros customizados
   dataCandidatura: timestamp("data_candidatura").defaultNow().notNull(),
   ultimaAtualizacao: timestamp("ultima_atualizacao").defaultNow().notNull(),
 });
@@ -184,6 +199,39 @@ export const relatorios = pgTable("relatorios", {
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 
+// Nova tabela para testes DISC
+export const testesDisc = pgTable("testes_disc", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  candidatoId: uuid("candidato_id").references(() => candidatos.id).notNull(),
+  // Respostas do teste (24 perguntas, 4 alternativas cada)
+  respostas: text("respostas").array().notNull(),
+  // Pontuações calculadas
+  pontuacaoD: integer("pontuacao_d").notNull(),
+  pontuacaoI: integer("pontuacao_i").notNull(),
+  pontuacaoS: integer("pontuacao_s").notNull(),
+  pontuacaoC: integer("pontuacao_c").notNull(),
+  // Perfil dominante
+  perfilDominante: tipoDiscEnum("perfil_dominante").notNull(),
+  // Análise detalhada
+  descricaoPerfil: text("descricao_perfil"),
+  pontosFortes: text("pontos_fortes").array(),
+  areasDesenvolvimento: text("areas_desenvolvimento").array(),
+  estiloTrabalho: text("estilo_trabalho"),
+  estiloLideranca: text("estilo_lideranca"),
+  estiloComunitacao: text("estilo_comunicacao"),
+  dataRealizacao: timestamp("data_realizacao").defaultNow().notNull(),
+});
+
+// Tabela para filtros salvos
+export const filtrosSalvos = pgTable("filtros_salvos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  empresaId: uuid("empresa_id").references(() => empresas.id).notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  criterios: text("criterios").notNull(), // JSON string com critérios
+  ativo: boolean("ativo").default(true),
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUsuarioSchema = createInsertSchema(usuarios).omit({
   id: true,
@@ -233,6 +281,16 @@ export const insertRelatorioSchema = createInsertSchema(relatorios).omit({
   criadoEm: true,
 });
 
+export const insertTestesDiscSchema = createInsertSchema(testesDisc).omit({
+  id: true,
+  dataRealizacao: true,
+});
+
+export const insertFiltrosSalvosSchema = createInsertSchema(filtrosSalvos).omit({
+  id: true,
+  criadoEm: true,
+});
+
 // Types
 export type Usuario = typeof usuarios.$inferSelect;
 export type InsertUsuario = z.infer<typeof insertUsuarioSchema>;
@@ -254,3 +312,7 @@ export type Proposta = typeof propostas.$inferSelect;
 export type InsertProposta = z.infer<typeof insertPropostaSchema>;
 export type Relatorio = typeof relatorios.$inferSelect;
 export type InsertRelatorio = z.infer<typeof insertRelatorioSchema>;
+export type TesteDisc = typeof testesDisc.$inferSelect;
+export type InsertTesteDisc = z.infer<typeof insertTestesDiscSchema>;
+export type FiltroSalvo = typeof filtrosSalvos.$inferSelect;
+export type InsertFiltroSalvo = z.infer<typeof insertFiltrosSalvosSchema>;

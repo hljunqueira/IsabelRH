@@ -1,5 +1,5 @@
 import { 
-  usuarios, candidatos, empresas, vagas, candidaturas, bancoTalentos, contatos, servicos, propostas, relatorios,
+  usuarios, candidatos, empresas, vagas, candidaturas, bancoTalentos, contatos, servicos, propostas, relatorios, testesDisc,
   type Usuario, type InsertUsuario,
   type Candidato, type InsertCandidato,
   type Empresa, type InsertEmpresa,
@@ -9,7 +9,8 @@ import {
   type Contato, type InsertContato,
   type Servico, type InsertServico,
   type Proposta, type InsertProposta,
-  type Relatorio, type InsertRelatorio
+  type Relatorio, type InsertRelatorio,
+  type TesteDisc, type InsertTesteDisc
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
@@ -73,6 +74,11 @@ export interface IStorage {
   // Relatorio methods
   createRelatorio(relatorio: InsertRelatorio): Promise<Relatorio>;
   getAllRelatorios(): Promise<Relatorio[]>;
+  
+  // DISC Testing methods
+  createTesteDISC(teste: InsertTesteDisc): Promise<TesteDisc>;
+  getTesteDISCByCandidato(candidatoId: string): Promise<TesteDisc | undefined>;
+  updateCandidatoDISC(candidatoId: string, discData: { perfilDisc: string; pontuacaoD: number; pontuacaoI: number; pontuacaoS: number; pontuacaoC: number; dataTesteDISC: Date }): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -86,6 +92,7 @@ export class MemStorage implements IStorage {
   private servicos: Map<string, Servico>;
   private propostas: Map<string, Proposta>;
   private relatorios: Map<string, Relatorio>;
+  private testesDisc: Map<string, TesteDisc>;
 
   constructor() {
     this.usuarios = new Map();
@@ -98,6 +105,7 @@ export class MemStorage implements IStorage {
     this.servicos = new Map();
     this.propostas = new Map();
     this.relatorios = new Map();
+    this.testesDisc = new Map();
   }
 
   async getUsuario(id: string): Promise<Usuario | undefined> {
@@ -156,6 +164,13 @@ export class MemStorage implements IStorage {
       curriculoUrl: insertCandidato.curriculoUrl ?? null,
       areasInteresse: insertCandidato.areasInteresse ?? null,
       fotoPerfil: insertCandidato.fotoPerfil ?? null,
+      // Campos DISC
+      perfilDisc: null,
+      pontuacaoD: 0,
+      pontuacaoI: 0,
+      pontuacaoS: 0,
+      pontuacaoC: 0,
+      dataTesteDISC: null,
       criadoEm: new Date(),
     };
     this.candidatos.set(id, candidato);
@@ -250,6 +265,9 @@ export class MemStorage implements IStorage {
       status: insertVaga.status ?? null,
       dataEncerramento: insertVaga.dataEncerramento ?? null,
       responsabilidades: insertVaga.responsabilidades ?? null,
+      modalidade: insertVaga.modalidade ?? null,
+      cargaHoraria: insertVaga.cargaHoraria ?? null,
+      diferenciais: insertVaga.diferenciais ?? null,
       publicadoEm: new Date(),
     };
     this.vagas.set(id, vaga);
@@ -280,9 +298,24 @@ export class MemStorage implements IStorage {
   async createCandidatura(insertCandidatura: InsertCandidatura): Promise<Candidatura> {
     const id = crypto.randomUUID();
     const candidatura: Candidatura = {
-      ...insertCandidatura,
       id,
+      vagaId: insertCandidatura.vagaId,
+      candidatoId: insertCandidatura.candidatoId,
+      status: insertCandidatura.status || null,
+      prioridade: insertCandidatura.prioridade ?? null,
+      etapa: insertCandidatura.etapa ?? null,
+      observacoes: insertCandidatura.observacoes ?? null,
+      pontuacao: insertCandidatura.pontuacao ?? null,
+      dataTriagem: insertCandidatura.dataTriagem ?? null,
+      dataEntrevista: insertCandidatura.dataEntrevista ?? null,
+      feedbackEmpresa: insertCandidatura.feedbackEmpresa ?? null,
+      compatibilidadeDisc: insertCandidatura.compatibilidadeDisc ?? null,
+      compatibilidadeSkills: insertCandidatura.compatibilidadeSkills ?? null,
+      compatibilidadeLocalizacao: insertCandidatura.compatibilidadeLocalizacao ?? true,
+      tagsFiltros: insertCandidatura.tagsFiltros ?? null,
+      motivoReprovacao: insertCandidatura.motivoReprovacao ?? null,
       dataCandidatura: new Date(),
+      ultimaAtualizacao: new Date(),
     };
     this.candidaturas.set(id, candidatura);
     return candidatura;
@@ -436,6 +469,51 @@ export class MemStorage implements IStorage {
 
   async getAllRelatorios(): Promise<Relatorio[]> {
     return Array.from(this.relatorios.values());
+  }
+
+  // DISC Testing methods
+  async createTesteDISC(teste: InsertTesteDisc): Promise<TesteDisc> {
+    const id = crypto.randomUUID();
+    const testeDisc: TesteDisc = {
+      id,
+      candidatoId: teste.candidatoId,
+      respostas: teste.respostas,
+      pontuacaoD: teste.pontuacaoD,
+      pontuacaoI: teste.pontuacaoI,
+      pontuacaoS: teste.pontuacaoS,
+      pontuacaoC: teste.pontuacaoC,
+      perfilDominante: teste.perfilDominante,
+      descricaoPerfil: teste.descricaoPerfil ?? null,
+      pontosFortes: teste.pontosFortes ?? null,
+      areasDesenvolvimento: teste.areasDesenvolvimento ?? null,
+      estiloTrabalho: teste.estiloTrabalho ?? null,
+      estiloLideranca: teste.estiloLideranca ?? null,
+      estiloComunitacao: teste.estiloComunitacao ?? null,
+      dataRealizacao: new Date(),
+    };
+    this.testesDisc.set(id, testeDisc);
+    return testeDisc;
+  }
+
+  async getTesteDISCByCandidato(candidatoId: string): Promise<TesteDisc | undefined> {
+    return Array.from(this.testesDisc.values()).find(t => t.candidatoId === candidatoId);
+  }
+
+  async updateCandidatoDISC(candidatoId: string, discData: { perfilDisc: string; pontuacaoD: number; pontuacaoI: number; pontuacaoS: number; pontuacaoC: number; dataTesteDISC: Date }): Promise<boolean> {
+    const candidato = this.candidatos.get(candidatoId);
+    if (!candidato) return false;
+    
+    const updated = { 
+      ...candidato, 
+      perfilDisc: discData.perfilDisc as any,
+      pontuacaoD: discData.pontuacaoD,
+      pontuacaoI: discData.pontuacaoI,
+      pontuacaoS: discData.pontuacaoS,
+      pontuacaoC: discData.pontuacaoC,
+      dataTesteDISC: discData.dataTesteDISC
+    };
+    this.candidatos.set(candidatoId, updated);
+    return true;
   }
 }
 
@@ -856,6 +934,47 @@ export class PostgreSQLStorage implements IStorage {
     } catch (error) {
       console.error("Error getting all relatorios:", error);
       return [];
+    }
+  }
+
+  // DISC Testing methods
+  async createTesteDISC(teste: InsertTesteDisc): Promise<TesteDisc> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(testesDisc).values(teste).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating teste DISC:", error);
+      throw error;
+    }
+  }
+
+  async getTesteDISCByCandidato(candidatoId: string): Promise<TesteDisc | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(testesDisc).where(eq(testesDisc.candidatoId, candidatoId)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting teste DISC:", error);
+      return undefined;
+    }
+  }
+
+  async updateCandidatoDISC(candidatoId: string, discData: { perfilDisc: string; pontuacaoD: number; pontuacaoI: number; pontuacaoS: number; pontuacaoC: number; dataTesteDISC: Date }): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      await this.db.update(candidatos).set({
+        perfilDisc: discData.perfilDisc as any,
+        pontuacaoD: discData.pontuacaoD,
+        pontuacaoI: discData.pontuacaoI,
+        pontuacaoS: discData.pontuacaoS,
+        pontuacaoC: discData.pontuacaoC,
+        dataTesteDISC: discData.dataTesteDISC
+      }).where(eq(candidatos.id, candidatoId));
+      return true;
+    } catch (error) {
+      console.error("Error updating candidato DISC:", error);
+      return false;
     }
   }
 }
