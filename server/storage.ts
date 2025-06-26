@@ -8,6 +8,9 @@ import {
   type BancoTalentos, type InsertBancoTalentos,
   type Contato, type InsertContato
 } from "@shared/schema";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Usuario methods
@@ -222,4 +225,280 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL Storage using Drizzle ORM
+export class PostgreSQLStorage implements IStorage {
+  private db: any;
+
+  constructor() {
+    if (process.env.DATABASE_URL) {
+      try {
+        const sql = neon(process.env.DATABASE_URL);
+        this.db = drizzle(sql);
+      } catch (error) {
+        console.error("Failed to connect to PostgreSQL, falling back to memory storage:", error);
+        this.db = null;
+      }
+    }
+  }
+
+  async getUsuario(id: string): Promise<Usuario | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(usuarios).where(eq(usuarios.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting usuario:", error);
+      return undefined;
+    }
+  }
+
+  async getUsuarioByEmail(email: string): Promise<Usuario | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(usuarios).where(eq(usuarios.email, email)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting usuario by email:", error);
+      return undefined;
+    }
+  }
+
+  async createUsuario(usuario: InsertUsuario): Promise<Usuario> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(usuarios).values(usuario).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating usuario:", error);
+      throw error;
+    }
+  }
+
+  async getCandidato(id: string): Promise<Candidato | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(candidatos).where(eq(candidatos.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting candidato:", error);
+      return undefined;
+    }
+  }
+
+  async createCandidato(candidato: InsertCandidato): Promise<Candidato> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(candidatos).values(candidato).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating candidato:", error);
+      throw error;
+    }
+  }
+
+  async updateCandidato(id: string, candidato: Partial<InsertCandidato>): Promise<Candidato | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.update(candidatos).set(candidato).where(eq(candidatos.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating candidato:", error);
+      return undefined;
+    }
+  }
+
+  async getEmpresa(id: string): Promise<Empresa | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(empresas).where(eq(empresas.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting empresa:", error);
+      return undefined;
+    }
+  }
+
+  async createEmpresa(empresa: InsertEmpresa): Promise<Empresa> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(empresas).values(empresa).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating empresa:", error);
+      throw error;
+    }
+  }
+
+  async updateEmpresa(id: string, empresa: Partial<InsertEmpresa>): Promise<Empresa | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.update(empresas).set(empresa).where(eq(empresas.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating empresa:", error);
+      return undefined;
+    }
+  }
+
+  async getVaga(id: string): Promise<Vaga | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.select().from(vagas).where(eq(vagas.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting vaga:", error);
+      return undefined;
+    }
+  }
+
+  async getVagasByEmpresa(empresaId: string): Promise<Vaga[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(vagas).where(eq(vagas.empresaId, empresaId));
+      return result;
+    } catch (error) {
+      console.error("Error getting vagas by empresa:", error);
+      return [];
+    }
+  }
+
+  async getAllVagas(): Promise<Vaga[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(vagas);
+      return result;
+    } catch (error) {
+      console.error("Error getting all vagas:", error);
+      return [];
+    }
+  }
+
+  async createVaga(vaga: InsertVaga): Promise<Vaga> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(vagas).values(vaga).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating vaga:", error);
+      throw error;
+    }
+  }
+
+  async updateVaga(id: string, vaga: Partial<InsertVaga>): Promise<Vaga | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.update(vagas).set(vaga).where(eq(vagas.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating vaga:", error);
+      return undefined;
+    }
+  }
+
+  async deleteVaga(id: string): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      await this.db.delete(vagas).where(eq(vagas.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting vaga:", error);
+      return false;
+    }
+  }
+
+  async getCandidaturasByCandidato(candidatoId: string): Promise<Candidatura[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(candidaturas).where(eq(candidaturas.candidatoId, candidatoId));
+      return result;
+    } catch (error) {
+      console.error("Error getting candidaturas by candidato:", error);
+      return [];
+    }
+  }
+
+  async getCandidaturasByVaga(vagaId: string): Promise<Candidatura[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(candidaturas).where(eq(candidaturas.vagaId, vagaId));
+      return result;
+    } catch (error) {
+      console.error("Error getting candidaturas by vaga:", error);
+      return [];
+    }
+  }
+
+  async createCandidatura(candidatura: InsertCandidatura): Promise<Candidatura> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(candidaturas).values(candidatura).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating candidatura:", error);
+      throw error;
+    }
+  }
+
+  async checkCandidaturaExists(vagaId: string, candidatoId: string): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      const result = await this.db.select().from(candidaturas)
+        .where(and(eq(candidaturas.vagaId, vagaId), eq(candidaturas.candidatoId, candidatoId)))
+        .limit(1);
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error checking candidatura exists:", error);
+      return false;
+    }
+  }
+
+  async createBancoTalentos(talento: InsertBancoTalentos): Promise<BancoTalentos> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(bancoTalentos).values(talento).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating banco talentos:", error);
+      throw error;
+    }
+  }
+
+  async getAllBancoTalentos(): Promise<BancoTalentos[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(bancoTalentos);
+      return result;
+    } catch (error) {
+      console.error("Error getting all banco talentos:", error);
+      return [];
+    }
+  }
+
+  async createContato(contato: InsertContato): Promise<Contato> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(contatos).values(contato).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating contato:", error);
+      throw error;
+    }
+  }
+
+  async getAllContatos(): Promise<Contato[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(contatos);
+      return result;
+    } catch (error) {
+      console.error("Error getting all contatos:", error);
+      return [];
+    }
+  }
+}
+
+// Use PostgreSQL if available, fallback to memory storage
+const memStorage = new MemStorage();
+const pgStorage = new PostgreSQLStorage();
+
+export const storage = process.env.DATABASE_URL ? pgStorage : memStorage;
