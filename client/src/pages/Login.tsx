@@ -605,11 +605,7 @@ export default function Login() {
                       />
                     </div>
                     
-                    <div className="bg-isabel-accent p-3 rounded-md">
-                      <p className="text-sm text-gray-700 font-medium">Credenciais de teste:</p>
-                      <p className="text-xs text-gray-600">Email: isabel@isabelcunharh.com</p>
-                      <p className="text-xs text-gray-600">Senha: admin123</p>
-                    </div>
+
                     
                     <Button 
                       type="submit" 
@@ -623,77 +619,7 @@ export default function Login() {
             </Tabs>
           </Card>
           
-          {/* Acesso Rápido para Teste */}
-          <div className="mt-8 p-4 bg-white rounded-lg shadow-sm">
-            <h3 className="text-lg font-medium text-isabel-blue mb-3">Acesso Rápido para Teste</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button
-                onClick={() => {
-                  const candidatoUser = {
-                    usuario: {
-                      id: "candidato-teste",
-                      email: "candidato@teste.com",
-                      tipo: "candidato",
-                      criadoEm: new Date(),
-                    },
-                    profile: {
-                      id: "candidato-teste",
-                      nome: "João Silva",
-                      telefone: "(48) 99999-9999",
-                      linkedin: "linkedin.com/in/joao-silva",
-                      curriculoUrl: null,
-                      areasInteresse: ["Tecnologia", "Marketing"],
-                      criadoEm: new Date(),
-                    },
-                  };
-                  localStorage.setItem("auth-user", JSON.stringify(candidatoUser));
-                  toast({ title: "Logado como candidato de teste!" });
-                  setLocation("/candidato");
-                }}
-                variant="outline"
-                className="w-full h-16 flex flex-col items-center gap-1 border-blue-200 hover:bg-blue-50"
-              >
-                <UserRoundCheck className="h-5 w-5 text-blue-600" />
-                <span className="text-blue-800 font-medium">Entrar como Candidato</span>
-                <span className="text-xs text-blue-600">João Silva</span>
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  const empresaUser = {
-                    usuario: {
-                      id: "empresa-teste",
-                      email: "empresa@teste.com",
-                      tipo: "empresa",
-                      criadoEm: new Date(),
-                    },
-                    profile: {
-                      id: "empresa-teste",
-                      nome: "Tech Solutions LTDA",
-                      cnpj: "12.345.678/0001-90",
-                      setor: "Tecnologia",
-                      criadoEm: new Date(),
-                    },
-                  };
-                  localStorage.setItem("auth-user", JSON.stringify(empresaUser));
-                  toast({ title: "Logado como empresa de teste!" });
-                  setLocation("/empresa");
-                }}
-                variant="outline"
-                className="w-full h-16 flex flex-col items-center gap-1 border-green-200 hover:bg-green-50"
-              >
-                <Building className="h-5 w-5 text-green-600" />
-                <span className="text-green-800 font-medium">Entrar como Empresa</span>
-                <span className="text-xs text-green-600">Tech Solutions LTDA</span>
-              </Button>
-            </div>
-            
-            <div className="mt-4 pt-3 border-t">
-              <p className="text-xs text-gray-500 text-center">
-                Ou use as credenciais acima nas abas Login/Admin para testar o sistema completo
-              </p>
-            </div>
-          </div>
+
         </div>
       </section>
     </Layout>

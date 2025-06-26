@@ -158,14 +158,13 @@ export default function BancoTalentos() {
               <Users className="text-white h-10 w-10" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Banco de Talentos</h1>
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl max-w-3xl mx-auto text-[#2b3245]">
               Faça parte do nosso banco de talentos e seja contactado para oportunidades 
               exclusivas que combinam com seu perfil profissional
             </p>
           </div>
         </div>
       </section>
-
       {/* Form Section */}
       <section className="py-20 bg-isabel-accent">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -342,7 +341,6 @@ export default function BancoTalentos() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

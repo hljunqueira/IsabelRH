@@ -89,7 +89,7 @@ export default function AreaCandidato() {
   });
 
   // Fetch candidate profile
-  const { data: candidato, isLoading: loadingProfile } = useQuery({
+  const { data: candidato, isLoading: loadingProfile } = useQuery<Candidato>({
     queryKey: [`/api/candidatos/${user?.usuario?.id}`],
     enabled: !!user?.usuario?.id,
   });
@@ -109,10 +109,10 @@ export default function AreaCandidato() {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<Candidato>) => {
-      return await apiRequest("PUT", `/api/candidatos/${user.usuario.id}`, data);
+      return await apiRequest("PUT", `/api/candidatos/${user?.usuario?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/candidatos/${user.usuario.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/candidatos/${user?.usuario?.id}`] });
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
