@@ -33,6 +33,22 @@ const formatPhone = (value: string) => {
   return `(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7, 11)}`;
 };
 
+// Função para formatar CEP
+const formatCEP = (value: string) => {
+  const cep = value.replace(/\D/g, '');
+  if (cep.length <= 5) return cep;
+  return `${cep.slice(0, 5)}-${cep.slice(5, 8)}`;
+};
+
+// Função para formatar CPF
+const formatCPF = (value: string) => {
+  const cpf = value.replace(/\D/g, '');
+  if (cpf.length <= 3) return cpf;
+  if (cpf.length <= 6) return `${cpf.slice(0, 3)}.${cpf.slice(3)}`;
+  if (cpf.length <= 9) return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6)}`;
+  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9, 11)}`;
+};
+
 export default function Login() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -50,10 +66,14 @@ export default function Login() {
     // Candidato fields
     nome: "",
     telefone: "",
+    cpf: "",
+    dataNascimento: "",
     linkedin: "",
     areasInteresse: [] as string[],
     cidade: "",
     estado: "",
+    cep: "",
+    endereco: "",
     escolaridade: "",
     experiencia: "",
     objetivos: "",
@@ -206,8 +226,17 @@ export default function Login() {
         ...submitData,
         nome: registerData.nome,
         telefone: registerData.telefone,
+        cpf: registerData.cpf,
+        dataNascimento: registerData.dataNascimento,
         linkedin: registerData.linkedin,
         areasInteresse: registerData.areasInteresse,
+        cidade: registerData.cidade,
+        estado: registerData.estado,
+        cep: registerData.cep,
+        endereco: registerData.endereco,
+        nivelEscolaridade: registerData.escolaridade,
+        objetivoProfissional: registerData.objetivos,
+        experiencia: registerData.experiencia,
       };
     } else if (registerData.tipo === "empresa") {
       if (!registerData.nomeEmpresa) {
@@ -440,6 +469,55 @@ export default function Login() {
                             />
                           </div>
                           
+                          <div>
+                            <Label htmlFor="cpf">CPF</Label>
+                            <Input
+                              id="cpf"
+                              type="text"
+                              value={registerData.cpf || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, cpf: formatCPF(e.target.value) }))}
+                              placeholder="000.000.000-00"
+                              maxLength={14}
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                            <Input
+                              id="dataNascimento"
+                              type="date"
+                              value={registerData.dataNascimento || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, dataNascimento: e.target.value }))}
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="cep">CEP</Label>
+                            <Input
+                              id="cep"
+                              type="text"
+                              value={registerData.cep || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, cep: formatCEP(e.target.value) }))}
+                              placeholder="00000-000"
+                              maxLength={9}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <Label htmlFor="endereco">Endereço</Label>
+                            <Input
+                              id="endereco"
+                              type="text"
+                              value={registerData.endereco || ""}
+                              onChange={(e) => setRegisterData(prev => ({ ...prev, endereco: e.target.value }))}
+                              placeholder="Rua, número, complemento"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <Label htmlFor="cidade">Cidade *</Label>
                             <Input
