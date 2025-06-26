@@ -8,7 +8,10 @@ import {
   insertVagaSchema,
   insertCandidaturaSchema,
   insertBancoTalentosSchema,
-  insertContatoSchema
+  insertContatoSchema,
+  insertServicoSchema,
+  insertPropostaSchema,
+  insertRelatorioSchema
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 
@@ -285,6 +288,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get contatos error:", error);
       res.status(500).json({ message: "Erro ao buscar contatos" });
+    }
+  });
+
+  // Admin routes
+  app.get("/api/admin/candidatos", async (req, res) => {
+    try {
+      const candidatos = await storage.getAllCandidatos();
+      res.json(candidatos);
+    } catch (error) {
+      console.error("Get all candidatos error:", error);
+      res.status(500).json({ message: "Erro ao buscar candidatos" });
+    }
+  });
+
+  app.get("/api/admin/empresas", async (req, res) => {
+    try {
+      const empresas = await storage.getAllEmpresas();
+      res.json(empresas);
+    } catch (error) {
+      console.error("Get all empresas error:", error);
+      res.status(500).json({ message: "Erro ao buscar empresas" });
+    }
+  });
+
+  app.delete("/api/admin/candidatos/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteCandidato(id);
+      if (deleted) {
+        res.json({ message: "Candidato removido com sucesso" });
+      } else {
+        res.status(404).json({ message: "Candidato não encontrado" });
+      }
+    } catch (error) {
+      console.error("Delete candidato error:", error);
+      res.status(500).json({ message: "Erro ao remover candidato" });
+    }
+  });
+
+  app.delete("/api/admin/empresas/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteEmpresa(id);
+      if (deleted) {
+        res.json({ message: "Empresa removida com sucesso" });
+      } else {
+        res.status(404).json({ message: "Empresa não encontrada" });
+      }
+    } catch (error) {
+      console.error("Delete empresa error:", error);
+      res.status(500).json({ message: "Erro ao remover empresa" });
+    }
+  });
+
+  // Servicos routes
+  app.post("/api/admin/servicos", async (req, res) => {
+    try {
+      const servicoData = insertServicoSchema.parse(req.body);
+      const servico = await storage.createServico(servicoData);
+      res.json(servico);
+    } catch (error) {
+      console.error("Create servico error:", error);
+      res.status(400).json({ message: "Erro ao criar serviço" });
+    }
+  });
+
+  app.get("/api/admin/servicos", async (req, res) => {
+    try {
+      const servicos = await storage.getAllServicos();
+      res.json(servicos);
+    } catch (error) {
+      console.error("Get servicos error:", error);
+      res.status(500).json({ message: "Erro ao buscar serviços" });
+    }
+  });
+
+  app.patch("/api/admin/servicos/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const servico = await storage.updateServico(id, updateData);
+      if (servico) {
+        res.json(servico);
+      } else {
+        res.status(404).json({ message: "Serviço não encontrado" });
+      }
+    } catch (error) {
+      console.error("Update servico error:", error);
+      res.status(400).json({ message: "Erro ao atualizar serviço" });
+    }
+  });
+
+  app.delete("/api/admin/servicos/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteServico(id);
+      if (deleted) {
+        res.json({ message: "Serviço removido com sucesso" });
+      } else {
+        res.status(404).json({ message: "Serviço não encontrado" });
+      }
+    } catch (error) {
+      console.error("Delete servico error:", error);
+      res.status(500).json({ message: "Erro ao remover serviço" });
+    }
+  });
+
+  // Propostas routes
+  app.post("/api/admin/propostas", async (req, res) => {
+    try {
+      const propostaData = insertPropostaSchema.parse(req.body);
+      const proposta = await storage.createProposta(propostaData);
+      res.json(proposta);
+    } catch (error) {
+      console.error("Create proposta error:", error);
+      res.status(400).json({ message: "Erro ao criar proposta" });
+    }
+  });
+
+  app.get("/api/admin/propostas", async (req, res) => {
+    try {
+      const propostas = await storage.getAllPropostas();
+      res.json(propostas);
+    } catch (error) {
+      console.error("Get propostas error:", error);
+      res.status(500).json({ message: "Erro ao buscar propostas" });
+    }
+  });
+
+  app.patch("/api/admin/propostas/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const proposta = await storage.updateProposta(id, updateData);
+      if (proposta) {
+        res.json(proposta);
+      } else {
+        res.status(404).json({ message: "Proposta não encontrada" });
+      }
+    } catch (error) {
+      console.error("Update proposta error:", error);
+      res.status(400).json({ message: "Erro ao atualizar proposta" });
+    }
+  });
+
+  // Relatorios routes
+  app.post("/api/admin/relatorios", async (req, res) => {
+    try {
+      const relatorioData = insertRelatorioSchema.parse(req.body);
+      const relatorio = await storage.createRelatorio(relatorioData);
+      res.json(relatorio);
+    } catch (error) {
+      console.error("Create relatorio error:", error);
+      res.status(400).json({ message: "Erro ao criar relatório" });
+    }
+  });
+
+  app.get("/api/admin/relatorios", async (req, res) => {
+    try {
+      const relatorios = await storage.getAllRelatorios();
+      res.json(relatorios);
+    } catch (error) {
+      console.error("Get relatorios error:", error);
+      res.status(500).json({ message: "Erro ao buscar relatórios" });
     }
   });
 

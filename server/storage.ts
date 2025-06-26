@@ -1,12 +1,15 @@
 import { 
-  usuarios, candidatos, empresas, vagas, candidaturas, bancoTalentos, contatos,
+  usuarios, candidatos, empresas, vagas, candidaturas, bancoTalentos, contatos, servicos, propostas, relatorios,
   type Usuario, type InsertUsuario,
   type Candidato, type InsertCandidato,
   type Empresa, type InsertEmpresa,
   type Vaga, type InsertVaga,
   type Candidatura, type InsertCandidatura,
   type BancoTalentos, type InsertBancoTalentos,
-  type Contato, type InsertContato
+  type Contato, type InsertContato,
+  type Servico, type InsertServico,
+  type Proposta, type InsertProposta,
+  type Relatorio, type InsertRelatorio
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
@@ -49,6 +52,27 @@ export interface IStorage {
   // Contato methods
   createContato(contato: InsertContato): Promise<Contato>;
   getAllContatos(): Promise<Contato[]>;
+  
+  // Admin methods
+  getAllCandidatos(): Promise<Candidato[]>;
+  getAllEmpresas(): Promise<Empresa[]>;
+  deleteCandidato(id: string): Promise<boolean>;
+  deleteEmpresa(id: string): Promise<boolean>;
+  
+  // Servico methods
+  createServico(servico: InsertServico): Promise<Servico>;
+  getAllServicos(): Promise<Servico[]>;
+  updateServico(id: string, servico: Partial<InsertServico>): Promise<Servico | undefined>;
+  deleteServico(id: string): Promise<boolean>;
+  
+  // Proposta methods
+  createProposta(proposta: InsertProposta): Promise<Proposta>;
+  getAllPropostas(): Promise<Proposta[]>;
+  updateProposta(id: string, proposta: Partial<InsertProposta>): Promise<Proposta | undefined>;
+  
+  // Relatorio methods
+  createRelatorio(relatorio: InsertRelatorio): Promise<Relatorio>;
+  getAllRelatorios(): Promise<Relatorio[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -59,6 +83,9 @@ export class MemStorage implements IStorage {
   private candidaturas: Map<string, Candidatura>;
   private bancoTalentos: Map<string, BancoTalentos>;
   private contatos: Map<string, Contato>;
+  private servicos: Map<string, Servico>;
+  private propostas: Map<string, Proposta>;
+  private relatorios: Map<string, Relatorio>;
 
   constructor() {
     this.usuarios = new Map();
@@ -68,6 +95,9 @@ export class MemStorage implements IStorage {
     this.candidaturas = new Map();
     this.bancoTalentos = new Map();
     this.contatos = new Map();
+    this.servicos = new Map();
+    this.propostas = new Map();
+    this.relatorios = new Map();
   }
 
   async getUsuario(id: string): Promise<Usuario | undefined> {
@@ -237,6 +267,116 @@ export class MemStorage implements IStorage {
 
   async getAllContatos(): Promise<Contato[]> {
     return Array.from(this.contatos.values());
+  }
+
+  // Admin methods
+  async getAllCandidatos(): Promise<Candidato[]> {
+    return Array.from(this.candidatos.values());
+  }
+
+  async getAllEmpresas(): Promise<Empresa[]> {
+    return Array.from(this.empresas.values());
+  }
+
+  async deleteCandidato(id: string): Promise<boolean> {
+    const deleted = this.candidatos.delete(id);
+    if (deleted) {
+      this.usuarios.delete(id);
+    }
+    return deleted;
+  }
+
+  async deleteEmpresa(id: string): Promise<boolean> {
+    const deleted = this.empresas.delete(id);
+    if (deleted) {
+      this.usuarios.delete(id);
+    }
+    return deleted;
+  }
+
+  // Servico methods
+  async createServico(insertServico: InsertServico): Promise<Servico> {
+    const id = crypto.randomUUID();
+    const servico: Servico = {
+      ...insertServico,
+      id,
+      criadoEm: new Date(),
+      empresaId: insertServico.empresaId ?? null,
+      candidatoId: insertServico.candidatoId ?? null,
+      valor: insertServico.valor ?? null,
+      dataInicio: insertServico.dataInicio ?? null,
+      dataFim: insertServico.dataFim ?? null,
+      observacoes: insertServico.observacoes ?? null,
+      status: insertServico.status ?? 'pendente',
+    };
+    this.servicos.set(id, servico);
+    return servico;
+  }
+
+  async getAllServicos(): Promise<Servico[]> {
+    return Array.from(this.servicos.values());
+  }
+
+  async updateServico(id: string, servico: Partial<InsertServico>): Promise<Servico | undefined> {
+    const existing = this.servicos.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Servico = { ...existing, ...servico };
+    this.servicos.set(id, updated);
+    return updated;
+  }
+
+  async deleteServico(id: string): Promise<boolean> {
+    return this.servicos.delete(id);
+  }
+
+  // Proposta methods
+  async createProposta(insertProposta: InsertProposta): Promise<Proposta> {
+    const id = crypto.randomUUID();
+    const proposta: Proposta = {
+      ...insertProposta,
+      id,
+      criadoEm: new Date(),
+      prazoEntrega: insertProposta.prazoEntrega ?? null,
+      observacoes: insertProposta.observacoes ?? null,
+      aprovada: insertProposta.aprovada ?? null,
+    };
+    this.propostas.set(id, proposta);
+    return proposta;
+  }
+
+  async getAllPropostas(): Promise<Proposta[]> {
+    return Array.from(this.propostas.values());
+  }
+
+  async updateProposta(id: string, proposta: Partial<InsertProposta>): Promise<Proposta | undefined> {
+    const existing = this.propostas.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Proposta = { ...existing, ...proposta };
+    this.propostas.set(id, updated);
+    return updated;
+  }
+
+  // Relatorio methods
+  async createRelatorio(insertRelatorio: InsertRelatorio): Promise<Relatorio> {
+    const id = crypto.randomUUID();
+    const relatorio: Relatorio = {
+      ...insertRelatorio,
+      id,
+      criadoEm: new Date(),
+      totalCandidatos: insertRelatorio.totalCandidatos ?? null,
+      totalEmpresas: insertRelatorio.totalEmpresas ?? null,
+      totalVagas: insertRelatorio.totalVagas ?? null,
+      totalServicos: insertRelatorio.totalServicos ?? null,
+      faturamento: insertRelatorio.faturamento ?? null,
+    };
+    this.relatorios.set(id, relatorio);
+    return relatorio;
+  }
+
+  async getAllRelatorios(): Promise<Relatorio[]> {
+    return Array.from(this.relatorios.values());
   }
 }
 
@@ -507,6 +647,155 @@ export class PostgreSQLStorage implements IStorage {
       return result;
     } catch (error) {
       console.error("Error getting all contatos:", error);
+      return [];
+    }
+  }
+
+  // Admin methods
+  async getAllCandidatos(): Promise<Candidato[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(candidatos);
+      return result;
+    } catch (error) {
+      console.error("Error getting all candidatos:", error);
+      return [];
+    }
+  }
+
+  async getAllEmpresas(): Promise<Empresa[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(empresas);
+      return result;
+    } catch (error) {
+      console.error("Error getting all empresas:", error);
+      return [];
+    }
+  }
+
+  async deleteCandidato(id: string): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      await this.db.delete(candidatos).where(eq(candidatos.id, id));
+      await this.db.delete(usuarios).where(eq(usuarios.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting candidato:", error);
+      return false;
+    }
+  }
+
+  async deleteEmpresa(id: string): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      await this.db.delete(empresas).where(eq(empresas.id, id));
+      await this.db.delete(usuarios).where(eq(usuarios.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting empresa:", error);
+      return false;
+    }
+  }
+
+  // Servico methods
+  async createServico(servico: InsertServico): Promise<Servico> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(servicos).values(servico).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating servico:", error);
+      throw error;
+    }
+  }
+
+  async getAllServicos(): Promise<Servico[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(servicos);
+      return result;
+    } catch (error) {
+      console.error("Error getting all servicos:", error);
+      return [];
+    }
+  }
+
+  async updateServico(id: string, servico: Partial<InsertServico>): Promise<Servico | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.update(servicos).set(servico).where(eq(servicos.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating servico:", error);
+      return undefined;
+    }
+  }
+
+  async deleteServico(id: string): Promise<boolean> {
+    if (!this.db) return false;
+    try {
+      await this.db.delete(servicos).where(eq(servicos.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting servico:", error);
+      return false;
+    }
+  }
+
+  // Proposta methods
+  async createProposta(proposta: InsertProposta): Promise<Proposta> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(propostas).values(proposta).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating proposta:", error);
+      throw error;
+    }
+  }
+
+  async getAllPropostas(): Promise<Proposta[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(propostas);
+      return result;
+    } catch (error) {
+      console.error("Error getting all propostas:", error);
+      return [];
+    }
+  }
+
+  async updateProposta(id: string, proposta: Partial<InsertProposta>): Promise<Proposta | undefined> {
+    if (!this.db) return undefined;
+    try {
+      const result = await this.db.update(propostas).set(proposta).where(eq(propostas.id, id)).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating proposta:", error);
+      return undefined;
+    }
+  }
+
+  // Relatorio methods
+  async createRelatorio(relatorio: InsertRelatorio): Promise<Relatorio> {
+    if (!this.db) throw new Error("Database not connected");
+    try {
+      const result = await this.db.insert(relatorios).values(relatorio).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating relatorio:", error);
+      throw error;
+    }
+  }
+
+  async getAllRelatorios(): Promise<Relatorio[]> {
+    if (!this.db) return [];
+    try {
+      const result = await this.db.select().from(relatorios);
+      return result;
+    } catch (error) {
+      console.error("Error getting all relatorios:", error);
       return [];
     }
   }

@@ -10,6 +10,8 @@ import Contato from "@/pages/Contato";
 import Login from "@/pages/Login";
 import AreaCandidato from "@/pages/AreaCandidato";
 import AreaEmpresa from "@/pages/AreaEmpresa";
+import Admin from "@/pages/Admin";
+import AdminLogin from "@/pages/AdminLogin";
 import BancoTalentos from "@/pages/BancoTalentos";
 import NotFound from "@/pages/not-found";
 
@@ -23,6 +25,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/candidato" component={AreaCandidato} />
       <Route path="/empresa" component={AreaEmpresa} />
+      <Route path="/admin" component={Admin} />
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/banco-talentos" component={BancoTalentos} />
       <Route component={NotFound} />
     </Switch>

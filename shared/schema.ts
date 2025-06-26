@@ -10,7 +10,9 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const tipoUsuarioEnum = pgEnum('tipo_usuario', ['candidato', 'empresa']);
+export const tipoUsuarioEnum = pgEnum('tipo_usuario', ['candidato', 'empresa', 'admin']);
+export const statusConsultoriaEnum = pgEnum('status_consultoria', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
+export const tipoServicoEnum = pgEnum('tipo_servico', ['recrutamento', 'selecao', 'consultoria_rh', 'treinamento', 'avaliacao']);
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -73,6 +75,44 @@ export const contatos = pgTable("contatos", {
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });
 
+export const servicos = pgTable("servicos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  empresaId: uuid("empresa_id").references(() => empresas.id),
+  candidatoId: uuid("candidato_id").references(() => candidatos.id),
+  tipoServico: tipoServicoEnum("tipo_servico").notNull(),
+  descricao: text("descricao").notNull(),
+  valor: varchar("valor", { length: 50 }),
+  status: statusConsultoriaEnum("status").notNull().default('pendente'),
+  dataInicio: timestamp("data_inicio"),
+  dataFim: timestamp("data_fim"),
+  observacoes: text("observacoes"),
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+});
+
+export const propostas = pgTable("propostas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  empresaId: uuid("empresa_id").references(() => empresas.id).notNull(),
+  tipoServico: tipoServicoEnum("tipo_servico").notNull(),
+  descricao: text("descricao").notNull(),
+  valorProposto: varchar("valor_proposto", { length: 50 }).notNull(),
+  prazoEntrega: varchar("prazo_entrega", { length: 100 }),
+  observacoes: text("observacoes"),
+  aprovada: text("aprovada"), // 'sim', 'nao', 'pendente'
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+});
+
+export const relatorios = pgTable("relatorios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tipo: varchar("tipo", { length: 100 }).notNull(), // 'mensal', 'trimestral', 'anual'
+  periodo: varchar("periodo", { length: 50 }).notNull(),
+  totalCandidatos: varchar("total_candidatos", { length: 20 }),
+  totalEmpresas: varchar("total_empresas", { length: 20 }),
+  totalVagas: varchar("total_vagas", { length: 20 }),
+  totalServicos: varchar("total_servicos", { length: 20 }),
+  faturamento: varchar("faturamento", { length: 50 }),
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUsuarioSchema = createInsertSchema(usuarios).omit({
   id: true,
@@ -109,6 +149,21 @@ export const insertContatoSchema = createInsertSchema(contatos).omit({
   criadoEm: true,
 });
 
+export const insertServicoSchema = createInsertSchema(servicos).omit({
+  id: true,
+  criadoEm: true,
+});
+
+export const insertPropostaSchema = createInsertSchema(propostas).omit({
+  id: true,
+  criadoEm: true,
+});
+
+export const insertRelatorioSchema = createInsertSchema(relatorios).omit({
+  id: true,
+  criadoEm: true,
+});
+
 // Types
 export type Usuario = typeof usuarios.$inferSelect;
 export type InsertUsuario = z.infer<typeof insertUsuarioSchema>;
@@ -124,3 +179,9 @@ export type BancoTalentos = typeof bancoTalentos.$inferSelect;
 export type InsertBancoTalentos = z.infer<typeof insertBancoTalentosSchema>;
 export type Contato = typeof contatos.$inferSelect;
 export type InsertContato = z.infer<typeof insertContatoSchema>;
+export type Servico = typeof servicos.$inferSelect;
+export type InsertServico = z.infer<typeof insertServicoSchema>;
+export type Proposta = typeof propostas.$inferSelect;
+export type InsertProposta = z.infer<typeof insertPropostaSchema>;
+export type Relatorio = typeof relatorios.$inferSelect;
+export type InsertRelatorio = z.infer<typeof insertRelatorioSchema>;

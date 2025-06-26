@@ -47,8 +47,42 @@ The application uses PostgreSQL with the following main entities:
 1. **User Registration/Login**: Users can register as either candidates or companies
 2. **Candidate Flow**: Candidates can view jobs, apply to positions, and manage their profiles
 3. **Company Flow**: Companies can post jobs, view applications, and manage job listings
-4. **Talent Banking**: Potential candidates can register interest without full registration
-5. **Contact System**: General inquiries are captured through contact forms
+4. **Admin Flow**: Isabel can manage all users, create services, proposals, and view comprehensive analytics
+5. **Talent Banking**: Potential candidates can register interest without full registration
+6. **Contact System**: General inquiries are captured through contact forms
+
+## Administrative Features
+
+The platform now includes a comprehensive administrative dashboard for Isabel Cunha:
+
+### Dashboard Analytics
+- Real-time statistics for candidates, companies, jobs, and services
+- Financial tracking with revenue estimation
+- Service status monitoring (pending, in progress, completed)
+- Proposal management with approval workflows
+
+### User Management
+- Complete oversight of all registered candidates and companies
+- User profile management and deletion capabilities
+- Activity tracking and engagement metrics
+
+### Service Management
+- Create and manage consultancy services (recruitment, selection, HR consulting, training, evaluation)
+- Track service progress with status updates
+- Set pricing and manage service delivery timelines
+- Service portfolio management with detailed descriptions
+
+### Proposal System
+- Create commercial proposals for potential clients
+- Set proposed values and delivery timelines
+- Approval workflow management (approve/reject proposals)
+- Proposal tracking and follow-up system
+
+### Reporting & Analytics
+- Monthly, quarterly, and annual performance reports
+- Revenue tracking and financial analytics
+- Success rate calculations and business metrics
+- Comprehensive business intelligence dashboard
 
 ## External Dependencies
 
@@ -94,6 +128,7 @@ Changelog:
 - June 26, 2025. Updated "Quem Somos" page photo and added Instagram icon to navigation
 - June 26, 2025. Updated WhatsApp button styling and text on contact page
 - June 26, 2025. Replaced generic user icon with Isabel Cunha's professional photo as logo on login page, matching Navigation component styling
+- June 26, 2025. Created comprehensive administrative dashboard with user management, service tracking, proposal system, and business analytics
 ```
 
 ## User Preferences
