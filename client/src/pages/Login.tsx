@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { UserRoundCheck, Building, Eye, EyeOff } from "lucide-react";
-import logoImage from "@assets/GNjPnSHd4wX4gM2H2En8qf.png";
+import logoImage from "@assets/475938809_597105653108037_9024041851945984459_n_1750906819330.jpg";
 
 export default function Login() {
   const { toast } = useToast();
@@ -164,11 +164,11 @@ export default function Login() {
       <section className="py-20 bg-isabel-accent min-h-screen">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 overflow-hidden rounded-full">
+            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4">
               <img 
                 src={logoImage} 
                 alt="Isabel Cunha RH" 
-                className="w-full h-full object-cover"
+                className="w-20 h-20 object-cover"
               />
             </div>
             <h1 className="text-3xl font-bold text-isabel-blue">Isabel Cunha RH</h1>

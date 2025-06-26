@@ -93,7 +93,7 @@ Changelog:
 - June 26, 2025. Initial setup
 - June 26, 2025. Updated "Quem Somos" page photo and added Instagram icon to navigation
 - June 26, 2025. Updated WhatsApp button styling and text on contact page
-- June 26, 2025. Replaced generic user icon with Isabel Cunha's professional photo as logo on login page
+- June 26, 2025. Replaced generic user icon with Isabel Cunha's professional photo as logo on login page, matching Navigation component styling
 ```
 
 ## User Preferences
