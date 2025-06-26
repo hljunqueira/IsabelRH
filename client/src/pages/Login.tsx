@@ -271,22 +271,30 @@ export default function Login() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Login simples para admin
-    if (adminData.email === "isabel@isabelcunharh.com" && adminData.senha === "admin123") {
-      const adminUser = {
-        usuario: {
-          id: "admin-1",
-          email: "isabel@isabelcunharh.com",
-          tipo: "admin",
-          criadoEm: new Date(),
-        },
-        profile: null,
-      };
+    // Fazer login real via API
+    try {
+      const response = await apiRequest("POST", "/api/auth/login", {
+        email: adminData.email,
+        senha: adminData.senha
+      });
       
-      localStorage.setItem("auth-user", JSON.stringify(adminUser));
-      toast({ title: "Login administrativo realizado com sucesso!" });
-      setLocation("/admin");
-    } else {
+      const data = await response.json();
+      
+      if (data.usuario && data.usuario.tipo === "admin") {
+        await authLogin(adminData.email, adminData.senha);
+        localStorage.setItem("auth-user", JSON.stringify(data));
+        toast({ title: "Login administrativo realizado com sucesso!" });
+        setTimeout(() => {
+          setLocation("/admin");
+        }, 500);
+      } else {
+        toast({ 
+          title: "Acesso negado", 
+          description: "Esta área é exclusiva para administradores",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
       toast({ 
         title: "Credenciais administrativas inválidas", 
         description: "Email ou senha incorretos",
@@ -697,7 +705,7 @@ export default function Login() {
                         type="email"
                         value={adminData.email}
                         onChange={(e) => setAdminData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="isabel@isabelcunharh.com"
+                        placeholder="isabel@isabelcunha.com.br"
                         required
                       />
                     </div>
