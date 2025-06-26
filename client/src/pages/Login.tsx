@@ -145,12 +145,16 @@ export default function Login() {
         description: "Bem-vindo(a) de volta!",
       });
       
-      // Redirecionar após atualizar o contexto
-      if (data.usuario.tipo === "candidato") {
-        setLocation("/candidato");
-      } else if (data.usuario.tipo === "empresa") {
-        setLocation("/empresa");
-      }
+      // Redirecionar após atualizar o contexto com pequeno delay
+      setTimeout(() => {
+        if (data.usuario.tipo === "candidato") {
+          setLocation("/candidato");
+        } else if (data.usuario.tipo === "empresa") {
+          setLocation("/empresa");
+        } else if (data.usuario.tipo === "admin") {
+          setLocation("/admin");
+        }
+      }, 500);
     },
     onError: () => {
       toast({
