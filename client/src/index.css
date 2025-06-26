@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(210, 40%, 16%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(210, 40%, 16%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(210, 40%, 16%);
+  --primary: hsl(24, 85%, 57%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(207, 55%, 24%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --muted: hsl(210, 40%, 98%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --accent: hsl(210, 40%, 98%);
+  --accent-foreground: hsl(210, 40%, 16%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --ring: hsl(24, 85%, 57%);
+  --radius: 0.5rem;
+  
+  /* Brand colors */
+  --isabel-orange: hsl(24, 85%, 57%);
+  --isabel-blue: hsl(207, 55%, 24%);
+  --isabel-accent: hsl(210, 40%, 98%);
+}
+
+.dark {
+  --background: hsl(222, 84%, 5%);
+  --foreground: hsl(210, 40%, 98%);
+  --card: hsl(222, 84%, 5%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --popover: hsl(222, 84%, 5%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --primary: hsl(24, 85%, 57%);
+  --primary-foreground: hsl(222, 84%, 5%);
+  --secondary: hsl(217, 32%, 17%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 32%, 17%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --accent: hsl(217, 32%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 32%, 17%);
+  --input: hsl(217, 32%, 17%);
+  --ring: hsl(24, 85%, 57%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+}
+
+@layer utilities {
+  .text-isabel-orange {
+    color: var(--isabel-orange);
+  }
+  .text-isabel-blue {
+    color: var(--isabel-blue);
+  }
+  .bg-isabel-orange {
+    background-color: var(--isabel-orange);
+  }
+  .bg-isabel-blue {
+    background-color: var(--isabel-blue);
+  }
+  .bg-isabel-orange\/10 {
+    background-color: hsl(24, 85%, 57%, 0.1);
+  }
+  .bg-isabel-blue\/10 {
+    background-color: hsl(207, 55%, 24%, 0.1);
+  }
+  .border-isabel-orange {
+    border-color: var(--isabel-orange);
+  }
+  .border-isabel-blue {
+    border-color: var(--isabel-blue);
+  }
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+}
