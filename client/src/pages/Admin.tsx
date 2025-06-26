@@ -206,7 +206,19 @@ export default function Admin() {
       });
       return;
     }
-    createServiceMutation.mutate(newService);
+    
+    // Preparar dados removendo campos vazios
+    const serviceData: any = {
+      tipoServico: newService.tipoServico,
+      descricao: newService.descricao,
+    };
+    
+    if (newService.empresaId) serviceData.empresaId = newService.empresaId;
+    if (newService.candidatoId) serviceData.candidatoId = newService.candidatoId;
+    if (newService.valor) serviceData.valor = newService.valor;
+    if (newService.observacoes) serviceData.observacoes = newService.observacoes;
+    
+    createServiceMutation.mutate(serviceData);
   };
 
   const handleCreateProposal = () => {
@@ -217,7 +229,19 @@ export default function Admin() {
       });
       return;
     }
-    createProposalMutation.mutate(newProposal);
+    
+    // Preparar dados removendo campos vazios
+    const proposalData: any = {
+      empresaId: newProposal.empresaId,
+      tipoServico: newProposal.tipoServico,
+      descricao: newProposal.descricao,
+      valorProposto: newProposal.valorProposto,
+    };
+    
+    if (newProposal.prazoEntrega) proposalData.prazoEntrega = newProposal.prazoEntrega;
+    if (newProposal.observacoes) proposalData.observacoes = newProposal.observacoes;
+    
+    createProposalMutation.mutate(proposalData);
   };
 
   // Estatísticas do dashboard
