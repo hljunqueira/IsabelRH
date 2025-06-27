@@ -54,31 +54,40 @@ export default function Admin() {
   useEffect(() => {
     console.log('🛠️ Admin: Verificando autenticação...');
     const storedUser = localStorage.getItem("auth-user");
-    console.log('🛠️ Admin: storedUser =', !!storedUser);
+    console.log('��️ Admin: storedUser existe =', !!storedUser);
     
     if (!storedUser) {
-      console.log('🛠️ Admin: Sem usuário, redirecionando para login');
-      setLocation("/login");
+      console.log('🛠️ Admin: Sem usuário, redirecionando para admin-login');
+      setLocation("/admin-login");
       return;
     }
     
     try {
       const userData = JSON.parse(storedUser);
-      console.log('🛠️ Admin: userData.usuario.type =', userData.usuario?.type);
+      console.log('🛠️ Admin: userData completo =', userData);
       
-      if (userData.usuario.type !== "admin") {
-        console.log('🛠️ Admin: Usuário não é admin, redirecionando para login');
-        setLocation("/login");
+      // Verificar diferentes estruturas possíveis
+      const userType = userData.usuario?.type || userData.usuario?.tipo || userData.type || userData.tipo;
+      console.log('🛠️ Admin: Tipo de usuário detectado =', userType);
+      
+      if (userType !== "admin") {
+        console.log('🛠️ Admin: Usuário não é admin, redirecionando para admin-login');
+        toast({
+          title: "Acesso negado",
+          description: "Você precisa ser um administrador para acessar esta área.",
+          variant: "destructive"
+        });
+        setLocation("/admin-login");
         return;
       }
       
       console.log('🛠️ Admin: Usuário admin autenticado com sucesso!');
       setUser(userData);
     } catch (error) {
-      console.log('🛠️ Admin: Erro ao parsear userData, redirecionando para login');
-      setLocation("/login");
+      console.log('🛠️ Admin: Erro ao parsear userData, redirecionando para admin-login');
+      setLocation("/admin-login");
     }
-  }, [setLocation]);
+  }, [setLocation, toast]);
 
   // Dados administrativos
   const { data: candidatos = [] } = useQuery<Candidato[]>({

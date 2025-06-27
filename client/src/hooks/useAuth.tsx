@@ -173,15 +173,23 @@ export const AuthProvider = React.memo(({ children }: AuthProviderProps) => {
         // Buscar dados do usuário do backend
         await fetchUserData(data.session);
         
-        // Obter dados atualizados para redirecionamento
-        const userData = JSON.parse(localStorage.getItem("auth-user") || '{}');
+        // Aguardar um pouco para garantir que os dados foram salvos
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        if (userData.usuario) {
-          const { type } = userData.usuario;
+        // Obter dados atualizados para redirecionamento
+        const storedData = localStorage.getItem("auth-user");
+        
+        if (storedData) {
+          const userData = JSON.parse(storedData);
+          console.log('🔍 Debug - userData completo:', userData);
+          
+          // Verificar diferentes possíveis estruturas de dados
+          const userType = userData.usuario?.type || userData.usuario?.tipo || userData.type || userData.tipo;
+          console.log('🔍 Debug - Tipo de usuário detectado:', userType);
           
           // Redirecionamento baseado no tipo de usuário
           let targetUrl = '/';
-          switch (type) {
+          switch (userType) {
             case 'admin':
               targetUrl = '/admin';
               break;
@@ -191,14 +199,21 @@ export const AuthProvider = React.memo(({ children }: AuthProviderProps) => {
             case 'candidato':
               targetUrl = '/candidato';
               break;
+            default:
+              console.warn('⚠️ Tipo de usuário não reconhecido:', userType);
+              targetUrl = '/';
           }
           
-          console.log(`🎯 Redirecionando usuário ${type} para:`, targetUrl);
+          console.log(`🎯 Redirecionando usuário ${userType} para:`, targetUrl);
           
-          // Redirecionamento com timeout para garantir que os dados estão salvos
+          // Redirecionamento com delay para garantir que tudo está pronto
           setTimeout(() => {
             setLocation(targetUrl);
-          }, 100);
+            window.location.reload(); // Force reload para garantir estado correto
+          }, 300);
+        } else {
+          console.warn('⚠️ Dados do usuário não encontrados no localStorage após login');
+          setLocation('/');
         }
       } else {
         console.error('❌ Login falhou - nenhuma sessão criada');

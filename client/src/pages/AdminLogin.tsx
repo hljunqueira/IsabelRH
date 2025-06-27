@@ -22,24 +22,34 @@ export default function AdminLogin() {
     e.preventDefault();
     
     // Login simples para admin (você pode melhorar a segurança depois)
-    if (loginData.email === "isabel@isabelcunharh.com" && loginData.senha === "admin123") {
+    if (loginData.email === "admin@isabelrh.com.br" && loginData.senha === "admin123") {
       const adminUser = {
         usuario: {
           id: "admin-1",
-          email: "isabel@isabelcunharh.com",
+          email: "admin@isabelrh.com.br",
+          type: "admin",
           tipo: "admin",
-          criadoEm: new Date(),
+          criadoEm: new Date().toISOString(),
         },
         profile: null,
       };
       
+      console.log('✅ Admin: Login bem-sucedido, salvando dados:', adminUser);
       localStorage.setItem("auth-user", JSON.stringify(adminUser));
-      toast({ title: "Login realizado com sucesso!" });
-      setLocation("/admin");
+      
+      toast({ 
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo(a) ao painel administrativo!"
+      });
+      
+      // Redirecionamento com delay para garantir que os dados estão salvos
+      setTimeout(() => {
+        setLocation("/admin");
+      }, 200);
     } else {
       toast({ 
         title: "Credenciais inválidas", 
-        description: "Email ou senha incorretos",
+        description: "Email ou senha incorretos. Use: admin@isabelrh.com.br",
         variant: "destructive" 
       });
     }
@@ -74,7 +84,7 @@ export default function AdminLogin() {
                     type="email"
                     value={loginData.email}
                     onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="isabel@isabelcunharh.com"
+                    placeholder="admin@isabelrh.com.br"
                     required
                   />
                 </div>
