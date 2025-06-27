@@ -277,6 +277,196 @@ app.get("/api/vagas", async (req, res) => {
     });
   }
 });
+app.get("/api/admin/candidatos", async (req, res) => {
+  console.log("\u{1F465} Admin/candidatos: Endpoint acessado");
+  const candidatosMock = [
+    {
+      id: "1",
+      nome: "Jo\xE3o Silva Santos",
+      email: "joao.silva@email.com",
+      telefone: "(11) 99999-9999",
+      cidade: "S\xE3o Paulo",
+      estado: "SP",
+      experiencia: 5,
+      educacao: "Superior Completo",
+      habilidades: ["JavaScript", "React", "Node.js"],
+      status: "ativo",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "2",
+      nome: "Maria Oliveira",
+      email: "maria.oliveira@email.com",
+      telefone: "(11) 88888-8888",
+      cidade: "Rio de Janeiro",
+      estado: "RJ",
+      experiencia: 3,
+      educacao: "Superior Completo",
+      habilidades: ["Python", "Django", "PostgreSQL"],
+      status: "ativo",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "3",
+      nome: "Pedro Costa",
+      email: "pedro.costa@email.com",
+      telefone: "(11) 77777-7777",
+      cidade: "Belo Horizonte",
+      estado: "MG",
+      experiencia: 7,
+      educacao: "P\xF3s-gradua\xE7\xE3o",
+      habilidades: ["Java", "Spring", "Docker"],
+      status: "ativo",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    }
+  ];
+  console.log(`\u2705 Admin/candidatos: Retornando ${candidatosMock.length} candidatos`);
+  res.json(candidatosMock);
+});
+app.get("/api/admin/empresas", async (req, res) => {
+  console.log("\u{1F3E2} Admin/empresas: Endpoint acessado");
+  const empresasMock = [
+    {
+      id: "1",
+      nome: "Tech Innovate Ltda",
+      email: "contato@techinnovate.com",
+      cnpj: "12.345.678/0001-90",
+      telefone: "(11) 3333-4444",
+      cidade: "S\xE3o Paulo",
+      estado: "SP",
+      setor: "Tecnologia",
+      funcionarios: 150,
+      status: "ativa",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "2",
+      nome: "RH Solutions S/A",
+      email: "info@rhsolutions.com.br",
+      cnpj: "98.765.432/0001-10",
+      telefone: "(48) 3333-5555",
+      cidade: "Florian\xF3polis",
+      estado: "SC",
+      setor: "Recursos Humanos",
+      funcionarios: 75,
+      status: "ativa",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "3",
+      nome: "Creative Studio",
+      email: "hello@creativestudio.com.br",
+      cnpj: "11.222.333/0001-44",
+      telefone: "(51) 3333-6666",
+      cidade: "Porto Alegre",
+      estado: "RS",
+      setor: "Design e Marketing",
+      funcionarios: 25,
+      status: "ativa",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    }
+  ];
+  console.log(`\u2705 Admin/empresas: Retornando ${empresasMock.length} empresas`);
+  res.json(empresasMock);
+});
+app.get("/api/admin/servicos", async (req, res) => {
+  console.log("\u{1F6E0}\uFE0F Admin/servicos: Endpoint acessado");
+  const servicosMock = [
+    {
+      id: "1",
+      titulo: "Consultoria em Recrutamento e Sele\xE7\xE3o",
+      empresa: "Tech Innovate Ltda",
+      tipo: "consultoria",
+      status: "em_andamento",
+      valor: 15e3,
+      inicio: "2024-01-15",
+      prazo: "2024-03-15",
+      descricao: "Implementa\xE7\xE3o de processo estruturado de R&S para \xE1rea de tecnologia",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "2",
+      titulo: "Treinamento em An\xE1lise DISC",
+      empresa: "RH Solutions S/A",
+      tipo: "treinamento",
+      status: "concluida",
+      valor: 8e3,
+      inicio: "2023-11-01",
+      prazo: "2023-12-01",
+      descricao: "Capacita\xE7\xE3o da equipe de RH em metodologia DISC",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "3",
+      titulo: "Estrutura\xE7\xE3o de Departamento de RH",
+      empresa: "Creative Studio",
+      tipo: "consultoria",
+      status: "proposta",
+      valor: 25e3,
+      inicio: "2024-02-01",
+      prazo: "2024-05-01",
+      descricao: "Cria\xE7\xE3o completa de departamento de RH com pol\xEDticas e processos",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    }
+  ];
+  console.log(`\u2705 Admin/servicos: Retornando ${servicosMock.length} servi\xE7os`);
+  res.json(servicosMock);
+});
+app.get("/api/admin/propostas", async (req, res) => {
+  console.log("\u{1F4CB} Admin/propostas: Endpoint acessado");
+  const propostasMock = [
+    {
+      id: "1",
+      empresa: "Tech Innovate Ltda",
+      servico: "Consultoria em Recrutamento",
+      valor: 15e3,
+      status: "aprovada",
+      aprovada: "sim",
+      data_proposta: "2024-01-01",
+      data_resposta: "2024-01-05",
+      observacoes: "Proposta aprovada com ajustes no cronograma",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "2",
+      empresa: "RH Solutions S/A",
+      servico: "Treinamento DISC",
+      valor: 8e3,
+      status: "aprovada",
+      aprovada: "sim",
+      data_proposta: "2023-10-15",
+      data_resposta: "2023-10-20",
+      observacoes: "Aprovada sem altera\xE7\xF5es",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "3",
+      empresa: "Creative Studio",
+      servico: "Estrutura\xE7\xE3o de RH",
+      valor: 25e3,
+      status: "pendente",
+      aprovada: "pendente",
+      data_proposta: "2024-01-20",
+      data_resposta: null,
+      observacoes: "Aguardando resposta da diretoria",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    },
+    {
+      id: "4",
+      empresa: "StartupXYZ",
+      servico: "Consultoria Estrat\xE9gica",
+      valor: 12e3,
+      status: "rejeitada",
+      aprovada: "nao",
+      data_proposta: "2023-12-01",
+      data_resposta: "2023-12-10",
+      observacoes: "Or\xE7amento n\xE3o aprovado pela empresa",
+      created_at: (/* @__PURE__ */ new Date()).toISOString()
+    }
+  ];
+  console.log(`\u2705 Admin/propostas: Retornando ${propostasMock.length} propostas`);
+  res.json(propostasMock);
+});
 var distPath = path.resolve(process.cwd(), "dist", "public");
 console.log("\u{1F50D} DEBUG: Configurando arquivos est\xE1ticos:");
 console.log("\u{1F4C1} Current working directory:", process.cwd());
@@ -308,7 +498,7 @@ app.get("*", (req, res) => {
       error: "Rota API n\xE3o encontrada",
       method: req.method,
       path: req.originalUrl,
-      availableRoutes: ["/api", "/api/test", "/api/health", "/api/auth/me", "/api/vagas"]
+      availableRoutes: ["/api", "/api/test", "/api/health", "/api/auth/me", "/api/vagas", "/api/admin/candidatos", "/api/admin/empresas", "/api/admin/servicos", "/api/admin/propostas"]
     });
   }
   console.log("\u{1F4DD} Servindo React App para rota:", req.originalUrl);
@@ -334,6 +524,10 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - GET /api/auth/me - Dados do usu\xE1rio autenticado");
   console.log("   - POST /api/auth/forgot-password - Recupera\xE7\xE3o de senha");
   console.log("   - GET /api/vagas - Lista de vagas");
+  console.log("   - GET /api/admin/candidatos - Lista de candidatos (admin)");
+  console.log("   - GET /api/admin/empresas - Lista de empresas (admin)");
+  console.log("   - GET /api/admin/servicos - Lista de servi\xE7os (admin)");
+  console.log("   - GET /api/admin/propostas - Lista de propostas (admin)");
   console.log("\u{1F5A5}\uFE0F Frontend React dispon\xEDvel em: /");
   console.log("\u2728 Isabel RH v5.0 - Sistema completo funcionando!");
 });

@@ -328,6 +328,212 @@ app.get("/api/vagas", async (req, res) => {
   }
 });
 
+// 👥 Rota de candidatos admin
+app.get("/api/admin/candidatos", async (req, res) => {
+  console.log('👥 Admin/candidatos: Endpoint acessado');
+  
+  const candidatosMock = [
+    {
+      id: "1",
+      nome: "João Silva Santos",
+      email: "joao.silva@email.com",
+      telefone: "(11) 99999-9999",
+      cidade: "São Paulo",
+      estado: "SP", 
+      experiencia: 5,
+      educacao: "Superior Completo",
+      habilidades: ["JavaScript", "React", "Node.js"],
+      status: "ativo",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2", 
+      nome: "Maria Oliveira",
+      email: "maria.oliveira@email.com",
+      telefone: "(11) 88888-8888",
+      cidade: "Rio de Janeiro",
+      estado: "RJ",
+      experiencia: 3,
+      educacao: "Superior Completo", 
+      habilidades: ["Python", "Django", "PostgreSQL"],
+      status: "ativo",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "3",
+      nome: "Pedro Costa",
+      email: "pedro.costa@email.com", 
+      telefone: "(11) 77777-7777",
+      cidade: "Belo Horizonte",
+      estado: "MG",
+      experiencia: 7,
+      educacao: "Pós-graduação",
+      habilidades: ["Java", "Spring", "Docker"],
+      status: "ativo",
+      created_at: new Date().toISOString()
+    }
+  ];
+  
+  console.log(`✅ Admin/candidatos: Retornando ${candidatosMock.length} candidatos`);
+  res.json(candidatosMock);
+});
+
+// 🏢 Rota de empresas admin
+app.get("/api/admin/empresas", async (req, res) => {
+  console.log('🏢 Admin/empresas: Endpoint acessado');
+  
+  const empresasMock = [
+    {
+      id: "1",
+      nome: "Tech Innovate Ltda",
+      email: "contato@techinnovate.com",
+      cnpj: "12.345.678/0001-90",
+      telefone: "(11) 3333-4444",
+      cidade: "São Paulo",
+      estado: "SP",
+      setor: "Tecnologia",
+      funcionarios: 150,
+      status: "ativa",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2",
+      nome: "RH Solutions S/A", 
+      email: "info@rhsolutions.com.br",
+      cnpj: "98.765.432/0001-10",
+      telefone: "(48) 3333-5555",
+      cidade: "Florianópolis",
+      estado: "SC",
+      setor: "Recursos Humanos",
+      funcionarios: 75,
+      status: "ativa", 
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "3",
+      nome: "Creative Studio",
+      email: "hello@creativestudio.com.br",
+      cnpj: "11.222.333/0001-44",
+      telefone: "(51) 3333-6666", 
+      cidade: "Porto Alegre",
+      estado: "RS",
+      setor: "Design e Marketing",
+      funcionarios: 25,
+      status: "ativa",
+      created_at: new Date().toISOString()
+    }
+  ];
+  
+  console.log(`✅ Admin/empresas: Retornando ${empresasMock.length} empresas`);
+  res.json(empresasMock);
+});
+
+// 🛠️ Rota de serviços admin
+app.get("/api/admin/servicos", async (req, res) => {
+  console.log('🛠️ Admin/servicos: Endpoint acessado');
+  
+  const servicosMock = [
+    {
+      id: "1",
+      titulo: "Consultoria em Recrutamento e Seleção",
+      empresa: "Tech Innovate Ltda",
+      tipo: "consultoria",
+      status: "em_andamento",
+      valor: 15000,
+      inicio: "2024-01-15",
+      prazo: "2024-03-15",
+      descricao: "Implementação de processo estruturado de R&S para área de tecnologia",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2",
+      titulo: "Treinamento em Análise DISC",
+      empresa: "RH Solutions S/A", 
+      tipo: "treinamento",
+      status: "concluida",
+      valor: 8000,
+      inicio: "2023-11-01",
+      prazo: "2023-12-01", 
+      descricao: "Capacitação da equipe de RH em metodologia DISC",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "3",
+      titulo: "Estruturação de Departamento de RH",
+      empresa: "Creative Studio",
+      tipo: "consultoria",
+      status: "proposta",
+      valor: 25000,
+      inicio: "2024-02-01",
+      prazo: "2024-05-01",
+      descricao: "Criação completa de departamento de RH com políticas e processos",
+      created_at: new Date().toISOString()
+    }
+  ];
+  
+  console.log(`✅ Admin/servicos: Retornando ${servicosMock.length} serviços`);
+  res.json(servicosMock);
+});
+
+// 📋 Rota de propostas admin
+app.get("/api/admin/propostas", async (req, res) => {
+  console.log('📋 Admin/propostas: Endpoint acessado');
+  
+  const propostasMock = [
+    {
+      id: "1",
+      empresa: "Tech Innovate Ltda",
+      servico: "Consultoria em Recrutamento",
+      valor: 15000,
+      status: "aprovada",
+      aprovada: "sim",
+      data_proposta: "2024-01-01",
+      data_resposta: "2024-01-05",
+      observacoes: "Proposta aprovada com ajustes no cronograma",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "2", 
+      empresa: "RH Solutions S/A",
+      servico: "Treinamento DISC",
+      valor: 8000,
+      status: "aprovada", 
+      aprovada: "sim",
+      data_proposta: "2023-10-15",
+      data_resposta: "2023-10-20",
+      observacoes: "Aprovada sem alterações",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "3",
+      empresa: "Creative Studio", 
+      servico: "Estruturação de RH",
+      valor: 25000,
+      status: "pendente",
+      aprovada: "pendente",
+      data_proposta: "2024-01-20",
+      data_resposta: null,
+      observacoes: "Aguardando resposta da diretoria",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "4",
+      empresa: "StartupXYZ",
+      servico: "Consultoria Estratégica", 
+      valor: 12000,
+      status: "rejeitada",
+      aprovada: "nao", 
+      data_proposta: "2023-12-01",
+      data_resposta: "2023-12-10",
+      observacoes: "Orçamento não aprovado pela empresa",
+      created_at: new Date().toISOString()
+    }
+  ];
+  
+  console.log(`✅ Admin/propostas: Retornando ${propostasMock.length} propostas`);
+  res.json(propostasMock);
+});
+
 // 📁 SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND
 const distPath = path.resolve(process.cwd(), "dist", "public");
 
@@ -370,7 +576,7 @@ app.get('*', (req, res) => {
       error: "Rota API não encontrada",
       method: req.method,
       path: req.originalUrl,
-      availableRoutes: ['/api', '/api/test', '/api/health', '/api/auth/me', '/api/vagas']
+      availableRoutes: ['/api', '/api/test', '/api/health', '/api/auth/me', '/api/vagas', '/api/admin/candidatos', '/api/admin/empresas', '/api/admin/servicos', '/api/admin/propostas']
     });
   }
   
@@ -402,6 +608,10 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - GET /api/auth/me - Dados do usuário autenticado");
   console.log("   - POST /api/auth/forgot-password - Recuperação de senha");
   console.log("   - GET /api/vagas - Lista de vagas");
+  console.log("   - GET /api/admin/candidatos - Lista de candidatos (admin)");
+  console.log("   - GET /api/admin/empresas - Lista de empresas (admin)");
+  console.log("   - GET /api/admin/servicos - Lista de serviços (admin)");
+  console.log("   - GET /api/admin/propostas - Lista de propostas (admin)");
   console.log("🖥️ Frontend React disponível em: /");
   console.log("✨ Isabel RH v5.0 - Sistema completo funcionando!");
 });
