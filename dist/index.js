@@ -4641,7 +4641,7 @@ async function setupVite(app2, server) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
+  const distPath = path2.resolve(import.meta.dirname, "..", "dist", "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -4665,8 +4665,14 @@ app.use(cors({
     "http://127.0.0.1:5174",
     "file://",
     // Permitir arquivos locais
-    "null"
+    "null",
     // Permitir origin null (arquivos locais)
+    // Railway production URLs
+    "https://isabelrh-production.up.railway.app",
+    "https://isabelrh.railway.app",
+    // Domínio personalizado (quando configurado)
+    "https://isabelrh.com.br",
+    "https://www.isabelrh.com.br"
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
