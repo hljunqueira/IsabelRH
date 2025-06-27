@@ -851,7 +851,7 @@ export default function AreaCandidato() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2">
-                            {profileData.habilidades.map((habilidade, index) => (
+                            {(profileData.habilidades || []).map((habilidade, index) => (
                               <Badge key={index} variant="secondary" className="flex items-center space-x-1">
                                 <span>{habilidade}</span>
                                 {isEditing && (
@@ -890,7 +890,7 @@ export default function AreaCandidato() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2">
-                            {profileData.idiomas.map((idioma, index) => (
+                            {(profileData.idiomas || []).map((idioma, index) => (
                               <Badge key={index} variant="outline" className="flex items-center space-x-1">
                                 <span>{idioma}</span>
                                 {isEditing && (
@@ -991,7 +991,7 @@ export default function AreaCandidato() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2">
-                            {profileData.areasInteresse.map((area, index) => (
+                            {(profileData.areasInteresse || []).map((area, index) => (
                               <Badge key={index} variant="default" className="flex items-center space-x-1">
                                 <span>{area}</span>
                                 {isEditing && (

@@ -188,7 +188,7 @@ app.get("/api/vagas", async (req, res) => {
         empresas!inner(nome, cidade, estado)
       `)
       .eq('status', 'ativa')
-      .order('created_at', { ascending: false });
+      .order('publicado_em', { ascending: false });
     
     // Filtro por destaque
     if (destaque === 'true') {
@@ -208,30 +208,72 @@ app.get("/api/vagas", async (req, res) => {
     
     const { data: vagas, error } = await query;
     
-    if (error) {
-      console.error('❌ Erro ao buscar vagas:', error);
+    if (error || !vagas || vagas.length === 0) {
+      if (error) {
+        console.error('❌ Erro ao buscar vagas:', error);
+      } else {
+        console.log('⚠️ Nenhuma vaga encontrada no banco, usando dados mock');
+      }
       
-      // Fallback para dados mock se houver erro
+      // Fallback para dados mock se houver erro ou dados vazios
       const vagasMock = [
         {
           id: "1",
           titulo: "Desenvolvedor Frontend React",
-          empresa: "Tech Company",
+          empresa: "Tech Innovate",
           cidade: "São Paulo",
           estado: "SP",
           localizacao: "São Paulo, SP",
           modalidade: "Remoto",
           tipo: "Tecnologia",
           salario: "R$ 8.000 - R$ 12.000",
-          descricao: "Vaga para desenvolvedor React com experiência em TypeScript",
+          descricao: "Desenvolvimento de aplicações modernas com React, TypeScript e melhores práticas de desenvolvimento.",
           requisitos: ["React", "TypeScript", "JavaScript", "CSS", "Git"],
           destaque: true,
+          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        },
+        {
+          id: "2",
+          titulo: "Analista de RH",
+          empresa: "RH Solutions",
+          cidade: "Florianópolis",
+          estado: "SC",
+          localizacao: "Florianópolis, SC",
+          modalidade: "Híbrido",
+          tipo: "Recursos Humanos",
+          salario: "R$ 5.000 - R$ 7.000",
+          descricao: "Atuar em recrutamento e seleção, gestão de pessoas e desenvolvimento de políticas de RH.",
+          requisitos: ["Psicologia", "Recrutamento", "Seleção", "Excel"],
+          destaque: true,
+          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        },
+        {
+          id: "3",
+          titulo: "Designer UX/UI",
+          empresa: "Creative Studio",
+          cidade: "Porto Alegre",
+          estado: "RS",
+          localizacao: "Porto Alegre, RS",
+          modalidade: "Presencial",
+          tipo: "Design",
+          salario: "R$ 6.000 - R$ 9.000",
+          descricao: "Criação de interfaces intuitivas e experiências digitais excepcionais para aplicações web e mobile.",
+          requisitos: ["Figma", "Adobe XD", "Prototyping", "User Research"],
+          destaque: false,
           createdAt: new Date().toISOString(),
           created_at: new Date().toISOString()
         }
       ];
       
       let vagasFallback = [...vagasMock];
+      
+      // Aplicar filtros nos dados mock
+      if (destaque === 'true') {
+        vagasFallback = vagasFallback.filter(vaga => vaga.destaque);
+      }
+      
       if (limit) {
         const limitNum = parseInt(limit as string);
         vagasFallback = vagasFallback.slice(0, limitNum);
@@ -242,24 +284,37 @@ app.get("/api/vagas", async (req, res) => {
     }
     
     // Transformar dados para o formato esperado pelo frontend
-    const vagasFormatadas = vagas?.map((vaga: any) => ({
-      id: vaga.id,
-      titulo: vaga.titulo,
-      empresa: vaga.empresas?.nome || 'Empresa',
-      cidade: vaga.empresas?.cidade || vaga.cidade,
-      estado: vaga.empresas?.estado || vaga.estado,
-      localizacao: `${vaga.empresas?.cidade || vaga.cidade}, ${vaga.empresas?.estado || vaga.estado}`,
-      modalidade: vaga.modalidade,
-      tipo: vaga.area || vaga.setor || 'Geral',
-      salario: vaga.salario_min && vaga.salario_max 
-        ? `R$ ${vaga.salario_min.toLocaleString()} - R$ ${vaga.salario_max.toLocaleString()}`
-        : vaga.salario,
-      descricao: vaga.descricao,
-      requisitos: vaga.requisitos || [],
-      destaque: vaga.destaque || false,
-      createdAt: vaga.created_at,
-      created_at: vaga.created_at
-    })) || [];
+    const vagasFormatadas = vagas?.map((vaga: any) => {
+      // Garantir que requisitos é sempre um array
+      let requisitos = [];
+      if (vaga.requisitos) {
+        if (Array.isArray(vaga.requisitos)) {
+          requisitos = vaga.requisitos;
+        } else if (typeof vaga.requisitos === 'string') {
+          // Se for string, dividir por vírgula ou quebra de linha
+          requisitos = vaga.requisitos.split(/[,\n]/).map((req: string) => req.trim()).filter((req: string) => req.length > 0);
+        }
+      }
+      
+      return {
+        id: vaga.id,
+        titulo: vaga.titulo,
+        empresa: vaga.empresas?.nome || 'Empresa',
+        cidade: vaga.empresas?.cidade || vaga.cidade,
+        estado: vaga.empresas?.estado || vaga.estado,
+        localizacao: `${vaga.empresas?.cidade || vaga.cidade}, ${vaga.empresas?.estado || vaga.estado}`,
+        modalidade: vaga.modalidade,
+        tipo: vaga.area || vaga.setor || 'Geral',
+        salario: vaga.salario_min && vaga.salario_max 
+          ? `R$ ${vaga.salario_min.toLocaleString()} - R$ ${vaga.salario_max.toLocaleString()}`
+          : vaga.salario,
+        descricao: vaga.descricao,
+        requisitos: requisitos,
+        destaque: vaga.destaque || false,
+        createdAt: vaga.publicado_em || vaga.created_at,
+        created_at: vaga.publicado_em || vaga.created_at
+      };
+    }) || [];
     
     console.log(`✅ Vagas: Retornando ${vagasFormatadas.length} vagas do banco`);
     res.json(vagasFormatadas);

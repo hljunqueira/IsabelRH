@@ -615,7 +615,7 @@ export default function PerfilCandidato() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Lista de experiências */}
-                {profileData.experiencias.map((exp, index) => (
+                {(profileData.experiencias || []).map((exp, index) => (
                   <div key={exp.id || index} className="p-4 border rounded-lg bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -730,7 +730,7 @@ export default function PerfilCandidato() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {profileData.idiomas.map((idioma, index) => (
+                    {(profileData.idiomas || []).map((idioma, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-2">
                         {idioma}
                         <button 
@@ -767,7 +767,7 @@ export default function PerfilCandidato() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {profileData.habilidades.map((habilidade, index) => (
+                    {(profileData.habilidades || []).map((habilidade, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-2">
                         {habilidade}
                         <button 
@@ -804,7 +804,7 @@ export default function PerfilCandidato() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Lista de certificações */}
-                  {profileData.certificacoes.map((cert, index) => (
+                  {(profileData.certificacoes || []).map((cert, index) => (
                     <div key={cert.id || index} className="p-4 border rounded-lg bg-gray-50">
                       <div className="flex justify-between items-start">
                         <div>
