@@ -1,31 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 
 const app = express();
 
-console.log("🎯 VERSÃO ATUALIZADA - Isabel RH v2.0 - Iniciando servidor...");
+console.log("🎯 VERSÃO ULTRA-SIMPLES - Isabel RH v3.0 - TESTE RAILWAY");
 console.log("🔥 Timestamp:", new Date().toISOString());
-console.log("🌟 Rotas de teste incluídas: /api/test e /api");
+console.log("🌟 Testando Railway com servidor minimalista");
 
-// Configurar CORS para permitir acesso do frontend
+// Configurar CORS
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://127.0.0.1:5173', 
-    'http://localhost:3000', 
-    'http://localhost:5174', 
-    'http://127.0.0.1:5174',
-    'file://', // Permitir arquivos locais
-    'null', // Permitir origin null (arquivos locais)
-    // Railway production URLs
-    'https://isabelrh-production.up.railway.app',
-    'https://isabelrh.railway.app',
-    // Domínio personalizado (quando configurado)
-    'https://isabelrh.com.br',
-    'https://www.isabelrh.com.br'
-  ],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
@@ -34,76 +18,68 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
+// 🧪 ROTAS DE TESTE SUPER SIMPLES
+app.get('/', (req, res) => {
+  console.log("🏠 Rota / acessada!");
+  res.json({ 
+    message: "🎉 Isabel RH - Servidor funcionando!", 
+    status: "success",
+    timestamp: new Date().toISOString(),
+    version: "3.0"
   });
-
-  next();
 });
 
-(async () => {
-  try {
-    console.log("🚀 Iniciando servidor...");
-    console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
-    console.log("🔧 PORT:", process.env.PORT);
-    
-    const server = await registerRoutes(app);
-    console.log("✅ Rotas registradas com sucesso");
+app.get('/api', (req, res) => {
+  console.log("🔥 Rota /api acessada!");
+  res.json({ 
+    message: "🚀 API Isabel RH Online!", 
+    status: "success",
+    timestamp: new Date().toISOString(),
+    routes: ["/", "/api", "/api/test", "/api/health"]
+  });
+});
 
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
+app.get('/api/test', (req, res) => {
+  console.log("🧪 Rota /api/test acessada!");
+  res.json({ 
+    message: "✅ Teste realizado com sucesso!", 
+    status: "success",
+    server: "Railway",
+    environment: process.env.NODE_ENV || "production",
+    port: process.env.PORT || "unknown"
+  });
+});
 
-      res.status(status).json({ message });
-      throw err;
-    });
+app.get('/api/health', (req, res) => {
+  console.log("❤️ Health check acessado!");
+  res.json({ 
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
 
-    // importantly only setup vite in development and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
-    if (app.get("env") === "development") {
-      console.log("🛠️ Modo desenvolvimento - configurando Vite");
-      await setupVite(app, server);
-    } else {
-      console.log("🏭 Modo produção - servindo arquivos estáticos");
-      serveStatic(app);
-    }
+// Catch all para debug
+app.use('*', (req, res) => {
+  console.log("❓ Rota não encontrada:", req.method, req.originalUrl);
+  res.status(404).json({ 
+    error: "Rota não encontrada",
+    method: req.method,
+    path: req.originalUrl,
+    message: "Verifique as rotas disponíveis: /, /api, /api/test, /api/health"
+  });
+});
 
-    // Use Railway's PORT environment variable or default to 5001
-    const port = parseInt(process.env.PORT || "5001");
-    console.log("🎯 Tentando iniciar servidor na porta:", port);
-    
-    server.listen(port, "0.0.0.0", () => {
-      console.log("🎉 Servidor rodando com sucesso!");
-      log(`serving on port ${port}`);
-    });
-    
-  } catch (error) {
-    console.error("💥 Erro fatal durante inicialização:");
-    console.error(error);
-    process.exit(1);
-  }
-})();
+// Use Railway's PORT environment variable
+const port = parseInt(process.env.PORT || "5001");
+console.log("🎯 Tentando iniciar servidor na porta:", port);
+
+app.listen(port, "0.0.0.0", () => {
+  console.log("🎉 SERVIDOR ULTRA-SIMPLES RODANDO COM SUCESSO!");
+  console.log("🌐 Porta:", port);
+  console.log("🔗 Rotas disponíveis:");
+  console.log("   - GET /");
+  console.log("   - GET /api");
+  console.log("   - GET /api/test");
+  console.log("   - GET /api/health");
+});
