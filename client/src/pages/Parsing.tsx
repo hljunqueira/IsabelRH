@@ -405,23 +405,23 @@ export default function Parsing() {
                       <h4 className="font-medium text-sm mb-2">Informações Básicas</h4>
                       <div className="space-y-1 text-sm text-gray-600">
                         <p><strong>Telefone:</strong> {dados.telefone}</p>
-                        <p><strong>Experiência:</strong> {dados.experiencia.length} posições</p>
-                        <p><strong>Educação:</strong> {dados.educacao.length} formações</p>
-                        <p><strong>Habilidades:</strong> {dados.habilidades.length} skills</p>
+                        <p><strong>Experiência:</strong> {(dados.experiencia || []).length} posições</p>
+                        <p><strong>Educação:</strong> {(dados.educacao || []).length} formações</p>
+                        <p><strong>Habilidades:</strong> {(dados.habilidades || []).length} skills</p>
                       </div>
                     </div>
 
                     <div>
                       <h4 className="font-medium text-sm mb-2">Habilidades Principais</h4>
                       <div className="flex flex-wrap gap-1">
-                        {dados.habilidades.slice(0, 5).map((habilidade: any, idx: number) => (
+                        {(dados.habilidades || []).slice(0, 5).map((habilidade: any, idx: number) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
-                            {habilidade.nome}
+                            {habilidade.nome || habilidade}
                           </Badge>
                         ))}
-                        {dados.habilidades.length > 5 && (
+                        {(dados.habilidades || []).length > 5 && (
                           <Badge variant="outline" className="text-xs">
-                            +{dados.habilidades.length - 5}
+                            +{(dados.habilidades || []).length - 5}
                           </Badge>
                         )}
                       </div>
@@ -431,7 +431,7 @@ export default function Parsing() {
                       <div>
                         <h4 className="font-medium text-sm mb-2 text-red-600">Erros</h4>
                         <ul className="text-xs text-red-600 space-y-1">
-                          {validacao.erros.slice(0, 2).map((erro, idx) => (
+                          {(validacao.erros || []).slice(0, 2).map((erro, idx) => (
                             <li key={idx}>• {erro}</li>
                           ))}
                         </ul>

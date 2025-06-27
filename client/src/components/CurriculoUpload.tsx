@@ -370,7 +370,7 @@ export default function CurriculoUpload({
                       <div>
                         <h5 className="font-medium text-sm text-gray-700 mb-2">Habilidades</h5>
                         <div className="flex flex-wrap gap-1">
-                          {arquivo.dadosExtraidos?.habilidades.map((habilidade, index) => (
+                          {(arquivo.dadosExtraidos?.habilidades || []).map((habilidade, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {habilidade}
                             </Badge>
@@ -386,7 +386,7 @@ export default function CurriculoUpload({
                       <div>
                         <h5 className="font-medium text-sm text-gray-700 mb-2">Experiência</h5>
                         <ul className="text-sm space-y-1">
-                          {arquivo.dadosExtraidos?.experiencia.map((exp, index) => (
+                          {(arquivo.dadosExtraidos?.experiencia || []).map((exp, index) => (
                             <li key={index} className="text-gray-600">• {exp}</li>
                           ))}
                         </ul>
@@ -395,7 +395,7 @@ export default function CurriculoUpload({
                       <div>
                         <h5 className="font-medium text-sm text-gray-700 mb-2">Educação</h5>
                         <ul className="text-sm space-y-1">
-                          {arquivo.dadosExtraidos?.educacao.map((edu, index) => (
+                          {(arquivo.dadosExtraidos?.educacao || []).map((edu, index) => (
                             <li key={index} className="text-gray-600">• {edu}</li>
                           ))}
                         </ul>

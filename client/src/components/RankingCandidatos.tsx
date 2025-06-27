@@ -442,14 +442,14 @@ export default function RankingCandidatos({ vagaId, criterios }: RankingCandidat
 
                       {/* Habilidades */}
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {candidato.habilidades.slice(0, 5).map((habilidade, index) => (
+                        {(candidato.habilidades || []).slice(0, 5).map((habilidade, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {habilidade}
                           </Badge>
                         ))}
-                        {candidato.habilidades.length > 5 && (
+                        {(candidato.habilidades || []).length > 5 && (
                           <Badge variant="outline" className="text-xs">
-                            +{candidato.habilidades.length - 5}
+                            +{(candidato.habilidades || []).length - 5}
                           </Badge>
                         )}
                       </div>
@@ -552,7 +552,7 @@ export default function RankingCandidatos({ vagaId, criterios }: RankingCandidat
                 <div className="space-y-4">
                   <h3 className="font-medium text-lg">Habilidades</h3>
                   <div className="flex flex-wrap gap-2">
-                    {candidatoSelecionado.habilidades.map((habilidade, index) => (
+                    {(candidatoSelecionado.habilidades || []).map((habilidade, index) => (
                       <Badge key={index} variant="secondary">
                         {habilidade}
                       </Badge>
@@ -598,7 +598,7 @@ export default function RankingCandidatos({ vagaId, criterios }: RankingCandidat
                     <div>
                       <h4 className="font-medium text-sm mb-1">Setores de Interesse</h4>
                       <div className="flex flex-wrap gap-1">
-                        {candidatoSelecionado.preferencias.setor.map((setor, index) => (
+                        {(candidatoSelecionado.preferencias.setor || []).map((setor, index) => (
                           <Badge key={index} variant="outline" className="text-xs">
                             {setor}
                           </Badge>
