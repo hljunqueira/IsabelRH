@@ -1,3 +1,7 @@
+# VARIÁVEIS DE AMBIENTE PARA RAILWAY
+# ===================================
+# Copie estas variáveis uma por uma no Railway → Settings → Environment
+
 NODE_ENV=production
 PORT=5001
 
@@ -7,4 +11,11 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 SUPABASE_URL=https://wqifsgaxevfdwmfkihhg.supabase.co
 SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxaWZzZ2F4ZXZmZHdtZmtpaGhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDkxMDI5MywiZXhwIjoyMDY2NDg2MjkzfQ.X7xux96O-P36SiEEBBWBebh30oqd5T1JiBC1LhC1SEA
 
-FRONTEND_URL=https://isabelrh.com.br 
+# Esta URL será atualizada após o deploy com o domínio real
+FRONTEND_URL=https://isabelrh.com.br
+
+# INSTRUÇÕES:
+# 1. Aguarde o build completar no Railway
+# 2. Adicione estas variáveis uma por uma em Settings → Environment  
+# 3. Configure o domínio personalizado em Settings → Networking
+# 4. Teste o sistema completo 
