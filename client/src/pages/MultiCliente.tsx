@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { 
   Users, 
   Shield, 
@@ -30,94 +31,95 @@ export default function MultiCliente() {
   const [, setLocation] = useLocation();
   const [showNewClientDialog, setShowNewClientDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('clientes');
+  
+  // Estados para dados reais do Supabase
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [planos, setPlanos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dados simulados
-  const clientes = [
-    {
-      id: '1',
-      nome: 'TechCorp Solutions',
-      dominio: 'techcorp.com',
-      plano: 'Premium',
-      usuarios: 15,
-      limiteUsuarios: 50,
-      limiteVagas: 100,
-      vagasUsadas: 23,
-      status: 'ativo',
-      faturamento: 'R$ 2.500,00',
-      criadoEm: '2024-01-15'
-    },
-    {
-      id: '2',
-      nome: 'StartupXYZ',
-      dominio: 'startupxyz.com',
-      plano: 'Básico',
-      usuarios: 5,
-      limiteUsuarios: 10,
-      limiteVagas: 20,
-      vagasUsadas: 8,
-      status: 'ativo',
-      faturamento: 'R$ 500,00',
-      criadoEm: '2024-02-01'
-    },
-    {
-      id: '3',
-      nome: 'MegaCorp Inc',
-      dominio: 'megacorp.com',
-      plano: 'Enterprise',
-      usuarios: 45,
-      limiteUsuarios: 200,
-      limiteVagas: 500,
-      vagasUsadas: 156,
-      status: 'suspenso',
-      faturamento: 'R$ 8.900,00',
-      criadoEm: '2023-11-20'
+  // Carregar dados quando o componente montar
+  useEffect(() => {
+    if (activeTab === 'clientes') {
+      carregarClientes();
+    } else if (activeTab === 'usuarios') {
+      carregarUsuarios();
+    } else if (activeTab === 'planos') {
+      carregarPlanos();
     }
-  ];
+  }, [activeTab]);
 
-  const usuarios = [
-    {
-      id: '1',
-      nome: 'João Silva',
-      email: 'joao@techcorp.com',
-      cliente: 'TechCorp Solutions',
-      permissao: 'admin',
-      ultimoAcesso: '2024-01-20T10:30:00',
-      status: 'ativo'
-    },
-    {
-      id: '2',
-      nome: 'Maria Santos',
-      email: 'maria@startupxyz.com',
-      cliente: 'StartupXYZ',
-      permissao: 'editor',
-      ultimoAcesso: '2024-01-19T15:45:00',
-      status: 'ativo'
+  const carregarClientes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/multicliente/clientes');
+      if (!response.ok) throw new Error('Erro ao carregar clientes');
+      const dados = await response.json();
+      setClientes(dados);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      setError('Erro ao carregar clientes. Tente novamente.');
+      setClientes([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const planos = [
-    {
-      nome: 'Básico',
-      preco: 'R$ 500,00',
-      usuarios: 10,
-      vagas: 20,
-      recursos: ['Gestão básica', 'Suporte email']
-    },
-    {
-      nome: 'Premium',
-      preco: 'R$ 2.500,00',
-      usuarios: 50,
-      vagas: 100,
-      recursos: ['Todos os recursos', 'Suporte prioritário', 'API access']
-    },
-    {
-      nome: 'Enterprise',
-      preco: 'R$ 8.900,00',
-      usuarios: 200,
-      vagas: 500,
-      recursos: ['Recursos ilimitados', 'Suporte 24/7', 'Customizações', 'SLA garantido']
+  const carregarUsuarios = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/multicliente/usuarios');
+      if (!response.ok) throw new Error('Erro ao carregar usuários');
+      const dados = await response.json();
+      setUsuarios(dados);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      setError('Erro ao carregar usuários. Tente novamente.');
+      setUsuarios([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const carregarPlanos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/multicliente/planos');
+      if (!response.ok) throw new Error('Erro ao carregar planos');
+      const dados = await response.json();
+      setPlanos(dados);
+    } catch (error) {
+      console.error('Erro ao carregar planos:', error);
+      setError('Erro ao carregar planos. Tente novamente.');
+      setPlanos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const criarCliente = async (dadosCliente: any) => {
+    try {
+      const response = await fetch('/api/multicliente/clientes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dadosCliente)
+      });
+      
+      if (!response.ok) throw new Error('Erro ao criar cliente');
+      
+      setShowNewClientDialog(false);
+      carregarClientes(); // Recarregar lista
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error);
+      setError('Erro ao criar cliente. Tente novamente.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -184,7 +186,7 @@ export default function MultiCliente() {
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o plano" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                             <SelectItem value="basico">Básico</SelectItem>
                             <SelectItem value="premium">Premium</SelectItem>
                             <SelectItem value="enterprise">Enterprise</SelectItem>
@@ -201,6 +203,34 @@ export default function MultiCliente() {
                 </Dialog>
               </CardHeader>
               <CardContent>
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={carregarClientes}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                
+                {!loading && !error && clientes.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhum cliente cadastrado ainda.</p>
+                    <p className="text-sm">Clique em "Novo Cliente" para começar.</p>
+                  </div>
+                )}
+                
                 <div className="space-y-4">
                   {clientes.map((cliente) => (
                     <div key={cliente.id} className="p-4 border rounded-lg">
@@ -270,6 +300,34 @@ export default function MultiCliente() {
                 </Button>
               </CardHeader>
               <CardContent>
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={carregarUsuarios}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                
+                {!loading && !error && usuarios.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhum usuário cadastrado ainda.</p>
+                    <p className="text-sm">Clique em "Novo Usuário" para começar.</p>
+                  </div>
+                )}
+                
                 <div className="space-y-4">
                   {usuarios.map((usuario) => (
                     <div key={usuario.id} className="p-4 border rounded-lg">
@@ -340,7 +398,7 @@ export default function MultiCliente() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Recursos inclusos:</p>
                       <ul className="text-sm text-gray-600 space-y-1">
-                        {plano.recursos.map((recurso) => (
+                        {plano.recursos?.map((recurso: string) => (
                           <li key={recurso} className="flex items-center gap-2">
                             <CheckCircle className="h-3 w-3 text-green-500" />
                             {recurso}
@@ -365,8 +423,16 @@ export default function MultiCliente() {
                   <CardTitle className="text-lg">Receita Mensal</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-600">R$ 11.900</div>
-                  <p className="text-sm text-gray-600">+12% vs mês anterior</p>
+                  <div className="text-3xl font-bold text-green-600">
+                    {clientes.length > 0 
+                      ? `R$ ${clientes.filter(c => c.status === 'ativo').reduce((total, cliente) => {
+                          const valor = parseFloat(cliente.valor_mensal || 0);
+                          return total + valor;
+                        }, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : 'R$ 0,00'
+                    }
+                  </div>
+                  <p className="text-sm text-gray-600">Clientes ativos apenas</p>
                 </CardContent>
               </Card>
 
@@ -375,18 +441,24 @@ export default function MultiCliente() {
                   <CardTitle className="text-lg">Clientes Ativos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-600">2</div>
-                  <p className="text-sm text-gray-600">1 suspenso</p>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {clientes.filter(c => c.status === 'ativo').length}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {clientes.filter(c => c.status !== 'ativo').length} inativos
+                  </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Taxa de Retenção</CardTitle>
+                  <CardTitle className="text-lg">Total de Usuários</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-600">85%</div>
-                  <p className="text-sm text-gray-600">Últimos 12 meses</p>
+                  <div className="text-3xl font-bold text-purple-600">
+                    {usuarios.length}
+                  </div>
+                  <p className="text-sm text-gray-600">Todos os clientes</p>
                 </CardContent>
               </Card>
 
@@ -395,7 +467,15 @@ export default function MultiCliente() {
                   <CardTitle className="text-lg">Ticket Médio</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-600">R$ 3.967</div>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {clientes.length > 0 
+                      ? `R$ ${(clientes.filter(c => c.status === 'ativo').reduce((total, cliente) => {
+                          const valor = parseFloat(cliente.valor_mensal || 0);
+                          return total + valor;
+                        }, 0) / Math.max(clientes.filter(c => c.status === 'ativo').length, 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                      : 'R$ 0,00'
+                    }
+                  </div>
                   <p className="text-sm text-gray-600">Por cliente/mês</p>
                 </CardContent>
               </Card>
@@ -406,20 +486,29 @@ export default function MultiCliente() {
                 <CardTitle>Faturamento por Cliente</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {clientes.filter(c => c.status === 'ativo').map((cliente) => (
-                    <div key={cliente.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div>
-                        <span className="font-medium">{cliente.nome}</span>
-                        <span className="text-sm text-gray-600 ml-2">({cliente.plano})</span>
+                {clientes.filter(c => c.status === 'ativo').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhum cliente ativo com faturamento.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {clientes.filter(c => c.status === 'ativo').map((cliente) => (
+                      <div key={cliente.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div>
+                          <span className="font-medium">{cliente.nome}</span>
+                          <span className="text-sm text-gray-600 ml-2">({cliente.plano || 'Plano não definido'})</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium text-green-600">
+                            R$ {parseFloat(cliente.valor_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-xs text-gray-500">mensal</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium text-green-600">{cliente.faturamento}</div>
-                        <div className="text-xs text-gray-500">mensal</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

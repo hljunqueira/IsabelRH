@@ -366,7 +366,7 @@ export default function PerfilCandidato() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="solteiro">Solteiro(a)</SelectItem>
                         <SelectItem value="casado">Casado(a)</SelectItem>
                         <SelectItem value="divorciado">Divorciado(a)</SelectItem>
@@ -385,7 +385,7 @@ export default function PerfilCandidato() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="masculino">Masculino</SelectItem>
                         <SelectItem value="feminino">Feminino</SelectItem>
                         <SelectItem value="nao-binario">Não-binário</SelectItem>
@@ -403,7 +403,7 @@ export default function PerfilCandidato() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="não">Não</SelectItem>
                         <SelectItem value="sim">Sim</SelectItem>
                       </SelectContent>
@@ -491,7 +491,7 @@ export default function PerfilCandidato() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o estado" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="SC">Santa Catarina</SelectItem>
                         <SelectItem value="AC">Acre</SelectItem>
                         <SelectItem value="AL">Alagoas</SelectItem>
@@ -557,7 +557,7 @@ export default function PerfilCandidato() {
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="ensino-fundamental">Ensino Fundamental</SelectItem>
                         <SelectItem value="ensino-medio">Ensino Médio</SelectItem>
                         <SelectItem value="tecnico">Técnico</SelectItem>

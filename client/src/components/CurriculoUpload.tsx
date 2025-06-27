@@ -111,55 +111,89 @@ export default function CurriculoUpload({
   const processarArquivo = async (arquivo: ArquivoCurriculo) => {
     setProcessando(true);
     
-    // Simular processamento
+    // Atualizar status para processando
     setArquivos(prev => prev.map(a => 
       a.id === arquivo.id 
         ? { ...a, status: 'processando', progresso: 0 }
         : a
     ));
 
-    // Simular progresso
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+    try {
+      // Fazer upload real via API
+      const formData = new FormData();
+      formData.append('arquivo', arquivo.arquivo);
+      
+      // Simular progresso visual durante upload
+      const progressInterval = setInterval(() => {
+        setArquivos(prev => prev.map(a => {
+          if (a.id === arquivo.id && a.progresso < 90) {
+            return { ...a, progresso: a.progresso + 10 };
+          }
+          return a;
+        }));
+      }, 200);
+
+      const response = await fetch('/api/parsing/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        throw new Error('Erro no upload do arquivo');
+      }
+
+      const resultado = await response.json();
+
+      if (resultado.sucesso && resultado.dados) {
+        // Parsing bem-sucedido
+        const dadosExtraidos = {
+          nome: resultado.dados.nome || 'Nome não detectado',
+          email: resultado.dados.email || 'Email não detectado',
+          telefone: resultado.dados.telefone || 'Telefone não detectado',
+          experiencia: resultado.dados.experiencia?.map((exp: any) => 
+            `${exp.cargo} - ${exp.empresa} (${exp.periodo})`
+          ) || ['Experiência não detectada'],
+          educacao: resultado.dados.educacao?.map((edu: any) => 
+            `${edu.curso} - ${edu.instituicao} (${edu.periodo})`
+          ) || ['Educação não detectada'],
+          habilidades: resultado.dados.habilidades?.map((hab: any) => hab.nome) || [],
+          resumo: resultado.dados.resumo || 'Resumo não detectado'
+        };
+
+        setArquivos(prev => prev.map(a => 
+          a.id === arquivo.id 
+            ? { 
+                ...a, 
+                status: 'concluido', 
+                progresso: 100, 
+                dadosExtraidos 
+              }
+            : a
+        ));
+
+        onProcessamentoCompleto(dadosExtraidos);
+      } else {
+        // Parsing não implementado ou falhou
+        throw new Error(resultado.erro || 'Sistema de parsing ainda não implementado');
+      }
+    } catch (error) {
+      const mensagemErro = error instanceof Error ? error.message : 'Erro desconhecido';
+      
       setArquivos(prev => prev.map(a => 
         a.id === arquivo.id 
-          ? { ...a, progresso: i }
+          ? { 
+              ...a, 
+              status: 'erro', 
+              progresso: 0,
+              erro: mensagemErro
+            }
           : a
       ));
+    } finally {
+      setProcessando(false);
     }
-
-    // Simular dados extraídos
-    const dadosExtraidos = {
-      nome: 'João Silva Santos',
-      email: 'joao.silva@email.com',
-      telefone: '(11) 99999-9999',
-      experiencia: [
-        'Desenvolvedor Full Stack - TechCorp (2020-2023)',
-        'Desenvolvedor Frontend - StartupXYZ (2018-2020)'
-      ],
-      educacao: [
-        'Bacharel em Ciência da Computação - USP (2014-2018)',
-        'MBA em Gestão de Projetos - FGV (2019-2021)'
-      ],
-      habilidades: [
-        'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'SQL'
-      ],
-      resumo: 'Desenvolvedor com 5 anos de experiência em desenvolvimento web...'
-    };
-
-    setArquivos(prev => prev.map(a => 
-      a.id === arquivo.id 
-        ? { 
-            ...a, 
-            status: 'concluido', 
-            progresso: 100, 
-            dadosExtraidos 
-          }
-        : a
-    ));
-
-    onProcessamentoCompleto(dadosExtraidos);
-    setProcessando(false);
   };
 
   const processarTodos = async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,9 +57,15 @@ interface Conversa {
 interface ChatComponentProps {
   userId: string;
   userType: 'candidato' | 'empresa' | 'admin';
+  onNovaConversa?: (destinatarioId: string, destinatarioTipo: string, vagaId?: string) => Promise<void>;
 }
 
-export default function ChatComponent({ userId, userType }: ChatComponentProps) {
+export interface ChatComponentRef {
+  criarConversa: (destinatarioId: string, destinatarioTipo: 'candidato' | 'empresa', vagaId?: string) => Promise<void>;
+  carregarConversas: () => Promise<void>;
+}
+
+const ChatComponent = forwardRef<ChatComponentRef, ChatComponentProps>(({ userId, userType, onNovaConversa }, ref) => {
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [conversaAtiva, setConversaAtiva] = useState<Conversa | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -85,40 +91,44 @@ export default function ChatComponent({ userId, userType }: ChatComponentProps) 
   const carregarConversas = async () => {
     setLoading(true);
     try {
-      // Simular dados de conversas
-      const conversasMock: Conversa[] = [
-        {
-          id: '1',
-          participantes: [
-            { id: userId, nome: 'Você', tipo: userType },
-            { id: '2', nome: 'João Silva', tipo: 'candidato', avatar: '/avatar1.jpg' }
-          ],
-          ultimaMensagem: {
-            texto: 'Obrigado pela oportunidade!',
-            timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 min atrás
-            remetente: '2'
+      const response = await fetch(`/api/comunicacao/conversas?userId=${userId}&userType=${userType}`);
+      
+      if (!response.ok) {
+        throw new Error('Erro ao carregar conversas');
+      }
+      
+      const data = await response.json();
+      
+      // Mapear dados do Supabase para o formato do componente
+      const conversasMapeadas = (data.conversas || []).map((conv: any) => ({
+        id: conv.id,
+        participantes: [
+          {
+            id: conv.candidatos?.id || conv.candidato_id,
+            nome: conv.candidatos?.nome || 'Candidato',
+            tipo: 'candidato' as const,
+            avatar: conv.candidatos?.foto_perfil
           },
-          naoLidas: 2,
-          ativa: true
+          {
+            id: conv.empresas?.id || conv.empresa_id,
+            nome: conv.empresas?.nome || 'Empresa',
+            tipo: 'empresa' as const,
+            avatar: conv.empresas?.logo_empresa
+          }
+        ].filter(p => p.id), // Remover participantes nulos
+        ultimaMensagem: {
+          texto: conv.ultima_mensagem || 'Nova conversa',
+          timestamp: new Date(conv.atualizada_em || conv.criada_em),
+          remetente: conv.ultimo_remetente || ''
         },
-        {
-          id: '2',
-          participantes: [
-            { id: userId, nome: 'Você', tipo: userType },
-            { id: '3', nome: 'TechCorp', tipo: 'empresa', avatar: '/avatar2.jpg' }
-          ],
-          ultimaMensagem: {
-            texto: 'Quando podemos agendar a entrevista?',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2h atrás
-            remetente: userId
-          },
-          naoLidas: 0,
-          ativa: false
-        }
-      ];
-      setConversas(conversasMock);
+        naoLidas: conv.nao_lidas || 0,
+        ativa: conv.status === 'ativa'
+      }));
+      
+      setConversas(conversasMapeadas);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
+      setConversas([]);
     } finally {
       setLoading(false);
     }
@@ -126,73 +136,169 @@ export default function ChatComponent({ userId, userType }: ChatComponentProps) 
 
   const carregarMensagens = async (conversaId: string) => {
     try {
-      // Simular mensagens
-      const mensagensMock: Mensagem[] = [
-        {
-          id: '1',
-          texto: 'Olá! Vi sua vaga e gostaria de me candidatar.',
-          remetente: { id: '2', nome: 'João Silva', tipo: 'candidato' },
-          destinatario: { id: userId, nome: 'Você', tipo: userType },
-          timestamp: new Date(Date.now() - 1000 * 60 * 60),
-          lida: true
+      const response = await fetch(`/api/comunicacao/conversas/${conversaId}/mensagens`);
+      
+      if (!response.ok) {
+        throw new Error('Erro ao carregar mensagens');
+      }
+      
+      const data = await response.json();
+      
+      // Mapear mensagens do Supabase para o formato do componente
+      const mensagensMapeadas = (data.mensagens || []).map((msg: any) => ({
+        id: msg.id,
+        texto: msg.conteudo,
+        remetente: {
+          id: msg.remetente_id,
+          nome: msg.remetente?.nome || 'Usuário',
+          tipo: msg.remetente_tipo as 'candidato' | 'empresa' | 'admin',
+          avatar: msg.remetente?.foto_perfil || msg.remetente?.logo_empresa
         },
-        {
-          id: '2',
-          texto: 'Oi João! Obrigado pelo interesse. Pode me enviar seu currículo?',
-          remetente: { id: userId, nome: 'Você', tipo: userType },
-          destinatario: { id: '2', nome: 'João Silva', tipo: 'candidato' },
-          timestamp: new Date(Date.now() - 1000 * 60 * 45),
-          lida: true
+        destinatario: {
+          id: msg.destinatario_id,
+          nome: msg.destinatario?.nome || 'Usuário',
+          tipo: msg.destinatario_tipo as 'candidato' | 'empresa' | 'admin',
+          avatar: msg.destinatario?.foto_perfil || msg.destinatario?.logo_empresa
         },
-        {
-          id: '3',
-          texto: 'Claro! Já enviei por email. Obrigado pela oportunidade!',
-          remetente: { id: '2', nome: 'João Silva', tipo: 'candidato' },
-          destinatario: { id: userId, nome: 'Você', tipo: userType },
-          timestamp: new Date(Date.now() - 1000 * 60 * 30),
-          lida: false
-        }
-      ];
-      setMensagens(mensagensMock);
+        timestamp: new Date(msg.data_envio),
+        lida: msg.lida || false
+      }));
+      
+      setMensagens(mensagensMapeadas);
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
+      setMensagens([]);
     }
   };
 
   const enviarMensagem = async () => {
     if (!novaMensagem.trim() || !conversaAtiva) return;
 
-    const novaMsg: Mensagem = {
-      id: Date.now().toString(),
-      texto: novaMensagem,
-      remetente: { id: userId, nome: 'Você', tipo: userType },
-      destinatario: conversaAtiva.participantes.find(p => p.id !== userId)!,
-      timestamp: new Date(),
-      lida: false
-    };
+    const destinatario = conversaAtiva.participantes.find(p => p.id !== userId);
+    if (!destinatario) return;
 
-    setMensagens(prev => [...prev, novaMsg]);
-    setNovaMensagem('');
+    try {
+      const response = await fetch(`/api/comunicacao/conversas/${conversaAtiva.id}/mensagens`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          texto: novaMensagem,
+          remetenteId: userId,
+          remetenteTipo: userType,
+          destinatarioId: destinatario.id,
+          destinatarioTipo: destinatario.tipo
+        })
+      });
 
-    // Atualizar última mensagem na conversa
-    setConversas(prev => prev.map(conv => 
-      conv.id === conversaAtiva.id 
-        ? { 
-            ...conv, 
-            ultimaMensagem: { 
-              texto: novaMensagem, 
-              timestamp: new Date(), 
-              remetente: userId 
-            },
-            naoLidas: 0
+      if (!response.ok) {
+        throw new Error('Erro ao enviar mensagem');
+      }
+
+      const novaMsgData = await response.json();
+
+      // Adicionar mensagem à lista local
+      const novaMsg: Mensagem = {
+        id: novaMsgData.id,
+        texto: novaMensagem,
+        remetente: { id: userId, nome: 'Você', tipo: userType },
+        destinatario,
+        timestamp: new Date(),
+        lida: false
+      };
+
+      setMensagens(prev => [...prev, novaMsg]);
+      setNovaMensagem('');
+
+      // Atualizar última mensagem na conversa
+      setConversas(prev => prev.map(conv => 
+        conv.id === conversaAtiva.id 
+          ? { 
+              ...conv, 
+              ultimaMensagem: { 
+                texto: novaMensagem, 
+                timestamp: new Date(), 
+                remetente: userId 
+              },
+              naoLidas: 0
+            }
+          : conv
+      ));
+
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      // Manter a mensagem no input em caso de erro
+    }
+  };
+
+  const criarConversa = async (destinatarioId: string, destinatarioTipo: 'candidato' | 'empresa', vagaId?: string) => {
+    try {
+      const response = await fetch('/api/comunicacao/conversas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          candidatoId: userType === 'candidato' ? userId : destinatarioId,
+          empresaId: userType === 'empresa' ? userId : destinatarioId,
+          vagaId: vagaId,
+          titulo: `Conversa - ${destinatarioTipo === 'candidato' ? 'Candidato' : 'Empresa'}`,
+          criadorId: userId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar conversa');
+      }
+
+      const novaConversa = await response.json();
+      
+      // Atualizar lista de conversas
+      await carregarConversas();
+      
+      // Selecionar a nova conversa
+      const conversaMapeada = {
+        id: novaConversa.id,
+        participantes: [
+          {
+            id: novaConversa.candidato_id,
+            nome: 'Candidato',
+            tipo: 'candidato' as const,
+            avatar: undefined
+          },
+          {
+            id: novaConversa.empresa_id,
+            nome: 'Empresa',
+            tipo: 'empresa' as const,
+            avatar: undefined
           }
-        : conv
-    ));
+        ],
+        ultimaMensagem: {
+          texto: 'Nova conversa',
+          timestamp: new Date(),
+          remetente: ''
+        },
+        naoLidas: 0,
+        ativa: true
+      };
+      
+      setConversaAtiva(conversaMapeada);
+      
+    } catch (error) {
+      console.error('Erro ao criar conversa:', error);
+    }
   };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Expor métodos para componentes pai
+  useImperativeHandle(ref, () => ({
+    criarConversa,
+    carregarConversas
+  }));
 
   const obterIniciais = (nome: string) => {
     return nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -229,7 +335,23 @@ export default function ChatComponent({ userId, userType }: ChatComponentProps) 
         
         <ScrollArea className="h-[calc(600px-80px)]">
           <div className="p-2">
-            {conversasFiltradas.map((conversa) => {
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : conversasFiltradas.length === 0 ? (
+              <div className="text-center p-8 text-gray-500">
+                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-sm">Nenhuma conversa encontrada</p>
+                <p className="text-xs mt-2">
+                  {userType === 'candidato' 
+                    ? 'Candidate-se a vagas para iniciar conversas' 
+                    : 'Publique vagas para receber mensagens'
+                  }
+                </p>
+              </div>
+            ) : (
+              conversasFiltradas.map((conversa) => {
               const outroParticipante = conversa.participantes.find(p => p.id !== userId)!;
               return (
                 <div
@@ -275,7 +397,8 @@ export default function ChatComponent({ userId, userType }: ChatComponentProps) 
                   )}
                 </div>
               );
-            })}
+            })
+            )}
           </div>
         </ScrollArea>
       </div>
@@ -404,4 +527,8 @@ export default function ChatComponent({ userId, userType }: ChatComponentProps) 
       </div>
     </div>
   );
-} 
+});
+
+ChatComponent.displayName = 'ChatComponent';
+
+export default ChatComponent; 

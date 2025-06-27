@@ -288,7 +288,7 @@ export default function BancoTalentos() {
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione sua área de interesse" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                           {areasInteresse.map((area) => (
                             <SelectItem key={area} value={area}>
                               {area}

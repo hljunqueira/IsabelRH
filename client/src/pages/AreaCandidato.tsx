@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { 
   User, 
@@ -41,10 +41,18 @@ import {
   X,
   Plus,
   Trash2,
-  Brain
+  Brain,
+  MessageSquare,
+  Heart,
+  Search,
+  Filter,
+  SlidersHorizontal,
+  DollarSign,
+  Target
 } from "lucide-react";
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
 import TesteDISC from "@/components/TesteDISC";
+import ChatComponent, { ChatComponentRef } from "@/components/ChatComponent";
 
 export default function AreaCandidato() {
   const { user, logout } = useAuth();
@@ -54,6 +62,15 @@ export default function AreaCandidato() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showRetakeTest, setShowRetakeTest] = useState(false);
   const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
+  const chatRef = useRef<ChatComponentRef>(null);
+  
+  // Estados para o sistema de vagas melhorado
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterArea, setFilterArea] = useState("");
+  const [filterModalidade, setFilterModalidade] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [favoriteVagas, setFavoriteVagas] = useState<string[]>([]);
+  const [vagasTab, setVagasTab] = useState("todas");
   
   useEffect(() => {
     if (!user || user.type !== "candidato") {
@@ -61,6 +78,14 @@ export default function AreaCandidato() {
     }
   }, [user, setLocation]);
   
+  // Carregar favoritos do localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(`favoriteVagas_${user?.id}`);
+    if (saved) {
+      setFavoriteVagas(JSON.parse(saved));
+    }
+  }, [user?.id]);
+
   const handleLogout = () => {
     logout();
     toast({ title: "Logout realizado com sucesso!" });
@@ -417,11 +442,12 @@ export default function AreaCandidato() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
               <TabsTrigger value="vagas">Vagas Disponíveis</TabsTrigger>
               <TabsTrigger value="disc">Teste DISC</TabsTrigger>
+              <TabsTrigger value="chat">💬 Chat</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -1067,171 +1093,388 @@ export default function AreaCandidato() {
                   </div>
                 </Card>
               )}
-              
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Vagas Disponíveis</h2>
-              </div>
 
-              {loadingVagas ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
-                  ))}
+              {/* Sistema de Vagas Melhorado */}
+              <div className="space-y-6">
+                {/* Header com estatísticas */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Vagas Disponíveis</CardTitle>
+                      <Briefcase className="h-4 w-4 text-isabel-blue" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{Array.isArray(vagas) ? vagas.length : 0}</div>
+                      <p className="text-xs text-muted-foreground">Total de oportunidades</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Favoritas</CardTitle>
+                      <Heart className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{favoriteVagas.length}</div>
+                      <p className="text-xs text-muted-foreground">Vagas favoritadas</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Candidaturas</CardTitle>
+                      <Send className="h-4 w-4 text-isabel-orange" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{Array.isArray(candidaturas) ? candidaturas.length : 0}</div>
+                      <p className="text-xs text-muted-foreground">Enviadas</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Recomendadas</CardTitle>
+                      <Target className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {candidato?.areasInteresse?.length && Array.isArray(vagas) ? 
+                          vagas.filter(vaga => 
+                            candidato.areasInteresse.some(area => 
+                              vaga.area?.toLowerCase().includes(area.toLowerCase()) ||
+                              vaga.titulo?.toLowerCase().includes(area.toLowerCase())
+                            )
+                          ).length : 0
+                        }
+                      </div>
+                      <p className="text-xs text-muted-foreground">Para seu perfil</p>
+                    </CardContent>
+                  </Card>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {Array.isArray(vagas) && vagas.length > 0 ? (
-                    vagas.map((vaga: Vaga) => (
-                      <Card key={vaga.id} className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold mb-2">{vaga.titulo}</h3>
-                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                              <div className="flex items-center space-x-1">
-                                <Building className="h-4 w-4" />
-                                <span>Empresa</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="h-4 w-4" />
-                                <span>{vaga.cidade}, {vaga.estado}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Briefcase className="h-4 w-4" />
-                                <span>{vaga.modalidade}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Calendar className="h-4 w-4" />
-                                <span>Publicado em {new Date(vaga.publicadoEm).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-                            <p className="text-gray-700 mb-4 line-clamp-2">{vaga.descricao}</p>
-                            <div className="flex items-center space-x-4 text-sm">
-                              <span className="font-medium">Salário: {vaga.salario || "A combinar"}</span>
-                              <span className="text-gray-500">•</span>
-                              <span className="text-gray-500">Nível: {vaga.nivel}</span>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => setSelectedVaga(vaga)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver Detalhes
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle className="flex items-center gap-2">
-                                    <Briefcase className="h-5 w-5" />
-                                    {vaga.titulo}
-                                  </DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Localização</Label>
-                                      <p className="flex items-center gap-1">
-                                        <MapPin className="h-4 w-4" />
-                                        {vaga.cidade}, {vaga.estado}
-                                      </p>
+
+                {/* Busca e filtros */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                      <div className="flex-1 max-w-md">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                          <Input
+                            placeholder="Buscar por cargo, empresa ou palavra-chave..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="flex items-center gap-2"
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                          Filtros
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {showFilters && (
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium">Área</Label>
+                          <Select value={filterArea} onValueChange={setFilterArea}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Todas as áreas" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border shadow-lg">
+                              <SelectItem value="">Todas as áreas</SelectItem>
+                              <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                              <SelectItem value="Marketing">Marketing</SelectItem>
+                              <SelectItem value="Vendas">Vendas</SelectItem>
+                              <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium">Modalidade</Label>
+                          <Select value={filterModalidade} onValueChange={setFilterModalidade}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Todas as modalidades" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border shadow-lg">
+                              <SelectItem value="">Todas</SelectItem>
+                              <SelectItem value="Presencial">Presencial</SelectItem>
+                              <SelectItem value="Remoto">Remoto</SelectItem>
+                              <SelectItem value="Híbrido">Híbrido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Tabs de categorias */}
+                <Tabs value={vagasTab} onValueChange={setVagasTab}>
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="todas">
+                      Todas ({Array.isArray(vagas) ? vagas.length : 0})
+                    </TabsTrigger>
+                    <TabsTrigger value="recomendadas">
+                      Recomendadas
+                    </TabsTrigger>
+                    <TabsTrigger value="favoritas">
+                      Favoritas ({favoriteVagas.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="candidatadas">
+                      Candidatadas ({Array.isArray(candidaturas) ? candidaturas.length : 0})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value={vagasTab} className="mt-6">
+                    {loadingVagas ? (
+                      <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="animate-pulse h-32 bg-gray-200 rounded"></div>
+                        ))}
+                      </div>
+                    ) : Array.isArray(vagas) && vagas.length > 0 ? (
+                      <div className="space-y-4">
+                        {vagas
+                          .filter(vaga => {
+                            // Filtro por busca
+                            if (searchTerm && !vaga.titulo.toLowerCase().includes(searchTerm.toLowerCase()) && 
+                                !vaga.descricao.toLowerCase().includes(searchTerm.toLowerCase())) {
+                              return false;
+                            }
+                            
+                            // Filtro por área
+                            if (filterArea && vaga.area !== filterArea) {
+                              return false;
+                            }
+                            
+                            // Filtro por modalidade
+                            if (filterModalidade && vaga.modalidade !== filterModalidade) {
+                              return false;
+                            }
+                            
+                            // Filtro por tab
+                            if (vagasTab === "favoritas" && !favoriteVagas.includes(vaga.id)) {
+                              return false;
+                            }
+                            
+                            if (vagasTab === "candidatadas" && !isAlreadyApplied(vaga.id)) {
+                              return false;
+                            }
+                            
+                            if (vagasTab === "recomendadas") {
+                              if (!candidato?.areasInteresse?.length) return false;
+                              return candidato.areasInteresse.some(area => 
+                                vaga.area?.toLowerCase().includes(area.toLowerCase()) ||
+                                vaga.titulo?.toLowerCase().includes(area.toLowerCase())
+                              );
+                            }
+                            
+                            return true;
+                          })
+                          .map((vaga: Vaga) => (
+                            <Card key={vaga.id} className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-isabel-orange">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex-1">
+                                      <h3 className="text-xl font-semibold mb-1">{vaga.titulo}</h3>
+                                      <p className="text-gray-600 font-medium">{vaga.empresa || "Empresa"}</p>
                                     </div>
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Modalidade</Label>
-                                      <p>{vaga.modalidade}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Nível</Label>
-                                      <p>{vaga.nivel}</p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Salário</Label>
-                                      <p>{vaga.salario || "A combinar"}</p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <Label className="text-sm font-medium text-gray-600">Descrição da Vaga</Label>
-                                    <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.descricao}</p>
-                                  </div>
-                                  
-                                  {vaga.requisitos && (
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Requisitos</Label>
-                                      <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.requisitos}</p>
-                                    </div>
-                                  )}
-                                  
-                                  {vaga.beneficios && (
-                                    <div>
-                                      <Label className="text-sm font-medium text-gray-600">Benefícios</Label>
-                                      <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.beneficios}</p>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center justify-between pt-4 border-t">
-                                    <p className="text-sm text-gray-500">
-                                      Publicado em {new Date(vaga.publicadoEm).toLocaleDateString('pt-BR')}
-                                    </p>
-                                    <Button 
-                                      onClick={() => handleJobApply(vaga.id)}
-                                      disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
-                                      className={isAlreadyApplied(vaga.id) ? "" : "bg-isabel-blue hover:bg-isabel-blue/90"}
-                                      variant={isAlreadyApplied(vaga.id) ? "outline" : "default"}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const newFavorites = favoriteVagas.includes(vaga.id)
+                                          ? favoriteVagas.filter(id => id !== vaga.id)
+                                          : [...favoriteVagas, vaga.id];
+                                        setFavoriteVagas(newFavorites);
+                                        localStorage.setItem(`favoriteVagas_${user?.id}`, JSON.stringify(newFavorites));
+                                        toast({
+                                          title: favoriteVagas.includes(vaga.id) ? "Removido dos favoritos" : "Adicionado aos favoritos",
+                                        });
+                                      }}
+                                      className={favoriteVagas.includes(vaga.id) ? "text-red-500" : "text-gray-400"}
                                     >
-                                      {isAlreadyApplied(vaga.id) ? (
-                                        <>
-                                          <Eye className="h-4 w-4 mr-2" />
-                                          Já Candidatado
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Send className="h-4 w-4 mr-2" />
-                                          {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
-                                        </>
-                                      )}
+                                      <Heart className={`h-5 w-5 ${favoriteVagas.includes(vaga.id) ? "fill-current" : ""}`} />
                                     </Button>
                                   </div>
+                                  
+                                  <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                                    <div className="flex items-center space-x-1">
+                                      <MapPin className="h-4 w-4" />
+                                      <span>{vaga.cidade}, {vaga.estado}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <Briefcase className="h-4 w-4" />
+                                      <span>{vaga.modalidade}</span>
+                                    </div>
+                                    {vaga.salario && (
+                                      <div className="flex items-center space-x-1">
+                                        <DollarSign className="h-4 w-4" />
+                                        <span>{vaga.salario}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center space-x-1">
+                                      <Calendar className="h-4 w-4" />
+                                      <span>Publicado em {new Date(vaga.createdAt || vaga.publicadoEm).toLocaleDateString()}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <p className="text-gray-700 mb-4 line-clamp-2">{vaga.descricao}</p>
+                                  
+                                  {/* Tags de requisitos */}
+                                  {vaga.requisitos && Array.isArray(vaga.requisitos) && vaga.requisitos.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-4">
+                                      {vaga.requisitos.slice(0, 4).map((req, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                          {req}
+                                        </Badge>
+                                      ))}
+                                      {vaga.requisitos.length > 4 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          +{vaga.requisitos.length - 4}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button 
-                              onClick={() => handleJobApply(vaga.id)}
-                              disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
-                              className={isAlreadyApplied(vaga.id) ? "" : "bg-isabel-blue hover:bg-isabel-blue/90"}
-                              variant={isAlreadyApplied(vaga.id) ? "outline" : "default"}
-                              size="sm"
-                            >
-                              {isAlreadyApplied(vaga.id) ? (
-                                <>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Já Candidatado
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
+                                
+                                <div className="flex space-x-2 ml-4">
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => setSelectedVaga(vaga)}
+                                      >
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Ver Detalhes
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-2xl">
+                                      <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2">
+                                          <Briefcase className="h-5 w-5" />
+                                          {vaga.titulo}
+                                        </DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Localização</Label>
+                                            <p className="flex items-center gap-1">
+                                              <MapPin className="h-4 w-4" />
+                                              {vaga.cidade}, {vaga.estado}
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Modalidade</Label>
+                                            <p>{vaga.modalidade}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Salário</Label>
+                                            <p>{vaga.salario || "A combinar"}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Empresa</Label>
+                                            <p>{vaga.empresa || "Empresa"}</p>
+                                          </div>
+                                        </div>
+                                        
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Descrição da Vaga</Label>
+                                          <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.descricao}</p>
+                                        </div>
+                                        
+                                        {vaga.requisitos && Array.isArray(vaga.requisitos) && (
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Requisitos</Label>
+                                            <div className="mt-1 flex flex-wrap gap-2">
+                                              {vaga.requisitos.map((req, index) => (
+                                                <Badge key={index} variant="secondary">
+                                                  {req}
+                                                </Badge>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        <div className="flex items-center justify-between pt-4 border-t">
+                                          <p className="text-sm text-gray-500">
+                                            Publicado em {new Date(vaga.createdAt || vaga.publicadoEm).toLocaleDateString('pt-BR')}
+                                          </p>
+                                          <Button 
+                                            onClick={() => handleJobApply(vaga.id)}
+                                            disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
+                                            className={isAlreadyApplied(vaga.id) ? "" : "bg-isabel-blue hover:bg-isabel-blue/90"}
+                                            variant={isAlreadyApplied(vaga.id) ? "outline" : "default"}
+                                          >
+                                            {isAlreadyApplied(vaga.id) ? (
+                                              <>
+                                                <Eye className="h-4 w-4 mr-2" />
+                                                Já Candidatado
+                                              </>
+                                            ) : (
+                                              <>
+                                                <Send className="h-4 w-4 mr-2" />
+                                                {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
+                                              </>
+                                            )}
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                  
+                                  <Button 
+                                    onClick={() => handleJobApply(vaga.id)}
+                                    disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
+                                    className={isAlreadyApplied(vaga.id) ? 
+                                      "bg-green-600 hover:bg-green-700" : 
+                                      "bg-isabel-blue hover:bg-isabel-blue/90"
+                                    }
+                                    size="sm"
+                                  >
+                                    {isAlreadyApplied(vaga.id) ? (
+                                      <>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Candidatado
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                      </div>
+                    ) : (
+                      <Card className="p-8 text-center">
+                        <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma vaga encontrada</h3>
+                        <p className="text-gray-600">
+                          Não há vagas disponíveis no momento ou que correspondam aos filtros aplicados.
+                        </p>
                       </Card>
-                    ))
-                  ) : (
-                    <Card className="p-8 text-center">
-                      <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Nenhuma vaga disponível</h3>
-                      <p className="text-gray-600">
-                        Não há vagas disponíveis no momento. Volte em breve para conferir novas oportunidades.
-                      </p>
-                    </Card>
-                  )}
-                </div>
-              )}
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
             </TabsContent>
 
             {/* DISC Test Tab */}
@@ -1291,6 +1534,36 @@ export default function AreaCandidato() {
                   />
                 )}
               </div>
+            </TabsContent>
+
+            {/* Chat Tab */}
+            <TabsContent value="chat" className="space-y-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Central de Mensagens
+                </h2>
+                <p className="text-gray-600">
+                  Converse diretamente com empresas sobre suas candidaturas e oportunidades
+                </p>
+              </div>
+
+              {user?.id ? (
+                <div className="bg-white rounded-lg shadow">
+                  <ChatComponent 
+                    ref={chatRef}
+                    userId={user.id} 
+                    userType="candidato"
+                  />
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Chat indisponível</h3>
+                  <p className="text-gray-600">
+                    Faça login para acessar suas conversas
+                  </p>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>

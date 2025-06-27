@@ -240,6 +240,44 @@ export default function Admin() {
     },
   });
 
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/servicos/${id}`, {
+        method: 'DELETE',
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/servicos'] });
+      toast({ title: "Serviço removido com sucesso!" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Erro ao remover serviço", 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const deleteProposalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/propostas/${id}`, {
+        method: 'DELETE',
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/propostas'] });
+      toast({ title: "Proposta removida com sucesso!" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Erro ao remover proposta", 
+        variant: "destructive" 
+      });
+    }
+  });
+
   const handleCreateService = () => {
     if (!newService.tipoServico || !newService.descricao) {
       toast({ 
@@ -337,6 +375,44 @@ export default function Admin() {
       },
       variant: "destructive",
       icon: type === 'candidato' ? 'delete' : 'delete',
+      loading: false
+    });
+  };
+
+  const showServiceDeleteConfirmation = (id: string, name: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Remover Serviço",
+      description: `Tem certeza que deseja remover o serviço "${name}"? Esta ação não pode ser desfeita.`,
+      action: () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }));
+        deleteServiceMutation.mutate(id, {
+          onSettled: () => {
+            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
+          }
+        });
+      },
+      variant: "destructive",
+      icon: 'delete',
+      loading: false
+    });
+  };
+
+  const showProposalDeleteConfirmation = (id: string, empresa: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Remover Proposta",
+      description: `Tem certeza que deseja remover a proposta para "${empresa}"? Esta ação não pode ser desfeita.`,
+      action: () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }));
+        deleteProposalMutation.mutate(id, {
+          onSettled: () => {
+            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
+          }
+        });
+      },
+      variant: "destructive",
+      icon: 'delete',
       loading: false
     });
   };
@@ -501,7 +577,7 @@ export default function Admin() {
                       <SelectTrigger className="w-48">
                         <SelectValue placeholder="Filtrar por cidade" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="all">Todas as cidades</SelectItem>
                         {Array.from(new Set(candidatos.map(c => c.cidade).filter(Boolean))).map((cidade) => (
                           <SelectItem key={cidade} value={cidade || ""}>
@@ -590,7 +666,7 @@ export default function Admin() {
                       <SelectTrigger className="w-48">
                         <SelectValue placeholder="Filtrar por setor" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                         <SelectItem value="all">Todos os setores</SelectItem>
                         {Array.from(new Set(empresas.map(e => e.setor).filter(Boolean))).map((setor) => (
                           <SelectItem key={setor} value={setor || ""}>
@@ -683,7 +759,7 @@ export default function Admin() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione uma empresa" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                               {empresas.map((empresa) => (
                                 <SelectItem key={empresa.id} value={empresa.id}>
                                   {empresa.nome}
@@ -699,7 +775,7 @@ export default function Admin() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o tipo" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                               <SelectItem value="recrutamento">Recrutamento</SelectItem>
                               <SelectItem value="selecao">Seleção</SelectItem>
                               <SelectItem value="consultoria_rh">Consultoria RH</SelectItem>
@@ -758,7 +834,7 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {servicos.map((servico) => (
-                      <div key={servico.id} className="p-4 border rounded-lg">
+                      <div key={servico.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-medium capitalize">{String(servico.tipoServico || '').replace('_', ' ')}</h3>
@@ -767,15 +843,54 @@ export default function Admin() {
                               <p className="text-sm font-medium text-green-600 mt-2">{servico.valor}</p>
                             )}
                           </div>
-                          <Badge variant={
-                            servico.status === 'concluida' ? 'default' :
-                            servico.status === 'em_andamento' ? 'secondary' : 'outline'
-                          }>
-                            {String(servico.status || '').replace('_', ' ')}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={
+                              servico.status === 'concluida' ? 'default' :
+                              servico.status === 'em_andamento' ? 'secondary' : 'outline'
+                            }>
+                              {String(servico.status || '').replace('_', ' ')}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Funcionalidade de editar - pode ser implementada depois
+                                toast({ 
+                                  title: "Funcionalidade de edição", 
+                                  description: "Em desenvolvimento. Use 'Novo Serviço' por enquanto.",
+                                  variant: "default"
+                                });
+                              }}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => showServiceDeleteConfirmation(
+                                servico.id, 
+                                String(servico.tipoServico || '').replace('_', ' ')
+                              )}
+                              disabled={deleteServiceMutation.isPending}
+                            >
+                              {deleteServiceMutation.isPending ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
+                    {servicos.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Nenhum serviço cadastrado ainda.</p>
+                        <p className="text-sm">Clique em "Novo Serviço" para começar.</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -804,7 +919,7 @@ export default function Admin() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione uma empresa" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                               {empresas.map((empresa) => (
                                 <SelectItem key={empresa.id} value={empresa.id}>
                                   {empresa.nome}
@@ -820,7 +935,7 @@ export default function Admin() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o tipo" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
                               <SelectItem value="recrutamento">Recrutamento</SelectItem>
                               <SelectItem value="selecao">Seleção</SelectItem>
                               <SelectItem value="consultoria_rh">Consultoria RH</SelectItem>
@@ -882,7 +997,7 @@ export default function Admin() {
                     {propostas.map((proposta) => {
                       const empresa = empresas.find(e => e.id === proposta.empresaId);
                       return (
-                        <div key={proposta.id} className="p-4 border rounded-lg">
+                        <div key={proposta.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h3 className="font-medium">{empresa?.nome}</h3>
@@ -900,6 +1015,7 @@ export default function Admin() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'sim' })}
+                                    title="Aprovar proposta"
                                   >
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                   </Button>
@@ -907,11 +1023,42 @@ export default function Admin() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'nao' })}
+                                    title="Rejeitar proposta"
                                   >
                                     <XCircle className="h-4 w-4 text-red-600" />
                                   </Button>
                                 </>
                               )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Funcionalidade de editar - pode ser implementada depois
+                                  toast({ 
+                                    title: "Funcionalidade de edição", 
+                                    description: "Em desenvolvimento. Use 'Nova Proposta' por enquanto.",
+                                    variant: "default"
+                                  });
+                                }}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => showProposalDeleteConfirmation(
+                                  proposta.id, 
+                                  empresa?.nome || 'Empresa'
+                                )}
+                                disabled={deleteProposalMutation.isPending}
+                              >
+                                {deleteProposalMutation.isPending ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
                               <Badge variant={
                                 proposta.aprovada === 'sim' ? 'default' :
                                 proposta.aprovada === 'nao' ? 'destructive' : 'outline'
@@ -924,6 +1071,13 @@ export default function Admin() {
                         </div>
                       );
                     })}
+                    {propostas.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Nenhuma proposta cadastrada ainda.</p>
+                        <p className="text-sm">Clique em "Nova Proposta" para começar.</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

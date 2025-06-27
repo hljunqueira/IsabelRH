@@ -115,101 +115,61 @@ export function useParsing({ onProcessamentoCompleto, onErro }: UseParsingProps 
         ));
       }
 
-      // Simular dados extraídos
-      const dadosExtraidos: DadosExtraidos = {
-        id: arquivoId,
-        nome: 'João Silva Santos',
-        email: 'joao.silva@email.com',
-        telefone: '(11) 99999-9999',
-        endereco: {
-          rua: 'Rua das Flores, 123',
-          cidade: 'São Paulo',
-          estado: 'SP',
-          cep: '01234-567'
-        },
-        experiencia: [
-          {
-            empresa: 'TechCorp',
-            cargo: 'Desenvolvedor Full Stack Senior',
-            periodo: '2020 - 2023',
-            descricao: 'Desenvolvimento de aplicações web usando React, Node.js e Python',
-            tecnologias: ['React', 'Node.js', 'Python', 'PostgreSQL']
-          },
-          {
-            empresa: 'StartupXYZ',
-            cargo: 'Desenvolvedor Frontend',
-            periodo: '2018 - 2020',
-            descricao: 'Desenvolvimento de interfaces de usuário responsivas',
-            tecnologias: ['Vue.js', 'JavaScript', 'CSS', 'HTML']
-          }
-        ],
-        educacao: [
-          {
-            instituicao: 'Universidade de São Paulo',
-            curso: 'Bacharel em Ciência da Computação',
-            nivel: 'Graduação',
-            periodo: '2014 - 2018',
-            concluido: true
-          },
-          {
-            instituicao: 'FGV',
-            curso: 'MBA em Gestão de Projetos',
-            nivel: 'Pós-graduação',
-            periodo: '2019 - 2021',
-            concluido: true
-          }
-        ],
-        habilidades: [
-          { nome: 'JavaScript', nivel: 'avancado', categoria: 'Linguagens' },
-          { nome: 'TypeScript', nivel: 'avancado', categoria: 'Linguagens' },
-          { nome: 'React', nivel: 'expert', categoria: 'Frameworks' },
-          { nome: 'Node.js', nivel: 'avancado', categoria: 'Backend' },
-          { nome: 'Python', nivel: 'intermediario', categoria: 'Linguagens' },
-          { nome: 'SQL', nivel: 'avancado', categoria: 'Banco de Dados' }
-        ],
-        idiomas: [
-          { idioma: 'Português', nivel: 'nativo' },
-          { idioma: 'Inglês', nivel: 'avancado' },
-          { idioma: 'Espanhol', nivel: 'intermediario' }
-        ],
-        certificacoes: [
-          {
-            nome: 'AWS Certified Developer',
-            emissor: 'Amazon Web Services',
-            data: '2022-06-15',
-            validade: '2025-06-15'
-          }
-        ],
-        resumo: 'Desenvolvedor Full Stack com 5 anos de experiência em desenvolvimento web, especializado em React e Node.js. Apaixonado por criar soluções inovadoras e escaláveis.',
-        linkedin: 'linkedin.com/in/joaosilva',
-        github: 'github.com/joaosilva',
-        portfolio: 'joaosilva.dev',
-        expectativaSalarial: 8000,
-        disponibilidade: 'Imediata',
-        preferencias: {
-          modalidade: 'hibrido',
-          tipoContrato: 'clt',
-          setores: ['Tecnologia', 'E-commerce', 'Fintech']
-        }
-      };
+      // Fazer upload e parsing real via API
+      const formData = new FormData();
+      formData.append('arquivo', arquivo);
+      
+      const response = await fetch('/api/parsing/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erro no upload do arquivo');
+      }
+      
+      const resultadoAPI = await response.json();
+      
+      // Se a API retornou dados válidos, usar eles
+      // Senão, o sistema está configurado para não retornar dados mock
+      const dadosExtraidos: DadosExtraidos | undefined = resultadoAPI.dados || undefined;
 
-      // Atualizar arquivo como concluído
-      setArquivos(prev => prev.map(a => 
-        a.id === arquivoId 
-          ? { ...a, status: 'concluido', progresso: 100, dadosExtraidos }
-          : a
-      ));
+      // Atualizar arquivo como concluído ou com erro se não há dados
+      if (dadosExtraidos) {
+        setArquivos(prev => prev.map(a => 
+          a.id === arquivoId 
+            ? { ...a, status: 'concluido', progresso: 100, dadosExtraidos }
+            : a
+        ));
 
-      const resultado: ResultadoParsing = {
-        sucesso: true,
-        dados: dadosExtraidos,
-        confianca: 0.92,
-        camposDetectados: ['nome', 'email', 'telefone', 'experiencia', 'educacao', 'habilidades'],
-        camposFaltantes: ['certificacoes', 'idiomas']
-      };
+        const resultado: ResultadoParsing = {
+          sucesso: true,
+          dados: dadosExtraidos,
+          confianca: resultadoAPI.confianca || 0,
+          camposDetectados: resultadoAPI.camposDetectados || [],
+          camposFaltantes: resultadoAPI.camposFaltantes || []
+        };
 
-      onProcessamentoCompleto?.(dadosExtraidos);
-      return resultado;
+        onProcessamentoCompleto?.(dadosExtraidos);
+        return resultado;
+      } else {
+        // Não há dados - parsing não implementado ainda
+        setArquivos(prev => prev.map(a => 
+          a.id === arquivoId 
+            ? { ...a, status: 'erro', erro: 'Sistema de parsing ainda não implementado' }
+            : a
+        ));
+
+        const resultado: ResultadoParsing = {
+          sucesso: false,
+          erro: 'Sistema de parsing ainda não implementado',
+          confianca: 0,
+          camposDetectados: [],
+          camposFaltantes: ['Implementar parsing real de documentos']
+        };
+
+                 return resultado;
+       }
 
     } catch (err) {
       const erro = err instanceof Error ? err.message : 'Erro desconhecido';

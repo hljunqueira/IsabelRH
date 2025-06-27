@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -50,6 +50,7 @@ import {
 import type { Empresa, Vaga, Candidatura, Candidato } from "@shared/schema";
 import Layout from "@/components/Layout";
 import TalentosCompativeis from "@/components/TalentosCompativeis";
+import ChatComponent, { ChatComponentRef } from "@/components/ChatComponent";
 
 export default function AreaEmpresa() {
   console.log('🏢 AreaEmpresa: Componente iniciado');
@@ -65,6 +66,7 @@ export default function AreaEmpresa() {
   const [showCandidateModal, setShowCandidateModal] = useState(false);
   const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const chatRef = useRef<ChatComponentRef>(null);
   
   const handleLogout = () => {
     logout();
@@ -379,7 +381,7 @@ export default function AreaEmpresa() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil">Perfil da Empresa</TabsTrigger>
               <TabsTrigger value="vagas">Minhas Vagas</TabsTrigger>
@@ -388,6 +390,7 @@ export default function AreaEmpresa() {
               <TabsTrigger value="triagem">Triagem</TabsTrigger>
               <TabsTrigger value="parsing">Parsing</TabsTrigger>
               <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+              <TabsTrigger value="chat">💬 Chat</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -1390,6 +1393,36 @@ export default function AreaEmpresa() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Chat Tab */}
+            <TabsContent value="chat" className="space-y-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Central de Mensagens
+                </h2>
+                <p className="text-gray-600">
+                  Converse diretamente com candidatos sobre suas candidaturas e processos seletivos
+                </p>
+              </div>
+
+              {user?.id ? (
+                <div className="bg-white rounded-lg shadow">
+                  <ChatComponent 
+                    ref={chatRef}
+                    userId={user.id} 
+                    userType="empresa"
+                  />
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Chat indisponível</h3>
+                  <p className="text-gray-600">
+                    Faça login para acessar suas conversas
+                  </p>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
 

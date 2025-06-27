@@ -17,9 +17,22 @@ import {
   MapPin,
   Clock,
   DollarSign,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  Copy,
+  Mail,
+  MessageCircle
 } from "lucide-react";
+import { SiLinkedin, SiFacebook, SiX, SiWhatsapp } from "react-icons/si";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 
 import GNjPnSHd4wX4gM2H2En8qf from "@assets/GNjPnSHd4wX4gM2H2En8qf.png";
 
@@ -39,6 +52,7 @@ interface Vaga {
 export default function Home() {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchVagasDestaque();
@@ -56,6 +70,75 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para compartilhar vaga
+  const shareVaga = (vaga: Vaga, platform: string) => {
+    const baseUrl = window.location.origin;
+    const vagaUrl = `${baseUrl}/candidato?highlight=${vaga.id}`;
+    const shareText = `🚀 Oportunidade de emprego: ${vaga.titulo} na ${vaga.empresa}! 💼\n\n📍 ${vaga.cidade}, ${vaga.estado}\n💰 ${vaga.salario || 'Salário a combinar'}\n\n${vaga.descricao.substring(0, 100)}...\n\nCandidature-se em:`;
+    
+    const shareData = {
+      title: `${vaga.titulo} - ${vaga.empresa}`,
+      text: shareText,
+      url: vagaUrl
+    };
+
+    switch (platform) {
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${vagaUrl}`)}`, '_blank');
+        break;
+      
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(vagaUrl)}`, '_blank');
+        break;
+      
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(vagaUrl)}`, '_blank');
+        break;
+      
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(vagaUrl)}`, '_blank');
+        break;
+      
+      case 'email':
+        window.open(`mailto:?subject=${encodeURIComponent(shareData.title)}&body=${encodeURIComponent(`${shareText}\n\n${vagaUrl}`)}`, '_blank');
+        break;
+      
+      case 'copy':
+        navigator.clipboard.writeText(vagaUrl).then(() => {
+          toast({
+            title: "Link copiado!",
+            description: "O link da vaga foi copiado para a área de transferência.",
+          });
+        }).catch(() => {
+          toast({
+            title: "Erro ao copiar",
+            description: "Não foi possível copiar o link.",
+            variant: "destructive",
+          });
+        });
+        break;
+      
+      case 'native':
+        if (navigator.share) {
+          navigator.share(shareData).catch(() => {
+            // Fallback para copiar link
+            shareVaga(vaga, 'copy');
+          });
+        } else {
+          shareVaga(vaga, 'copy');
+        }
+        break;
+      
+      default:
+        break;
+    }
+    
+    toast({
+      title: "Vaga compartilhada!",
+      description: `A vaga foi compartilhada via ${platform}.`,
+    });
   };
 
   return (
@@ -282,19 +365,99 @@ export default function Home() {
                       )}
                       
                       <div className="flex gap-2">
-                        <Link href="/candidato">
-                          <Button className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90">
+                        <Link href={`/candidato?highlight=${vaga.id}`} className="flex-1">
+                          <Button className="w-full bg-isabel-orange hover:bg-isabel-orange/90">
                             Candidatar-se
                           </Button>
                         </Link>
+                        
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
+                          className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white px-3"
+                          onClick={() => {
+                            // Por enquanto, mostrar detalhes da vaga em um toast ou modal
+                            alert(`Detalhes da vaga:\n\n${vaga.titulo}\n${vaga.empresa}\n\n${vaga.descricao}\n\nRequisitos:\n${vaga.requisitos.join(', ')}`);
+                          }}
                         >
                           Ver mais
                           <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
+                        
+                        {/* Botão de Compartilhamento */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="border-gray-300 text-gray-600 hover:bg-gray-50 px-3"
+                              title="Compartilhar vaga"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg">
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'whatsapp')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-green-50"
+                            >
+                              <SiWhatsapp className="h-4 w-4 text-green-600" />
+                              <span>WhatsApp</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'linkedin')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-blue-50"
+                            >
+                              <SiLinkedin className="h-4 w-4 text-blue-600" />
+                              <span>LinkedIn</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'facebook')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-blue-50"
+                            >
+                              <SiFacebook className="h-4 w-4 text-blue-700" />
+                              <span>Facebook</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'twitter')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-gray-50"
+                            >
+                              <SiX className="h-4 w-4 text-gray-800" />
+                              <span>X (Twitter)</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'email')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-gray-50"
+                            >
+                              <Mail className="h-4 w-4 text-gray-600" />
+                              <span>E-mail</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'copy')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-gray-50"
+                            >
+                              <Copy className="h-4 w-4 text-gray-600" />
+                              <span>Copiar link</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem 
+                              onClick={() => shareVaga(vaga, 'native')}
+                              className="flex items-center gap-2 cursor-pointer hover:bg-isabel-orange/10"
+                            >
+                              <MessageCircle className="h-4 w-4 text-isabel-orange" />
+                              <span>Compartilhar...</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardContent>
                   </Card>

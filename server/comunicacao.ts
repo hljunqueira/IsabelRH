@@ -64,79 +64,8 @@ export class SistemaComunicacao {
   }
 
   private carregarTemplates() {
-    const templatesPadrao: TemplateMensagem[] = [
-      {
-        id: 'template-aprovacao',
-        nome: 'Candidatura Aprovada',
-        categoria: 'aprovacao',
-        assunto: 'Parabéns! Sua candidatura foi aprovada',
-        conteudo: `Olá {{nome_candidato}}!
-
-Parabéns! Sua candidatura para a vaga de {{titulo_vaga}} foi aprovada na triagem inicial.
-
-Score obtido: {{score}}%
-Classificação: {{classificacao}}
-
-Próximos passos: {{proximos_passos}}
-
-Aguarde nosso contato para agendamento da {{proxima_etapa}}.
-
-Atenciosamente,
-Equipe de RH`,
-        variaveis: ['nome_candidato', 'titulo_vaga', 'score', 'classificacao', 'proximos_passos', 'proxima_etapa'],
-        ativo: true,
-        criadoEm: new Date()
-      },
-      {
-        id: 'template-reprovacao',
-        nome: 'Candidatura Não Aprovada',
-        categoria: 'reprovacao',
-        assunto: 'Atualização sobre sua candidatura',
-        conteudo: `Olá {{nome_candidato}},
-
-Obrigado pelo interesse na vaga de {{titulo_vaga}}.
-
-Infelizmente, sua candidatura não foi aprovada nesta etapa.
-
-Score obtido: {{score}}%
-Motivo: {{motivo}}
-
-Mantenha seu perfil atualizado para futuras oportunidades.
-
-Atenciosamente,
-Equipe de RH`,
-        variaveis: ['nome_candidato', 'titulo_vaga', 'score', 'motivo'],
-        ativo: true,
-        criadoEm: new Date()
-      },
-      {
-        id: 'template-entrevista',
-        nome: 'Agendamento de Entrevista',
-        categoria: 'entrevista',
-        assunto: 'Agendamento de Entrevista',
-        conteudo: `Olá {{nome_candidato}}!
-
-Sua candidatura para {{titulo_vaga}} foi selecionada para entrevista.
-
-Data: {{data_entrevista}}
-Horário: {{horario_entrevista}}
-Local: {{local_entrevista}}
-Tipo: {{tipo_entrevista}}
-
-Por favor, confirme sua presença respondendo esta mensagem.
-
-Atenciosamente,
-{{nome_recrutador}}
-{{cargo_recrutador}}`,
-        variaveis: ['nome_candidato', 'titulo_vaga', 'data_entrevista', 'horario_entrevista', 'local_entrevista', 'tipo_entrevista', 'nome_recrutador', 'cargo_recrutador'],
-        ativo: true,
-        criadoEm: new Date()
-      }
-    ];
-
-    templatesPadrao.forEach(template => {
-      this.templates.set(template.id, template);
-    });
+    // Templates mock removidos - sistema agora usa templates dinâmicos do Supabase
+    console.log('💬 Sistema Comunicação: Iniciado sem templates hardcoded');
   }
 
   async criarConversa(

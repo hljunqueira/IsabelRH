@@ -84,85 +84,61 @@ export default function RankingCandidatos({ vagaId, criterios }: RankingCandidat
   const carregarCandidatos = async () => {
     setLoading(true);
     try {
-      // Simular dados de candidatos
-      const candidatosMock: Candidato[] = [
-        {
-          id: '1',
-          nome: 'João Silva Santos',
-          email: 'joao.silva@email.com',
-          telefone: '(11) 99999-9999',
-          avatar: '/avatar1.jpg',
-          localizacao: 'São Paulo, SP',
-          experiencia: 5,
-          educacao: 'Bacharel em Ciência da Computação',
-          habilidades: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Python'],
-          score: 95,
-          match: 92,
-          status: 'disponivel',
-          ultimaAtividade: new Date(Date.now() - 1000 * 60 * 30),
-          curriculo: '/curriculo1.pdf',
-          linkedin: 'linkedin.com/in/joaosilva',
-          portfolio: 'joaosilva.dev',
-          expectativaSalarial: 8000,
-          disponibilidade: 'imediata',
-          preferencias: {
-            modalidade: 'hibrido',
-            tipoContrato: 'clt',
-            setor: ['Tecnologia', 'E-commerce']
-          }
-        },
-        {
-          id: '2',
-          nome: 'Maria Costa Oliveira',
-          email: 'maria.costa@email.com',
-          telefone: '(11) 88888-8888',
-          avatar: '/avatar2.jpg',
-          localizacao: 'Campinas, SP',
-          experiencia: 3,
-          educacao: 'Tecnólogo em Análise e Desenvolvimento',
-          habilidades: ['React', 'Vue.js', 'JavaScript', 'CSS', 'HTML'],
-          score: 88,
-          match: 85,
-          status: 'disponivel',
-          ultimaAtividade: new Date(Date.now() - 1000 * 60 * 60 * 2),
-          curriculo: '/curriculo2.pdf',
-          linkedin: 'linkedin.com/in/mariacosta',
-          expectativaSalarial: 6000,
-          disponibilidade: '15_dias',
-          preferencias: {
-            modalidade: 'remoto',
-            tipoContrato: 'pj',
-            setor: ['Startup', 'Tecnologia']
-          }
-        },
-        {
-          id: '3',
-          nome: 'Pedro Almeida Lima',
-          email: 'pedro.almeida@email.com',
-          telefone: '(11) 77777-7777',
-          avatar: '/avatar3.jpg',
-          localizacao: 'Rio de Janeiro, RJ',
-          experiencia: 8,
-          educacao: 'Mestrado em Engenharia de Software',
-          habilidades: ['Java', 'Spring', 'Microservices', 'AWS', 'Docker'],
-          score: 92,
-          match: 78,
-          status: 'em_processo',
-          ultimaAtividade: new Date(Date.now() - 1000 * 60 * 60 * 24),
-          curriculo: '/curriculo3.pdf',
-          linkedin: 'linkedin.com/in/pedroalmeida',
-          expectativaSalarial: 12000,
-          disponibilidade: '30_dias',
-          preferencias: {
-            modalidade: 'presencial',
-            tipoContrato: 'clt',
-            setor: ['Fintech', 'Tecnologia']
-          }
+      // Buscar candidatos reais do banco
+      const response = await fetch('/api/admin/candidatos');
+      
+      if (!response.ok) {
+        throw new Error(`Erro na API: ${response.status}`);
+      }
+      
+      const candidatosData = await response.json();
+      
+      // Transformar dados do banco para o formato esperado pelo componente
+      const candidatosFormatados: Candidato[] = candidatosData.map((candidato: any) => ({
+        id: candidato.id.toString(),
+        nome: candidato.nome || candidato.name || 'Nome não informado',
+        email: candidato.email || '',
+        telefone: candidato.telefone || candidato.phone || '',
+        avatar: candidato.avatar || undefined,
+        localizacao: candidato.cidade && candidato.estado 
+          ? `${candidato.cidade}, ${candidato.estado}` 
+          : candidato.localizacao || 'Localização não informada',
+        experiencia: candidato.experiencia || candidato.anos_experiencia || 0,
+        educacao: candidato.educacao || candidato.formacao || 'Não informado',
+        habilidades: Array.isArray(candidato.habilidades) 
+          ? candidato.habilidades 
+          : candidato.habilidades 
+            ? candidato.habilidades.split(',').map((h: string) => h.trim())
+            : [],
+        score: candidato.score || 0, // Usar score real ou 0 se não disponível
+        match: candidato.match || candidato.score || 0, // Usar match real ou score como fallback
+        status: candidato.status || 'disponivel',
+        ultimaAtividade: candidato.ultima_atividade 
+          ? new Date(candidato.ultima_atividade)
+          : candidato.updated_at 
+            ? new Date(candidato.updated_at)
+            : new Date(),
+        curriculo: candidato.curriculo || candidato.curriculum_url || '',
+        linkedin: candidato.linkedin || candidato.linkedin_url || undefined,
+        portfolio: candidato.portfolio || candidato.portfolio_url || undefined,
+        expectativaSalarial: candidato.expectativa_salarial || candidato.salario_desejado || 0,
+        disponibilidade: candidato.disponibilidade || 'imediata',
+        preferencias: {
+          modalidade: candidato.modalidade_preferida || candidato.preferencias?.modalidade || 'hibrido',
+          tipoContrato: candidato.tipo_contrato_preferido || candidato.preferencias?.tipoContrato || 'clt',
+          setor: Array.isArray(candidato.setores_interesse)
+            ? candidato.setores_interesse
+            : candidato.setores_interesse
+              ? candidato.setores_interesse.split(',').map((s: string) => s.trim())
+              : candidato.preferencias?.setor || ['Geral']
         }
-      ];
-      setCandidatos(candidatosMock);
+      }));
+      
+      setCandidatos(candidatosFormatados);
     } catch (error) {
       console.error('Erro ao carregar candidatos:', error);
+      // Em caso de erro, deixar lista vazia
+      setCandidatos([]);
     } finally {
       setLoading(false);
     }

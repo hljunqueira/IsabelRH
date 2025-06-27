@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { 
   Search, 
   Briefcase, 
@@ -30,54 +31,95 @@ export default function Hunting() {
   const [, setLocation] = useLocation();
   const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('campanhas');
+  
+  // Estados para dados reais do Supabase
+  const [campanhas, setCampanhas] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [integracoes, setIntegracoes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dados simulados de campanhas
-  const campanhas = [
-    {
-      id: '1',
-      nome: 'Desenvolvedores React Senior',
-      empresa: 'TechCorp',
-      status: 'ativa',
-      candidatos: 15,
-      contactados: 8,
-      interessados: 3,
-      criadaEm: '2024-01-15'
-    },
-    {
-      id: '2',
-      nome: 'Analistas de Dados',
-      empresa: 'DataSolutions',
-      status: 'pausada',
-      candidatos: 22,
-      contactados: 12,
-      interessados: 5,
-      criadaEm: '2024-01-10'
+  // Carregar dados quando a aba mudar
+  useEffect(() => {
+    if (activeTab === 'campanhas') {
+      carregarCampanhas();
+    } else if (activeTab === 'templates') {
+      carregarTemplates();
+    } else if (activeTab === 'integracoes') {
+      carregarIntegracoes();
     }
-  ];
+  }, [activeTab]);
 
-  const templates = [
-    {
-      id: '1',
-      nome: 'Convite Inicial LinkedIn',
-      assunto: 'Oportunidade interessante na {EMPRESA}',
-      conteudo: 'Olá {NOME}, vi seu perfil e acredito que você seria um ótimo fit para uma posição que estamos recrutando...',
-      canal: 'linkedin'
-    },
-    {
-      id: '2',
-      nome: 'Follow-up Email',
-      assunto: 'Seguimento da oportunidade - {VAGA}',
-      conteudo: 'Oi {NOME}, espero que esteja bem! Gostaria de dar seguimento à nossa conversa...',
-      canal: 'email'
+  const carregarCampanhas = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/hunting/campanhas');
+      if (!response.ok) throw new Error('Erro ao carregar campanhas');
+      const dados = await response.json();
+      setCampanhas(dados);
+    } catch (error) {
+      console.error('Erro ao carregar campanhas:', error);
+      setError('Erro ao carregar campanhas. Tente novamente.');
+      setCampanhas([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const integracoes = [
-    { nome: 'LinkedIn', status: 'conectado', tipo: 'social' },
-    { nome: 'GitHub', status: 'desconectado', tipo: 'portfolio' },
-    { nome: 'Behance', status: 'desconectado', tipo: 'portfolio' },
-    { nome: 'Stack Overflow', status: 'desconectado', tipo: 'portfolio' }
-  ];
+  const carregarTemplates = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/hunting/templates');
+      if (!response.ok) throw new Error('Erro ao carregar templates');
+      const dados = await response.json();
+      setTemplates(dados);
+    } catch (error) {
+      console.error('Erro ao carregar templates:', error);
+      setError('Erro ao carregar templates. Tente novamente.');
+      setTemplates([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const carregarIntegracoes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/hunting/integracoes');
+      if (!response.ok) throw new Error('Erro ao carregar integrações');
+      const dados = await response.json();
+      setIntegracoes(dados);
+    } catch (error) {
+      console.error('Erro ao carregar integrações:', error);
+      setError('Erro ao carregar integrações. Tente novamente.');
+      setIntegracoes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const criarCampanha = async (dadosCampanha: any) => {
+    try {
+      const response = await fetch('/api/hunting/campanhas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dadosCampanha)
+      });
+      
+      if (!response.ok) throw new Error('Erro ao criar campanha');
+      
+      setShowNewCampaignDialog(false);
+      carregarCampanhas(); // Recarregar lista
+    } catch (error) {
+      console.error('Erro ao criar campanha:', error);
+      setError('Erro ao criar campanha. Tente novamente.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -151,6 +193,34 @@ export default function Hunting() {
                 </Dialog>
               </CardHeader>
               <CardContent>
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={carregarCampanhas}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                
+                {!loading && !error && campanhas.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhuma campanha de hunting criada ainda.</p>
+                    <p className="text-sm">Clique em "Nova Campanha" para começar.</p>
+                  </div>
+                )}
+                
                 <div className="space-y-4">
                   {campanhas.map((campanha) => (
                     <div key={campanha.id} className="p-4 border rounded-lg">
@@ -209,6 +279,34 @@ export default function Hunting() {
                 </Button>
               </CardHeader>
               <CardContent>
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={carregarTemplates}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                
+                {!loading && !error && templates.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhum template de contato criado ainda.</p>
+                    <p className="text-sm">Clique em "Novo Template" para começar.</p>
+                  </div>
+                )}
+                
                 <div className="space-y-4">
                   {templates.map((template) => (
                     <div key={template.id} className="p-4 border rounded-lg">
@@ -243,6 +341,34 @@ export default function Hunting() {
                 <CardTitle>Integrações com Plataformas</CardTitle>
               </CardHeader>
               <CardContent>
+                {loading && (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={carregarIntegracoes}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                
+                {!loading && !error && integracoes.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <ExternalLink className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Nenhuma integração configurada ainda.</p>
+                    <p className="text-sm">Configure integrações para expandir seu alcance.</p>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {integracoes.map((integracao) => (
                     <div key={integracao.nome} className="p-4 border rounded-lg">
@@ -289,8 +415,14 @@ export default function Hunting() {
                   <CardTitle className="text-lg">Taxa de Resposta</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-600">32%</div>
-                  <p className="text-sm text-gray-600">Últimos 30 dias</p>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {campanhas.length > 0 
+                      ? `${Math.round((campanhas.reduce((total, c) => total + (c.total_interessados || 0), 0) / 
+                          Math.max(campanhas.reduce((total, c) => total + (c.total_contactados || 0), 0), 1)) * 100)}%`
+                      : '0%'
+                    }
+                  </div>
+                  <p className="text-sm text-gray-600">Baseado nas campanhas ativas</p>
                 </CardContent>
               </Card>
 
@@ -299,8 +431,10 @@ export default function Hunting() {
                   <CardTitle className="text-lg">Candidatos Contactados</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-600">127</div>
-                  <p className="text-sm text-gray-600">Este mês</p>
+                  <div className="text-3xl font-bold text-green-600">
+                    {campanhas.reduce((total, campanha) => total + (campanha.total_contactados || 0), 0)}
+                  </div>
+                  <p className="text-sm text-gray-600">Todas as campanhas</p>
                 </CardContent>
               </Card>
 
@@ -309,7 +443,9 @@ export default function Hunting() {
                   <CardTitle className="text-lg">Conversões</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-600">8</div>
+                  <div className="text-3xl font-bold text-purple-600">
+                    {campanhas.reduce((total, campanha) => total + (campanha.total_interessados || 0), 0)}
+                  </div>
                   <p className="text-sm text-gray-600">Candidatos interessados</p>
                 </CardContent>
               </Card>

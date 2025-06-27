@@ -95,16 +95,46 @@
 
 @layer components {
   /* Fix para dropdowns transparentes - aplica fundo sólido globalmente */
-  [data-radix-select-content] {
+  [data-radix-select-content],
+  [data-radix-dropdown-menu-content],
+  .dropdown-content,
+  .select-content {
     background-color: white !important;
     border: 1px solid hsl(var(--border)) !important;
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
     backdrop-filter: none !important;
+    position: relative !important;
+    z-index: 9999 !important;
   }
   
-  .dark [data-radix-select-content] {
+  /* Garantir que todos os dropdowns Radix tenham fundo sólido */
+  [data-radix-popper-content-wrapper] > div,
+  [data-radix-portal] > div[data-radix-dropdown-menu-content],
+  [data-radix-portal] > div[data-radix-select-content] {
+    background-color: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Para temas escuros */
+  .dark [data-radix-select-content],
+  .dark [data-radix-dropdown-menu-content] {
     background-color: hsl(var(--popover)) !important;
     border-color: hsl(var(--border)) !important;
+  }
+
+  /* Fix específico para DropdownMenuContent */
+  .dropdown-menu-content-white {
+    background-color: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  }
+
+  /* Fix específico para SelectContent */
+  .select-content-white {
+    background-color: white !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
   }
 }
 

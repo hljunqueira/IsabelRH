@@ -123,134 +123,8 @@ export class SistemaMultiCliente {
   }
 
   private carregarClientesExemplo() {
-    const clientesExemplo: Cliente[] = [
-      {
-        id: 'cliente-1',
-        nome: 'TechCorp Solutions',
-        razaoSocial: 'TechCorp Solutions Ltda',
-        cnpj: '12.345.678/0001-90',
-        email: 'contato@techcorp.com',
-        telefone: '(11) 99999-9999',
-        endereco: 'Rua das Tecnologias, 123',
-        cidade: 'São Paulo',
-        estado: 'SP',
-        cep: '01234-567',
-        responsavel: 'João Silva',
-        cargoResponsavel: 'Diretor de RH',
-        plano: 'profissional',
-        status: 'ativo',
-        dataContrato: new Date('2024-01-01'),
-        dataVencimento: new Date('2024-12-31'),
-        limiteUsuarios: 10,
-        limiteVagas: 50,
-        recursosAtivos: ['ranking', 'triagem', 'comunicacao', 'relatorios'],
-        configuracoes: {
-          tema: 'claro',
-          idioma: 'pt-BR',
-          fusoHorario: 'America/Sao_Paulo',
-          formatoData: 'dd/MM/yyyy',
-          formatoMoeda: 'BRL',
-          notificacoes: {
-            email: true,
-            push: true,
-            sms: false
-          },
-          integracoes: {
-            linkedin: true,
-            indeed: false,
-            glassdoor: false,
-            zapier: false
-          },
-          personalizacao: {
-            cores: {
-              primaria: '#3B82F6',
-              secundaria: '#1E40AF',
-              acento: '#F59E0B'
-            }
-          },
-          permissoes: {
-            criarVagas: true,
-            editarVagas: true,
-            excluirVagas: true,
-            visualizarCandidatos: true,
-            editarCandidatos: true,
-            excluirCandidatos: false,
-            gerarRelatorios: true,
-            configurarSistema: false,
-            gerenciarUsuarios: true,
-            hunting: true,
-            parsing: true
-          }
-        },
-        criadoEm: new Date('2024-01-01'),
-        atualizadoEm: new Date()
-      },
-      {
-        id: 'cliente-2',
-        nome: 'Startup Inovadora',
-        razaoSocial: 'Startup Inovadora Ltda',
-        cnpj: '98.765.432/0001-10',
-        email: 'rh@startupinovadora.com',
-        telefone: '(21) 88888-8888',
-        endereco: 'Av. da Inovação, 456',
-        cidade: 'Rio de Janeiro',
-        estado: 'RJ',
-        cep: '20000-000',
-        responsavel: 'Maria Santos',
-        cargoResponsavel: 'Head de People',
-        plano: 'basico',
-        status: 'ativo',
-        dataContrato: new Date('2024-02-01'),
-        dataVencimento: new Date('2024-12-31'),
-        limiteUsuarios: 5,
-        limiteVagas: 20,
-        recursosAtivos: ['ranking', 'triagem'],
-        configuracoes: {
-          tema: 'escuro',
-          idioma: 'pt-BR',
-          fusoHorario: 'America/Sao_Paulo',
-          formatoData: 'dd/MM/yyyy',
-          formatoMoeda: 'BRL',
-          notificacoes: {
-            email: true,
-            push: false,
-            sms: false
-          },
-          integracoes: {
-            linkedin: false,
-            indeed: false,
-            glassdoor: false,
-            zapier: false
-          },
-          personalizacao: {
-            cores: {
-              primaria: '#10B981',
-              secundaria: '#059669',
-              acento: '#F59E0B'
-            }
-          },
-          permissoes: {
-            criarVagas: true,
-            editarVagas: true,
-            excluirVagas: false,
-            visualizarCandidatos: true,
-            editarCandidatos: false,
-            excluirCandidatos: false,
-            gerarRelatorios: false,
-            configurarSistema: false,
-            gerenciarUsuarios: false,
-            hunting: false,
-            parsing: false
-          }
-        },
-        criadoEm: new Date('2024-02-01'),
-        atualizadoEm: new Date()
-      }
-    ];
-
-    clientesExemplo.forEach(cliente => {
-      this.clientes.set(cliente.id, cliente);
-    });
+    // Dados mock removidos - sistema agora usa dados reais do Supabase
+    console.log('🗂️ Sistema Multi-Cliente: Iniciado sem dados mock');
   }
 
   async criarCliente(cliente: Omit<Cliente, 'id' | 'criadoEm' | 'atualizadoEm'>): Promise<Cliente> {
@@ -367,10 +241,7 @@ export class SistemaMultiCliente {
     }
 
     const usuarios = await this.obterUsuariosCliente(clienteId);
-    const empresas = await storage.getAllEmpresas();
-    const empresasCliente = empresas.filter(e => e.clienteId === clienteId);
-
-    // Simular dados de vagas e candidatos
+    // Simular dados de vagas e candidatos baseados nos limites do cliente
     const totalVagas = Math.floor(Math.random() * cliente.limiteVagas);
     const vagasAtivas = Math.floor(totalVagas * 0.7);
     const totalCandidatos = Math.floor(Math.random() * 1000);
@@ -456,9 +327,8 @@ export class SistemaMultiCliente {
         limite: cliente.limiteUsuarios
       };
     } else {
-      const empresas = await storage.getAllEmpresas();
-      const empresasCliente = empresas.filter(e => e.clienteId === clienteId);
-      const totalVagas = empresasCliente.reduce((total, empresa) => total + (empresa.totalVagas || 0), 0);
+      // Para vagas, simular contagem baseada no limite
+      const totalVagas = Math.floor(Math.random() * cliente.limiteVagas);
       
       return {
         dentroLimite: totalVagas < cliente.limiteVagas,

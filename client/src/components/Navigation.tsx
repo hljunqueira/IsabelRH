@@ -128,11 +128,11 @@ export default function Navigation() {
                       className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 cursor-pointer"
                       onClick={() => {
                         if (result.type === 'vaga') {
-                          window.location.href = '/candidato';
+                          window.location.href = `/candidato?vaga=${result.id}`;
                         } else if (result.type === 'candidato') {
-                          window.location.href = '/admin';
+                          window.location.href = '/admin?tab=candidatos';
                         } else if (result.type === 'empresa') {
-                          window.location.href = '/admin';
+                          window.location.href = '/admin?tab=empresas';
                         }
                         setShowSearchResults(false);
                         setSearchQuery("");
@@ -194,14 +194,14 @@ export default function Navigation() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 dropdown-menu-content-white bg-white border border-gray-200 shadow-lg">
                   <DropdownMenuItem asChild>
                     <Link href={user.type === 'admin' ? '/admin' : user.type === 'empresa' ? '/empresa' : '/candidato'}>
                       Minha Área
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut} className="text-red-600">
+                  <DropdownMenuItem onClick={signOut} className="text-red-600 hover:bg-red-50">
                     Sair
                   </DropdownMenuItem>
                 </DropdownMenuContent>
