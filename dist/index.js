@@ -72,22 +72,76 @@ app.get("/api/health", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
+var currentMockUser = null;
+app.post("/api/auth/mock-login", (req, res) => {
+  console.log("\u{1F3AD} Mock Login: Endpoint acessado");
+  const { email, password, type } = req.body;
+  const mockUsers = {
+    "admin@isabelrh.com.br": {
+      password: "admin123",
+      user: {
+        id: "dev-admin-1",
+        email: "admin@isabelrh.com.br",
+        name: "Administrador Isabel RH",
+        type: "admin",
+        created_at: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    },
+    "candidato@isabelrh.com.br": {
+      password: "candidato123",
+      user: {
+        id: "dev-candidato-1",
+        email: "candidato@isabelrh.com.br",
+        name: "Jo\xE3o Silva Santos",
+        type: "candidato",
+        created_at: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    },
+    "empresa@isabelrh.com.br": {
+      password: "empresa123",
+      user: {
+        id: "dev-empresa-1",
+        email: "empresa@isabelrh.com.br",
+        name: "Tech Innovate Ltda",
+        type: "empresa",
+        created_at: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    }
+  };
+  const mockCredential = mockUsers[email];
+  if (!mockCredential || mockCredential.password !== password) {
+    console.log("\u274C Mock Login: Credenciais inv\xE1lidas para:", email);
+    return res.status(401).json({ error: "Credenciais inv\xE1lidas" });
+  }
+  currentMockUser = { usuario: mockCredential.user };
+  console.log(`\u2705 Mock Login: Sucesso para ${mockCredential.user.type}:`, email);
+  res.json({
+    message: "Login realizado com sucesso",
+    usuario: mockCredential.user,
+    mock_token: `mock-${Date.now()}`
+  });
+});
 app.get("/api/auth/me", async (req, res) => {
   console.log("\u{1F510} Auth/me: Endpoint acessado");
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("\u26A0\uFE0F Auth/me: Sem token, retornando dados mock");
-      const mockUser = {
+      console.log("\u26A0\uFE0F Auth/me: Sem token, usando fallback");
+      if (currentMockUser) {
+        console.log("\u{1F3AD} Mock: Retornando usu\xE1rio da sess\xE3o:", currentMockUser.usuario.type);
+        return res.json(currentMockUser);
+      }
+      const defaultMockUser = {
         usuario: {
-          id: "dev-user-1",
-          email: "dev@isabelrh.com.br",
-          name: "Usu\xE1rio de Desenvolvimento",
+          id: "dev-admin-1",
+          email: "admin@isabelrh.com.br",
+          name: "Administrador Isabel RH",
           type: "admin",
           created_at: (/* @__PURE__ */ new Date()).toISOString()
         }
       };
-      return res.json(mockUser);
+      console.log("\u{1F3AD} Mock: Retornando dados de admin (padr\xE3o)");
+      return res.json(defaultMockUser);
     }
     const token = authHeader.substring(7);
     const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -521,6 +575,7 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - GET /api - Informa\xE7\xF5es da API");
   console.log("   - GET /api/test - Teste do servidor");
   console.log("   - GET /api/health - Health check");
+  console.log("   - POST /api/auth/mock-login - Login mock para desenvolvimento");
   console.log("   - GET /api/auth/me - Dados do usu\xE1rio autenticado");
   console.log("   - POST /api/auth/forgot-password - Recupera\xE7\xE3o de senha");
   console.log("   - GET /api/vagas - Lista de vagas");

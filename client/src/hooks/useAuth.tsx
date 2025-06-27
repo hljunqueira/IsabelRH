@@ -149,45 +149,104 @@ export const AuthProvider = React.memo(({ children }: AuthProviderProps) => {
   }, [isConfigured]);
 
   const signIn = async (email: string, password: string) => {
-    if (!isConfigured) {
-      throw new Error('Supabase não está configurado. Verifique as variáveis de ambiente.');
-    }
-
     try {
       setLoading(true);
       console.log('🔐 Tentando login para:', email);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        console.error('❌ Erro no login Supabase:', error.message);
-        throw error;
-      }
-
-      if (data.session && data.user) {
-        console.log('✅ Login Supabase bem-sucedido');
-        
-        // Buscar dados do usuário do backend
-        await fetchUserData(data.session);
-        
-        // Aguardar um pouco para garantir que os dados foram salvos
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Obter dados atualizados para redirecionamento
-        const storedData = localStorage.getItem("auth-user");
-        
-        if (storedData) {
-          const userData = JSON.parse(storedData);
-          console.log('🔍 Debug - userData completo:', userData);
+      // Primeiro, tentar autenticação real do Supabase se estiver configurado
+      if (isConfigured) {
+        try {
+          console.log('🔐 Tentando login Supabase primeiro...');
           
-          // Verificar diferentes possíveis estruturas de dados
-          const userType = userData.usuario?.type || userData.usuario?.tipo || userData.type || userData.tipo;
-          console.log('🔍 Debug - Tipo de usuário detectado:', userType);
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (!error && data.session && data.user) {
+            console.log('✅ Login Supabase bem-sucedido');
+            
+            // Buscar dados do usuário do backend
+            await fetchUserData(data.session);
+            
+            // Aguardar um pouco para garantir que os dados foram salvos
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Obter dados atualizados para redirecionamento
+            const storedData = localStorage.getItem("auth-user");
+            
+            if (storedData) {
+              const userData = JSON.parse(storedData);
+              console.log('🔍 Debug - userData completo:', userData);
+              
+              // Verificar diferentes possíveis estruturas de dados
+              const userType = userData.usuario?.type || userData.usuario?.tipo || userData.type || userData.tipo;
+              console.log('🔍 Debug - Tipo de usuário detectado:', userType);
+              
+              // Redirecionamento baseado no tipo de usuário
+              let targetUrl = '/';
+              switch (userType) {
+                case 'admin':
+                  targetUrl = '/admin';
+                  break;
+                case 'empresa':
+                  targetUrl = '/empresa';
+                  break;
+                case 'candidato':
+                  targetUrl = '/candidato';
+                  break;
+                default:
+                  console.warn('⚠️ Tipo de usuário não reconhecido:', userType);
+                  targetUrl = '/';
+              }
+              
+              console.log(`🎯 Redirecionando usuário ${userType} para:`, targetUrl);
+              
+              // Redirecionamento com delay para garantir que tudo está pronto
+              setTimeout(() => {
+                setLocation(targetUrl);
+                window.location.reload(); // Force reload para garantir estado correto
+              }, 300);
+              
+              return; // Sair da função, login Supabase funcionou
+            } else {
+              console.warn('⚠️ Dados do usuário não encontrados no localStorage após login');
+              setLocation('/');
+              return;
+            }
+          } else {
+            console.log('⚠️ Login Supabase falhou:', error?.message || 'Credenciais inválidas');
+            // Continuar para tentar login mock como fallback
+          }
+        } catch (supabaseError) {
+          console.log('⚠️ Erro no Supabase, tentando fallback mock:', supabaseError);
+          // Continuar para tentar login mock como fallback
+        }
+      }
+      
+      // Fallback para login mock (desenvolvimento ou quando Supabase falha)
+      try {
+        console.log('🎭 Tentando login mock como fallback...');
+        
+        const mockResponse = await fetch('/api/auth/mock-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        if (mockResponse.ok) {
+          const mockData = await mockResponse.json();
+          console.log('✅ Login mock bem-sucedido:', mockData.usuario.type);
+          
+          // Salvar dados no localStorage
+          const authData = { usuario: mockData.usuario };
+          localStorage.setItem("auth-user", JSON.stringify(authData));
+          setUser(mockData.usuario);
           
           // Redirecionamento baseado no tipo de usuário
+          const userType = mockData.usuario.type;
           let targetUrl = '/';
           switch (userType) {
             case 'admin':
@@ -206,18 +265,18 @@ export const AuthProvider = React.memo(({ children }: AuthProviderProps) => {
           
           console.log(`🎯 Redirecionando usuário ${userType} para:`, targetUrl);
           
-          // Redirecionamento com delay para garantir que tudo está pronto
+          // Redirecionamento com delay
           setTimeout(() => {
             setLocation(targetUrl);
-            window.location.reload(); // Force reload para garantir estado correto
-          }, 300);
+          }, 200);
+          
+          return; // Sair da função, login mock funcionou
         } else {
-          console.warn('⚠️ Dados do usuário não encontrados no localStorage após login');
-          setLocation('/');
+          throw new Error('Credenciais inválidas');
         }
-      } else {
-        console.error('❌ Login falhou - nenhuma sessão criada');
-        throw new Error('Falha na autenticação - tente novamente');
+      } catch (mockError) {
+        console.error('❌ Todos os métodos de login falharam');
+        throw new Error('Credenciais inválidas ou problema de conectividade');
       }
     } catch (error: any) {
       console.error('❌ Erro no processo de login:', error.message);
