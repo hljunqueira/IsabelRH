@@ -228,8 +228,8 @@ app.get("/api/vagas", async (req, res) => {
         descricao: vaga.descricao,
         requisitos: requisitos,
         destaque: vaga.destaque || false,
-        createdAt: vaga.publicado_em || vaga.created_at,
-        created_at: vaga.publicado_em || vaga.created_at
+        createdAt: vaga.publicado_em || vaga.criado_em,
+        created_at: vaga.publicado_em || vaga.criado_em
       };
     }) || [];
     
@@ -292,7 +292,7 @@ app.post("/api/vagas", async (req, res) => {
       destaque: destaque,
       status: 'ativa',
       publicado_em: new Date().toISOString(),
-      created_at: new Date().toISOString()
+      criado_em: new Date().toISOString()
     };
 
     const { data: vaga, error } = await supabase
@@ -329,8 +329,8 @@ app.post("/api/vagas", async (req, res) => {
       requisitos: vaga.requisitos || [],
       beneficios: vaga.beneficios || [],
       destaque: vaga.destaque || false,
-      createdAt: vaga.publicado_em || vaga.created_at,
-      created_at: vaga.publicado_em || vaga.created_at
+      createdAt: vaga.publicado_em || vaga.criado_em,
+      criado_em: vaga.criado_em
     };
 
     console.log('✅ Vaga criada com sucesso:', vaga.id);
@@ -345,7 +345,7 @@ app.post("/api/vagas", async (req, res) => {
   }
 });
 
-// �� Rota de candidatos admin
+// 🎯 Rota de candidatos admin
 app.get("/api/admin/candidatos", async (req, res) => {
   console.log('👥 Admin/candidatos: Endpoint acessado');
   
@@ -356,7 +356,7 @@ app.get("/api/admin/candidatos", async (req, res) => {
     let query = supabase
       .from('candidatos')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     // Busca por texto
     if (search) {
@@ -402,11 +402,11 @@ app.get("/api/admin/empresas", async (req, res) => {
     let query = supabase
       .from('empresas')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     // Busca por texto
     if (search) {
-      query = query.or(`nome.ilike.%${search}%,cnpj.ilike.%${search}%,email.ilike.%${search}%,setor.ilike.%${search}%`);
+      query = query.or(`nome.ilike.%${search}%,cnpj.ilike.%${search}%,setor.ilike.%${search}%`);
     }
     
     // Aplicar limit
@@ -448,7 +448,7 @@ app.get("/api/admin/servicos", async (req, res) => {
         *,
         empresas!inner(nome)
       `)
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar serviços:', error);
@@ -487,7 +487,7 @@ app.get("/api/admin/propostas", async (req, res) => {
         *,
         empresas!inner(nome)
       `)
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar propostas:', error);
@@ -520,9 +520,23 @@ app.post("/api/admin/servicos", async (req, res) => {
   console.log('🆕 Admin/servicos: Criando novo serviço');
   
   try {
+    // Mapear campos específicos do frontend para o banco
+    const servicoData = {
+      empresa_id: req.body.empresa_id,
+      candidato_id: req.body.candidato_id,
+      tipo_servico: req.body.tipo_servico,
+      descricao: req.body.descricao,
+      valor: req.body.valor,
+      status: req.body.status || 'pendente',
+      data_inicio: req.body.data_inicio,
+      data_fim: req.body.data_fim,
+      observacoes: req.body.observacoes,
+      criado_em: new Date().toISOString()
+    };
+    
     const { data: servico, error } = await supabase
       .from('servicos')
-      .insert(req.body)
+      .insert(servicoData)
       .select()
       .single();
     
@@ -551,13 +565,21 @@ app.post("/api/admin/propostas", async (req, res) => {
   console.log('🆕 Admin/propostas: Criando nova proposta');
   
   try {
+    // Mapear campos específicos do frontend para o banco
+    const propostaData = {
+      empresa_id: req.body.empresa_id,
+      tipo_servico: req.body.tipo_servico,
+      descricao: req.body.descricao,
+      valor_proposto: req.body.valor_proposto,
+      prazo_entrega: req.body.prazo_entrega,
+      observacoes: req.body.observacoes,
+      aprovada: req.body.aprovada || 'pendente',
+      criado_em: new Date().toISOString()
+    };
+    
     const { data: proposta, error } = await supabase
       .from('propostas')
-      .insert({
-        ...req.body,
-        aprovada: 'pendente',
-        data_proposta: new Date().toISOString()
-      })
+      .insert(propostaData)
       .select()
       .single();
     
@@ -586,12 +608,27 @@ app.patch("/api/admin/propostas/:id", async (req, res) => {
   console.log('📝 Admin/propostas: Atualizando proposta', req.params.id);
   
   try {
+    // Mapear campos específicos para atualização
+    const updateData: any = {
+      empresa_id: req.body.empresa_id,
+      tipo_servico: req.body.tipo_servico,
+      descricao: req.body.descricao,
+      valor_proposto: req.body.valor_proposto,
+      prazo_entrega: req.body.prazo_entrega,
+      observacoes: req.body.observacoes,
+      aprovada: req.body.aprovada
+    };
+    
+    // Remove campos undefined/null
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key];
+      }
+    });
+    
     const { data: proposta, error } = await supabase
       .from('propostas')
-      .update({
-        ...req.body,
-        data_resposta: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', req.params.id)
       .select()
       .single();
@@ -684,7 +721,7 @@ app.get("/api/multicliente/clientes", async (req, res) => {
     const { data: clientes, error } = await supabase
       .from('clientes')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar clientes:', error);
@@ -716,7 +753,7 @@ app.get("/api/multicliente/usuarios", async (req, res) => {
         *,
         clientes!inner(nome)
       `)
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar usuários:', error);
@@ -842,7 +879,7 @@ app.get("/api/hunting/templates", async (req, res) => {
       .from('templates_hunting')
       .select('*')
       .eq('ativo', true)
-      .order('created_at', { ascending: false });
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar templates:', error);
@@ -1421,9 +1458,8 @@ app.get("/api/comunicacao/notificacoes", async (req, res) => {
     const { data: notificacoes, error } = await supabase
       .from('notificacoes')
       .select('*')
-      .eq('usuario_id', userId)
-      .eq('usuario_tipo', userType)
-      .order('criada_em', { ascending: false });
+      .eq('user_id', userId)
+      .order('criado_em', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar notificações:', error);
@@ -1503,7 +1539,7 @@ app.post("/api/comunicacao/conversas", async (req, res) => {
         status: 'ativa',
         total_mensagens: 0,
         nao_lidas: 0,
-        criada_em: new Date().toISOString(),
+        criado_em: new Date().toISOString(),
         atualizada_em: new Date().toISOString()
       })
       .select()
