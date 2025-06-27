@@ -5,6 +5,10 @@ import cors from "cors";
 
 const app = express();
 
+console.log("🎯 VERSÃO ATUALIZADA - Isabel RH v2.0 - Iniciando servidor...");
+console.log("🔥 Timestamp:", new Date().toISOString());
+console.log("🌟 Rotas de teste incluídas: /api/test e /api");
+
 // Configurar CORS para permitir acesso do frontend
 app.use(cors({
   origin: [
