@@ -61,33 +61,45 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    console.log("🚀 Iniciando servidor...");
+    console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
+    console.log("🔧 PORT:", process.env.PORT);
+    
+    const server = await registerRoutes(app);
+    console.log("✅ Rotas registradas com sucesso");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
-  });
+      res.status(status).json({ message });
+      throw err;
+    });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      console.log("🛠️ Modo desenvolvimento - configurando Vite");
+      await setupVite(app, server);
+    } else {
+      console.log("🏭 Modo produção - servindo arquivos estáticos");
+      serveStatic(app);
+    }
+
+    // Use Railway's PORT environment variable or default to 5001
+    const port = parseInt(process.env.PORT || "5001");
+    console.log("🎯 Tentando iniciar servidor na porta:", port);
+    
+    server.listen(port, "0.0.0.0", () => {
+      console.log("🎉 Servidor rodando com sucesso!");
+      log(`serving on port ${port}`);
+    });
+    
+  } catch (error) {
+    console.error("💥 Erro fatal durante inicialização:");
+    console.error(error);
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5001;
-  server.listen({
-    port,
-    host: "0.0.0.0" // Mudança: permitir acesso de qualquer IP
-  }, () => {
-    log(`serving on port ${port}`);
-  });
 })();
