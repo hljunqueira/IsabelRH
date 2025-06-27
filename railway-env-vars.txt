@@ -1,0 +1,10 @@
+NODE_ENV=production
+PORT=5001
+
+VITE_SUPABASE_URL=https://wqifsgaxevfdwmfkihhg.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxaWZzZ2F4ZXZmZHdtZmtpaGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MTY3OTUsImV4cCI6MjA1MTA5Mjc5NX0.UeXsYJvG4_B4F3xvlb8_o2WQjqJrJX7r6H7qZ8Z-XUw
+
+SUPABASE_URL=https://wqifsgaxevfdwmfkihhg.supabase.co
+SUPABASE_SERVICE_KEY=SUA_SERVICE_KEY_DO_SUPABASE_AQUI
+
+FRONTEND_URL=https://seu-app.up.railway.app 
