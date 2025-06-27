@@ -263,7 +263,7 @@ export default function Home() {
                         {vaga.descricao}
                       </p>
                       
-                      {vaga.requisitos.length > 0 && (
+                      {vaga.requisitos && vaga.requisitos.length > 0 && (
                         <div className="mb-4">
                           <h4 className="text-sm font-semibold text-isabel-blue mb-2">Principais requisitos:</h4>
                           <div className="flex flex-wrap gap-1">
