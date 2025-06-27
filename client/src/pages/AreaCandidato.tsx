@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -52,12 +53,13 @@ export default function AreaCandidato() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showRetakeTest, setShowRetakeTest] = useState(false);
+  const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
   
   useEffect(() => {
-    if (!user || user.usuario.tipo !== "candidato") {
+    if (!user || user.tipo !== "candidato") {
       setLocation("/login");
     }
-  }, [setLocation]);
+  }, [user, setLocation]);
   
   const handleLogout = () => {
     logout();
@@ -99,29 +101,29 @@ export default function AreaCandidato() {
 
   // Fetch candidate profile
   const { data: candidato, isLoading: loadingProfile } = useQuery<Candidato>({
-    queryKey: [`/api/candidatos/${user?.usuario?.id}`],
-    enabled: !!user?.usuario?.id,
+    queryKey: [`/api/candidatos/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Fetch available jobs
   const { data: vagas = [], isLoading: loadingVagas } = useQuery({
     queryKey: ['/api/vagas'],
-    enabled: !!user?.usuario?.id,
+    enabled: !!user?.id,
   });
 
   // Fetch my applications
   const { data: candidaturas = [], isLoading: loadingCandidaturas } = useQuery({
-    queryKey: [`/api/candidaturas/candidato/${user?.usuario?.id}`],
-    enabled: !!user?.usuario?.id,
+    queryKey: [`/api/candidaturas/candidato/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<Candidato>) => {
-      return await apiRequest("PUT", `/api/candidatos/${user?.usuario?.id}`, data);
+      return await apiRequest("PUT", `/api/candidatos/${user?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/candidatos/${user?.usuario?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/candidatos/${user?.id}`] });
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
@@ -142,11 +144,11 @@ export default function AreaCandidato() {
     mutationFn: async (vagaId: string) => {
       return await apiRequest("POST", "/api/candidaturas", {
         vagaId,
-        candidatoId: user?.usuario.id || '',
+        candidatoId: user?.id || '',
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/candidaturas/candidato/${user?.usuario.id || ''}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/candidaturas/candidato/${user?.id || ''}`] });
       toast({
         title: "Candidatura enviada!",
         description: "Sua candidatura foi enviada com sucesso.",
@@ -166,7 +168,7 @@ export default function AreaCandidato() {
     if (candidato) {
       setProfileData({
         nome: candidato.nome || "",
-        email: user?.usuario?.email || "",
+        email: user?.email || "",
         telefone: candidato.telefone || "",
         celular: candidato.celular || "",
         linkedin: candidato.linkedin || "",
@@ -202,25 +204,75 @@ export default function AreaCandidato() {
     updateProfileMutation.mutate(profileData);
   };
 
-  // Verifica se o perfil está completo
+  // Verifica se o perfil está completo (incluindo teste DISC)
   const isProfileComplete = () => {
-    return profileData.nome && 
+    const basicProfileComplete = profileData.nome && 
            profileData.telefone && 
            profileData.cidade && 
            profileData.estado && 
            profileData.experiencias &&
            profileData.objetivoProfissional &&
            profileData.nivelEscolaridade;
+    
+    const discTestComplete = !!candidato?.perfilDisc;
+    
+    return basicProfileComplete && discTestComplete;
+  };
+
+  // Calcula a completude do perfil em porcentagem (incluindo teste DISC)
+  const calculateProfileCompleteness = () => {
+    const fields = [
+      profileData.nome,
+      profileData.telefone,
+      profileData.cidade,
+      profileData.estado,
+      profileData.endereco,
+      profileData.dataNascimento,
+      profileData.nivelEscolaridade,
+      profileData.experiencias,
+      profileData.objetivoProfissional,
+      profileData.pretensaoSalarial,
+      profileData.disponibilidade,
+      profileData.modalidadeTrabalho,
+      profileData.habilidades.length > 0,
+      profileData.idiomas.length > 0,
+      profileData.curriculoUrl,
+      !!candidato?.perfilDisc // Teste DISC obrigatório
+    ];
+    
+    const filledFields = fields.filter(field => field && field !== '').length;
+    return Math.round((filledFields / fields.length) * 100);
   };
 
   const handleJobApply = (vagaId: string) => {
-    if (!isProfileComplete()) {
+    // Verifica se perfil básico está completo
+    const basicProfileComplete = profileData.nome && 
+           profileData.telefone && 
+           profileData.cidade && 
+           profileData.estado && 
+           profileData.experiencias &&
+           profileData.objetivoProfissional &&
+           profileData.nivelEscolaridade;
+    
+    const discTestComplete = !!candidato?.perfilDisc;
+    
+    if (!basicProfileComplete) {
       toast({
         title: "Perfil incompleto",
         description: "Por favor, complete seu perfil antes de se candidatar às vagas.",
         variant: "destructive",
       });
       setActiveTab("perfil");
+      return;
+    }
+    
+    if (!discTestComplete) {
+      toast({
+        title: "Teste DISC obrigatório",
+        description: "Para se candidatar às vagas, você precisa fazer o Teste DISC de perfil comportamental.",
+        variant: "destructive",
+      });
+      setActiveTab("disc");
       return;
     }
     
@@ -232,6 +284,7 @@ export default function AreaCandidato() {
       });
       return;
     }
+    
     applyJobMutation.mutate(vagaId);
   };
 
@@ -348,7 +401,7 @@ export default function AreaCandidato() {
                   Área do Candidato
                 </h1>
                 <p className="text-gray-600">
-                  Bem-vindo(a), {profileData.nome || user?.usuario?.email}
+                  Bem-vindo(a), {profileData.nome || user?.email}
                 </p>
               </div>
             </div>
@@ -403,10 +456,10 @@ export default function AreaCandidato() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Perfil Completo</CardTitle>
-                    <User className="h-4 w-4 text-green-600" />
+                    <User className={`h-4 w-4 ${calculateProfileCompleteness() >= 80 ? 'text-green-600' : calculateProfileCompleteness() >= 50 ? 'text-amber-600' : 'text-red-600'}`} />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">85%</div>
+                    <div className="text-2xl font-bold">{calculateProfileCompleteness()}%</div>
                     <p className="text-xs text-muted-foreground">
                       Completude do perfil
                     </p>
@@ -565,7 +618,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="masculino">Masculino</SelectItem>
                               <SelectItem value="feminino">Feminino</SelectItem>
                               <SelectItem value="outro">Outro</SelectItem>
@@ -583,7 +636,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="nao">Não</SelectItem>
                               <SelectItem value="sim">Sim</SelectItem>
                             </SelectContent>
@@ -672,7 +725,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione o estado" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="SC">Santa Catarina</SelectItem>
                               <SelectItem value="SP">São Paulo</SelectItem>
                               <SelectItem value="RJ">Rio de Janeiro</SelectItem>
@@ -706,7 +759,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="ensino_medio">Ensino Médio</SelectItem>
                               <SelectItem value="ensino_tecnico">Ensino Técnico</SelectItem>
                               <SelectItem value="ensino_superior">Ensino Superior</SelectItem>
@@ -784,7 +837,7 @@ export default function AreaCandidato() {
                                 <SelectTrigger className="flex-1">
                                   <SelectValue placeholder="Adicionar habilidade" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-white border shadow-lg">
                                   <SelectItem value="JavaScript">JavaScript</SelectItem>
                                   <SelectItem value="Python">Python</SelectItem>
                                   <SelectItem value="React">React</SelectItem>
@@ -822,7 +875,7 @@ export default function AreaCandidato() {
                                 <SelectTrigger className="flex-1">
                                   <SelectValue placeholder="Adicionar idioma" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-white border shadow-lg">
                                   <SelectItem value="Inglês - Básico">Inglês - Básico</SelectItem>
                                   <SelectItem value="Inglês - Intermediário">Inglês - Intermediário</SelectItem>
                                   <SelectItem value="Inglês - Avançado">Inglês - Avançado</SelectItem>
@@ -887,7 +940,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="imediata">Imediata</SelectItem>
                               <SelectItem value="15_dias">15 dias</SelectItem>
                               <SelectItem value="30_dias">30 dias</SelectItem>
@@ -905,7 +958,7 @@ export default function AreaCandidato() {
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white border shadow-lg">
                               <SelectItem value="presencial">Presencial</SelectItem>
                               <SelectItem value="remoto">Remoto</SelectItem>
                               <SelectItem value="hibrido">Híbrido</SelectItem>
@@ -924,7 +977,7 @@ export default function AreaCandidato() {
                                 <SelectTrigger className="flex-1">
                                   <SelectValue placeholder="Adicionar área de interesse" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-white border shadow-lg">
                                   <SelectItem value="Tecnologia">Tecnologia</SelectItem>
                                   <SelectItem value="Marketing">Marketing</SelectItem>
                                   <SelectItem value="Vendas">Vendas</SelectItem>
@@ -965,16 +1018,51 @@ export default function AreaCandidato() {
                   <div className="flex items-center space-x-3">
                     <Star className="h-5 w-5 text-amber-600" />
                     <div>
-                      <p className="font-medium text-amber-800">Perfil incompleto</p>
-                      <p className="text-sm text-amber-700">Complete seu perfil para se candidatar às vagas.</p>
-                      <Button 
-                        size="sm" 
-                        variant="link" 
-                        className="text-amber-700 underline p-0 h-auto"
-                        onClick={() => setActiveTab("perfil")}
-                      >
-                        Completar perfil agora
-                      </Button>
+                      <p className="font-medium text-amber-800">Pré-requisitos para candidatura</p>
+                      <p className="text-sm text-amber-700 mb-2">
+                        Para se candidatar às vagas você precisa:
+                      </p>
+                      <div className="text-sm text-amber-700 space-y-1">
+                        {!profileData.nome || !profileData.telefone || !profileData.cidade || !profileData.estado || !profileData.experiencias || !profileData.objetivoProfissional || !profileData.nivelEscolaridade ? (
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+                            <span>Completar perfil básico</span>
+                            <Button 
+                              size="sm" 
+                              variant="link" 
+                              className="text-amber-700 underline p-0 h-auto ml-2"
+                              onClick={() => setActiveTab("perfil")}
+                            >
+                              Completar agora
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                            <span>✓ Perfil básico completo</span>
+                          </div>
+                        )}
+                        
+                        {!candidato?.perfilDisc ? (
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-amber-600 rounded-full"></span>
+                            <span>Fazer Teste DISC de perfil comportamental</span>
+                            <Button 
+                              size="sm" 
+                              variant="link" 
+                              className="text-amber-700 underline p-0 h-auto ml-2"
+                              onClick={() => setActiveTab("disc")}
+                            >
+                              Fazer teste
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                            <span>✓ Teste DISC realizado ({candidato.perfilDisc})</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -1024,10 +1112,92 @@ export default function AreaCandidato() {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedVaga(vaga)}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Ver Detalhes
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <Briefcase className="h-5 w-5" />
+                                    {vaga.titulo}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Localização</Label>
+                                      <p className="flex items-center gap-1">
+                                        <MapPin className="h-4 w-4" />
+                                        {vaga.cidade}, {vaga.estado}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Modalidade</Label>
+                                      <p>{vaga.modalidade}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Nível</Label>
+                                      <p>{vaga.nivel}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Salário</Label>
+                                      <p>{vaga.salario || "A combinar"}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-sm font-medium text-gray-600">Descrição da Vaga</Label>
+                                    <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.descricao}</p>
+                                  </div>
+                                  
+                                  {vaga.requisitos && (
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Requisitos</Label>
+                                      <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.requisitos}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {vaga.beneficios && (
+                                    <div>
+                                      <Label className="text-sm font-medium text-gray-600">Benefícios</Label>
+                                      <p className="text-gray-700 mt-1 whitespace-pre-wrap">{vaga.beneficios}</p>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center justify-between pt-4 border-t">
+                                    <p className="text-sm text-gray-500">
+                                      Publicado em {new Date(vaga.publicadoEm).toLocaleDateString('pt-BR')}
+                                    </p>
+                                    <Button 
+                                      onClick={() => handleJobApply(vaga.id)}
+                                      disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
+                                      className={isAlreadyApplied(vaga.id) ? "" : "bg-isabel-blue hover:bg-isabel-blue/90"}
+                                      variant={isAlreadyApplied(vaga.id) ? "outline" : "default"}
+                                    >
+                                      {isAlreadyApplied(vaga.id) ? (
+                                        <>
+                                          <Eye className="h-4 w-4 mr-2" />
+                                          Já Candidatado
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          {applyJobMutation.isPending ? "Enviando..." : "Candidatar-se"}
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                             <Button 
                               onClick={() => handleJobApply(vaga.id)}
                               disabled={isAlreadyApplied(vaga.id) || applyJobMutation.isPending}
@@ -1111,10 +1281,10 @@ export default function AreaCandidato() {
                   </Card>
                 ) : (
                   <TesteDISC 
-                    candidatoId={user?.usuario?.id || ''} 
+                    candidatoId={user?.id || ''} 
                     onTesteConcluido={() => {
                       queryClient.invalidateQueries({ 
-                        queryKey: [`/api/candidatos/${user?.usuario?.id}`] 
+                        queryKey: [`/api/candidatos/${user?.id}`] 
                       });
                       setShowRetakeTest(false);
                     }}

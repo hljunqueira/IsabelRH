@@ -31,11 +31,17 @@ import {
   XCircle,
   Clock,
   LogOut,
-  Shield
+  Shield,
+  MessageCircle,
+  Search,
+  Users as UsersIcon
 } from "lucide-react";
 import type { Candidato, Empresa, Vaga, Servico, Proposta, Relatorio } from "@shared/schema";
+import ConfirmDialog from '@/components/ConfirmDialog';
+import LoadingSpinner, { PageLoader } from '@/components/LoadingSpinner';
 
 export default function Admin() {
+  console.log('🛠️ Admin: Componente iniciado');
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -46,20 +52,30 @@ export default function Admin() {
   const [user, setUser] = useState<any>(null);
   
   useEffect(() => {
+    console.log('🛠️ Admin: Verificando autenticação...');
     const storedUser = localStorage.getItem("auth-user");
+    console.log('🛠️ Admin: storedUser =', !!storedUser);
+    
     if (!storedUser) {
+      console.log('🛠️ Admin: Sem usuário, redirecionando para login');
       setLocation("/login");
       return;
     }
     
     try {
       const userData = JSON.parse(storedUser);
-      if (userData.usuario.tipo !== "admin") {
+      console.log('🛠️ Admin: userData.usuario.type =', userData.usuario?.type);
+      
+      if (userData.usuario.type !== "admin") {
+        console.log('🛠️ Admin: Usuário não é admin, redirecionando para login');
         setLocation("/login");
         return;
       }
+      
+      console.log('🛠️ Admin: Usuário admin autenticado com sucesso!');
       setUser(userData);
     } catch (error) {
+      console.log('🛠️ Admin: Erro ao parsear userData, redirecionando para login');
       setLocation("/login");
     }
   }, [setLocation]);
@@ -88,6 +104,23 @@ export default function Admin() {
   const { data: propostas = [] } = useQuery<Proposta[]>({
     queryKey: ['/api/admin/propostas'],
     enabled: !!user,
+  });
+
+  // Estados dos filtros
+  const [candidatoFilter, setCandidatoFilter] = useState("");
+  const [candidatoFilterCity, setCandidatoFilterCity] = useState("all");
+  const [empresaFilter, setEmpresaFilter] = useState("");
+  const [empresaFilterSetor, setEmpresaFilterSetor] = useState("all");
+
+  // Estados de confirmação
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: "",
+    description: "",
+    action: () => {},
+    variant: "destructive" as const,
+    icon: "delete" as const,
+    loading: false
   });
 
   // Estados dos formulários
@@ -244,6 +277,23 @@ export default function Admin() {
     createProposalMutation.mutate(proposalData);
   };
 
+  // Filtros de candidatos e empresas
+  const filteredCandidatos = candidatos.filter(candidato => {
+    const matchesName = candidato.nome?.toLowerCase().includes(candidatoFilter.toLowerCase()) ?? false;
+    const matchesPhone = candidato.telefone?.toLowerCase().includes(candidatoFilter.toLowerCase()) ?? false;
+    const matchesSearch = candidatoFilter === "" || matchesName || matchesPhone;
+    const matchesCity = candidatoFilterCity === "all" || candidato.cidade === candidatoFilterCity;
+    return matchesSearch && matchesCity;
+  });
+
+  const filteredEmpresas = empresas.filter(empresa => {
+    const matchesName = empresa.nome?.toLowerCase().includes(empresaFilter.toLowerCase()) ?? false;
+    const matchesCnpj = empresa.cnpj?.toLowerCase().includes(empresaFilter.toLowerCase()) ?? false;
+    const matchesSearch = empresaFilter === "" || matchesName || matchesCnpj;
+    const matchesSetor = empresaFilterSetor === "all" || empresa.setor === empresaFilterSetor;
+    return matchesSearch && matchesSetor;
+  });
+
   // Estatísticas do dashboard
   const stats = {
     totalCandidatos: candidatos.length,
@@ -259,8 +309,28 @@ export default function Admin() {
       .reduce((acc, s) => acc + parseFloat(s.valor?.replace(/[^\d,]/g, '').replace(',', '.') || '0'), 0)
   };
 
+  // Função para mostrar confirmação de delete
+  const showDeleteConfirmation = (id: string, type: 'candidato' | 'empresa', name: string) => {
+    setConfirmDialog({
+      open: true,
+      title: `Remover ${type === 'candidato' ? 'Candidato' : 'Empresa'}`,
+      description: `Tem certeza que deseja remover "${name}"? Esta ação não pode ser desfeita.`,
+      action: () => {
+        setConfirmDialog(prev => ({ ...prev, loading: true }));
+        deleteUserMutation.mutate({ id, type }, {
+          onSettled: () => {
+            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
+          }
+        });
+      },
+      variant: "destructive",
+      icon: type === 'candidato' ? 'delete' : 'delete',
+      loading: false
+    });
+  };
+
   if (!user) {
-    return <div>Carregando...</div>;
+    return <PageLoader text="Carregando área administrativa..." />;
   }
 
   return (
@@ -295,13 +365,16 @@ export default function Admin() {
           </div>
 
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="candidatos">Candidatos</TabsTrigger>
               <TabsTrigger value="empresas">Empresas</TabsTrigger>
               <TabsTrigger value="servicos">Serviços</TabsTrigger>
               <TabsTrigger value="propostas">Propostas</TabsTrigger>
               <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+              <TabsTrigger value="comunicacao">Comunicação</TabsTrigger>
+              <TabsTrigger value="hunting">Hunting</TabsTrigger>
+              <TabsTrigger value="multi-cliente">Multi-Cliente</TabsTrigger>
             </TabsList>
 
             {/* Dashboard */}
@@ -400,29 +473,87 @@ export default function Admin() {
             {/* Candidatos */}
             <TabsContent value="candidatos">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Gestão de Candidatos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar candidatos..."
+                        className="pl-8 w-64"
+                        value={candidatoFilter}
+                        onChange={(e) => setCandidatoFilter(e.target.value)}
+                      />
+                    </div>
+                    <Select value={candidatoFilterCity} onValueChange={setCandidatoFilterCity}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrar por cidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as cidades</SelectItem>
+                        {Array.from(new Set(candidatos.map(c => c.cidade).filter(Boolean))).map((cidade) => (
+                          <SelectItem key={cidade} value={cidade || ""}>
+                            {cidade}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {candidatos.map((candidato) => (
-                      <div key={candidato.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-medium">{candidato.nome}</h3>
-                          <p className="text-sm text-gray-500">{candidato.telefone}</p>
-                          {candidato.linkedin && (
-                            <p className="text-sm text-blue-600">{candidato.linkedin}</p>
-                          )}
+                    {filteredCandidatos.map((candidato) => (
+                      <div key={candidato.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Users className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{candidato.nome}</h3>
+                              <p className="text-sm text-gray-500">{candidato.telefone}</p>
+                              {candidato.cidade && (
+                                <p className="text-sm text-gray-400">📍 {candidato.cidade}</p>
+                              )}
+                              {candidato.linkedin && (
+                                <p className="text-sm text-blue-600">LinkedIn: {candidato.linkedin}</p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteUserMutation.mutate({ id: candidato.id, type: 'candidato' })}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLocation(`/candidato/${candidato.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => showDeleteConfirmation(candidato.id, 'candidato', candidato.nome)}
+                            disabled={deleteUserMutation.isPending}
+                          >
+                            {deleteUserMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     ))}
+                    {filteredCandidatos.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Nenhum candidato encontrado</p>
+                        {candidatoFilter && (
+                          <p className="text-sm">Tente ajustar os filtros de busca</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -431,27 +562,87 @@ export default function Admin() {
             {/* Empresas */}
             <TabsContent value="empresas">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Gestão de Empresas</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar empresas..."
+                        className="pl-8 w-64"
+                        value={empresaFilter}
+                        onChange={(e) => setEmpresaFilter(e.target.value)}
+                      />
+                    </div>
+                    <Select value={empresaFilterSetor} onValueChange={setEmpresaFilterSetor}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrar por setor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os setores</SelectItem>
+                        {Array.from(new Set(empresas.map(e => e.setor).filter(Boolean))).map((setor) => (
+                          <SelectItem key={setor} value={setor || ""}>
+                            {setor}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {empresas.map((empresa) => (
-                      <div key={empresa.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <h3 className="font-medium">{empresa.nome}</h3>
-                          <p className="text-sm text-gray-500">{empresa.cnpj}</p>
-                          <p className="text-sm text-gray-500">{empresa.setor}</p>
+                    {filteredEmpresas.map((empresa) => (
+                      <div key={empresa.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                              <Building className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{empresa.nome}</h3>
+                              <p className="text-sm text-gray-500">CNPJ: {empresa.cnpj}</p>
+                              {empresa.setor && (
+                                <p className="text-sm text-gray-400">🏢 {empresa.setor}</p>
+                              )}
+                              {empresa.cidade && (
+                                <p className="text-sm text-gray-400">📍 {empresa.cidade}</p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteUserMutation.mutate({ id: empresa.id, type: 'empresa' })}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLocation(`/empresa/${empresa.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => showDeleteConfirmation(empresa.id, 'empresa', empresa.nome)}
+                            disabled={deleteUserMutation.isPending}
+                          >
+                            {deleteUserMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     ))}
+                    {filteredEmpresas.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Nenhuma empresa encontrada</p>
+                        {empresaFilter && (
+                          <p className="text-sm">Tente ajustar os filtros de busca</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -537,8 +728,16 @@ export default function Admin() {
                           />
                         </div>
 
-                        <Button onClick={handleCreateService} className="w-full">
-                          Criar Serviço
+                        <Button 
+                          onClick={handleCreateService} 
+                          className="w-full"
+                          disabled={createServiceMutation.isPending}
+                        >
+                          {createServiceMutation.isPending ? (
+                            <LoadingSpinner size="sm" text="Criando..." />
+                          ) : (
+                            "Criar Serviço"
+                          )}
                         </Button>
                       </div>
                     </DialogContent>
@@ -651,8 +850,16 @@ export default function Admin() {
                           />
                         </div>
 
-                        <Button onClick={handleCreateProposal} className="w-full">
-                          Criar Proposta
+                        <Button 
+                          onClick={handleCreateProposal} 
+                          className="w-full"
+                          disabled={createProposalMutation.isPending}
+                        >
+                          {createProposalMutation.isPending ? (
+                            <LoadingSpinner size="sm" text="Criando..." />
+                          ) : (
+                            "Criar Proposta"
+                          )}
                         </Button>
                       </div>
                     </DialogContent>
@@ -740,9 +947,255 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Comunicação */}
+            <TabsContent value="comunicacao" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5 text-blue-500" />
+                    Sistema de Comunicação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Comunicação Integrada</h3>
+                      <p className="text-gray-600">
+                        Sistema completo de comunicação entre candidatos e empresas com chat em tempo real, 
+                        notificações push e templates personalizados.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">24</div>
+                          <div className="text-sm text-blue-700">Conversas Ativas</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">89</div>
+                          <div className="text-sm text-green-700">Mensagens Hoje</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Recursos Disponíveis:</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• Chat em tempo real</li>
+                          <li>• Notificações push</li>
+                          <li>• Templates de mensagens</li>
+                          <li>• Histórico de conversas</li>
+                          <li>• Status online/offline</li>
+                          <li>• Integração com área empresa</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+                        <MessageCircle className="h-12 w-12 mb-3 opacity-80" />
+                        <h3 className="text-lg font-semibold mb-2">Acesse o Sistema</h3>
+                        <p className="text-blue-100 text-sm mb-4">
+                          Gerencie todas as comunicações do sistema de forma centralizada.
+                        </p>
+                        <Button 
+                          onClick={() => setLocation("/comunicacao")}
+                          className="bg-white text-blue-600 hover:bg-blue-50 w-full"
+                        >
+                          Abrir Comunicação
+                        </Button>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-medium mb-3">Integração com Área Empresa</h4>
+                        <p className="text-sm text-gray-600 mb-3">
+                          O sistema de comunicação está completamente integrado com a área empresa, 
+                          permitindo que empresas se comuniquem diretamente com candidatos.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setLocation("/empresa")}
+                        >
+                          Ver Área Empresa
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Hunting */}
+            <TabsContent value="hunting" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="h-5 w-5 text-pink-500" />
+                    Sistema de Hunting
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Busca Ativa de Talentos</h3>
+                      <p className="text-gray-600">
+                        Plataforma completa para hunting de candidatos com integração a LinkedIn, 
+                        GitHub e outras redes profissionais.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-pink-50 rounded-lg">
+                          <div className="text-2xl font-bold text-pink-600">2</div>
+                          <div className="text-sm text-pink-700">Campanhas Ativas</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">37</div>
+                          <div className="text-sm text-green-700">Candidatos Contactados</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Funcionalidades:</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• Campanhas de hunting</li>
+                          <li>• Templates personalizados</li>
+                          <li>• Integração LinkedIn/GitHub</li>
+                          <li>• Relatórios de performance</li>
+                          <li>• Acompanhamento de status</li>
+                          <li>• Taxa de conversão</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg p-6 text-white">
+                        <Search className="h-12 w-12 mb-3 opacity-80" />
+                        <h3 className="text-lg font-semibold mb-2">Acesse o Hunting</h3>
+                        <p className="text-pink-100 text-sm mb-4">
+                          Gerencie campanhas de busca ativa e integre com plataformas externas.
+                        </p>
+                        <Button 
+                          onClick={() => setLocation("/hunting")}
+                          className="bg-white text-pink-600 hover:bg-pink-50 w-full"
+                        >
+                          Abrir Hunting
+                        </Button>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <span className="text-sm font-medium">LinkedIn</span>
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Conectado
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <span className="text-sm font-medium">GitHub</span>
+                          <Badge variant="outline">Desconectado</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Multi-Cliente */}
+            <TabsContent value="multi-cliente" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UsersIcon className="h-5 w-5 text-orange-500" />
+                    Gestão Multi-Cliente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Plataforma Multi-Tenant</h3>
+                      <p className="text-gray-600">
+                        Sistema completo para gerenciar múltiplos clientes com isolamento de dados, 
+                        permissões personalizadas e billing automatizado.
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-orange-50 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">3</div>
+                          <div className="text-sm text-orange-700">Clientes Ativos</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">R$ 11.9k</div>
+                          <div className="text-sm text-green-700">Receita Mensal</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Recursos Disponíveis:</h4>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                          <li>• Gestão de clientes</li>
+                          <li>• Controle de permissões</li>
+                          <li>• Limites de recursos</li>
+                          <li>• Faturamento automático</li>
+                          <li>• Relatórios por cliente</li>
+                          <li>• Backup e segurança</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white">
+                        <UsersIcon className="h-12 w-12 mb-3 opacity-80" />
+                        <h3 className="text-lg font-semibold mb-2">Acesse Multi-Cliente</h3>
+                        <p className="text-orange-100 text-sm mb-4">
+                          Gerencie todos os clientes, planos e faturamento de forma centralizada.
+                        </p>
+                        <Button 
+                          onClick={() => setLocation("/multi-cliente")}
+                          className="bg-white text-orange-600 hover:bg-orange-50 w-full"
+                        >
+                          Abrir Multi-Cliente
+                        </Button>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h4 className="font-medium mb-3">Planos Disponíveis</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Básico</span>
+                            <span className="font-medium">R$ 500,00</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Premium</span>
+                            <span className="font-medium">R$ 2.500,00</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Enterprise</span>
+                            <span className="font-medium">R$ 8.900,00</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog de Confirmação */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        confirmText="Sim, remover"
+        cancelText="Cancelar"
+        variant={confirmDialog.variant}
+        icon={confirmDialog.icon}
+        onConfirm={confirmDialog.action}
+        loading={confirmDialog.loading}
+      />
     </Layout>
   );
 }

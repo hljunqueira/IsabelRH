@@ -41,16 +41,23 @@ import {
   Target,
   Award,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Trophy,
+  Zap,
+  FileText,
+  BarChart3
 } from "lucide-react";
 import type { Empresa, Vaga, Candidatura, Candidato } from "@shared/schema";
 import Layout from "@/components/Layout";
 import TalentosCompativeis from "@/components/TalentosCompativeis";
 
 export default function AreaEmpresa() {
+  console.log('🏢 AreaEmpresa: Componente iniciado');
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  console.log('🏢 AreaEmpresa: user =', user);
   
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -66,10 +73,10 @@ export default function AreaEmpresa() {
   };
 
   useEffect(() => {
-    if (!user || user.usuario.tipo !== "empresa") {
+    if (!user || user.tipo !== "empresa") {
       setLocation("/login");
     }
-  }, [setLocation]);
+  }, [user, setLocation]);
 
   const [profileData, setProfileData] = useState({
     nome: "",
@@ -119,29 +126,29 @@ export default function AreaEmpresa() {
 
   // Fetch company profile
   const { data: empresa, isLoading: loadingProfile } = useQuery<Empresa>({
-    queryKey: [`/api/empresas/${user?.usuario?.id}`],
-    enabled: !!user?.usuario?.id,
+    queryKey: [`/api/empresas/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Fetch company jobs
   const { data: vagas = [], isLoading: loadingVagas } = useQuery({
-    queryKey: [`/api/vagas/empresa/${user?.usuario?.id}`],
-    enabled: !!user?.usuario?.id,
+    queryKey: [`/api/vagas/empresa/${user?.id}`],
+    enabled: !!user?.id,
   });
 
   // Fetch applications for each job
   const { data: candidaturasData = {} } = useQuery({
-    queryKey: ['/api/candidaturas/empresa', user?.usuario?.id],
-    enabled: !!user?.usuario?.id,
+    queryKey: ['/api/candidaturas/empresa', user?.id],
+    enabled: !!user?.id,
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<Empresa>) => {
-      return await apiRequest("PUT", `/api/empresas/${user?.usuario?.id}`, data);
+      return await apiRequest("PUT", `/api/empresas/${user?.id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/empresas/${user?.usuario?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/empresas/${user?.id}`] });
       toast({
         title: "Perfil atualizado!",
         description: "Informações da empresa foram salvas com sucesso.",
@@ -160,13 +167,18 @@ export default function AreaEmpresa() {
   // Create job mutation
   const createJobMutation = useMutation({
     mutationFn: async (data: any) => {
+      if (!user?.id) {
+        throw new Error("Usuário não identificado");
+      }
       return await apiRequest("POST", "/api/vagas", { 
         ...data, 
-        empresaId: user.usuario.id 
+        empresaId: user.id 
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/vagas/empresa/${user.usuario.id}`] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/vagas/empresa/${user.id}`] });
+      }
       toast({
         title: "Vaga criada!",
         description: "A vaga foi publicada com sucesso.",
@@ -189,7 +201,9 @@ export default function AreaEmpresa() {
       return await apiRequest("DELETE", `/api/vagas/${vagaId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/vagas/empresa/${user.usuario.id}`] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/vagas/empresa/${user.id}`] });
+      }
       toast({
         title: "Vaga removida!",
         description: "A vaga foi removida com sucesso.",
@@ -365,11 +379,15 @@ export default function AreaEmpresa() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil">Perfil da Empresa</TabsTrigger>
               <TabsTrigger value="vagas">Minhas Vagas</TabsTrigger>
               <TabsTrigger value="candidatos">Candidatos</TabsTrigger>
+              <TabsTrigger value="ranking">Ranking</TabsTrigger>
+              <TabsTrigger value="triagem">Triagem</TabsTrigger>
+              <TabsTrigger value="parsing">Parsing</TabsTrigger>
+              <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -409,39 +427,15 @@ export default function AreaEmpresa() {
                     <TrendingUp className="h-4 w-4 text-green-600" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">75%</div>
+                    <div className="text-2xl font-bold">-</div>
                     <p className="text-xs text-muted-foreground">
-                      Candidatos aprovados
+                      Aguardando dados
                     </p>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Atividade Recente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-isabel-blue rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Nova candidatura recebida</p>
-                        <p className="text-xs text-gray-500">João Silva se candidatou para Desenvolvedor React</p>
-                      </div>
-                      <span className="text-xs text-gray-400">2h atrás</span>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-isabel-orange rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Vaga publicada com sucesso</p>
-                        <p className="text-xs text-gray-500">Analista de Marketing Digital está ativa</p>
-                      </div>
-                      <span className="text-xs text-gray-400">1 dia atrás</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
             </TabsContent>
 
             {/* Company Profile Tab */}
@@ -1204,7 +1198,18 @@ export default function AreaEmpresa() {
                         Crie sua primeira vaga para começar a atrair candidatos qualificados.
                       </p>
                       <Button 
-                        onClick={() => setShowJobModal(true)}
+                        onClick={() => {
+                          if (!isProfileComplete()) {
+                            toast({
+                              title: "Perfil incompleto",
+                              description: "Por favor, complete seu perfil empresarial antes de publicar vagas.",
+                              variant: "destructive",
+                            });
+                            setActiveTab("perfil");
+                            return;
+                          }
+                          setShowJobModal(true);
+                        }}
                         className="bg-isabel-blue hover:bg-isabel-blue/90"
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -1227,27 +1232,9 @@ export default function AreaEmpresa() {
                   <CardTitle>Pipeline de Candidatos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-blue-600">12</div>
-                      <div className="text-sm text-blue-800">Candidatados</div>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-yellow-600">8</div>
-                      <div className="text-sm text-yellow-800">Em Triagem</div>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-purple-600">5</div>
-                      <div className="text-sm text-purple-800">Entrevista</div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-green-600">3</div>
-                      <div className="text-sm text-green-800">Aprovados</div>
-                    </div>
-                    <div className="bg-red-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl font-bold text-red-600">4</div>
-                      <div className="text-sm text-red-800">Reprovados</div>
-                    </div>
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Publique vagas para visualizar o pipeline de candidatos</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1296,6 +1283,114 @@ export default function AreaEmpresa() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Ranking Inteligente Tab */}
+            <TabsContent value="ranking" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-yellow-500" />
+                    Ranking Inteligente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Trophy className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Sistema de Ranking Inteligente</h3>
+                    <p className="text-gray-600 mb-6">
+                      Avalie candidatos com base em múltiplos critérios: DISC, habilidades, experiência e localização.
+                    </p>
+                    <Button 
+                      onClick={() => setLocation("/empresa/ranking")}
+                      className="bg-yellow-500 hover:bg-yellow-600"
+                    >
+                      Acessar Ranking Inteligente
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Triagem Automática Tab */}
+            <TabsContent value="triagem" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-blue-500" />
+                    Triagem Automática
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Zap className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Triagem Automática</h3>
+                    <p className="text-gray-600 mb-6">
+                      Configure filtros inteligentes e ações automáticas para triar candidatos de forma eficiente.
+                    </p>
+                    <Button 
+                      onClick={() => setLocation("/empresa/triagem")}
+                      className="bg-blue-500 hover:bg-blue-600"
+                    >
+                      Acessar Triagem Automática
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Parsing de Currículos Tab */}
+            <TabsContent value="parsing" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-green-500" />
+                    Parsing de Currículos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <FileText className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Parsing de Currículos</h3>
+                    <p className="text-gray-600 mb-6">
+                      Extraia automaticamente dados de currículos enviados e visualize informações estruturadas.
+                    </p>
+                    <Button 
+                      onClick={() => setLocation("/empresa/parsing")}
+                      className="bg-green-500 hover:bg-green-600"
+                    >
+                      Acessar Parsing
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Relatórios Tab */}
+            <TabsContent value="relatorios" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-purple-500" />
+                    Relatórios & Dashboards
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <BarChart3 className="h-16 w-16 text-purple-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Relatórios & Dashboards</h3>
+                    <p className="text-gray-600 mb-6">
+                      Visualize KPIs de recrutamento, gráficos de desempenho e relatórios detalhados.
+                    </p>
+                    <Button 
+                      onClick={() => setLocation("/empresa/relatorios")}
+                      className="bg-purple-500 hover:bg-purple-600"
+                    >
+                      Acessar Relatórios
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
 
           {/* Candidate Management Modal */}
@@ -1340,89 +1435,9 @@ export default function AreaEmpresa() {
                   </Select>
                 </div>
 
-                <div className="space-y-3">
-                  {/* Mock candidate data for demonstration */}
-                  {[
-                    { 
-                      nome: "João Silva", 
-                      email: "joao@email.com", 
-                      telefone: "(48) 99999-9999",
-                      status: "candidatado",
-                      pontuacao: 8.5,
-                      dataCandidatura: "2024-06-25"
-                    },
-                    { 
-                      nome: "Maria Santos", 
-                      email: "maria@email.com", 
-                      telefone: "(48) 88888-8888",
-                      status: "triagem",
-                      pontuacao: 9.2,
-                      dataCandidatura: "2024-06-24"
-                    },
-                    { 
-                      nome: "Pedro Costa", 
-                      email: "pedro@email.com", 
-                      telefone: "(48) 77777-7777",
-                      status: "entrevista",
-                      pontuacao: 7.8,
-                      dataCandidatura: "2024-06-23"
-                    }
-                  ].map((candidato, index) => (
-                    <Card key={index} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-medium">{candidato.nome}</h4>
-                            <Badge 
-                              variant={
-                                candidato.status === "aprovado" ? "default" :
-                                candidato.status === "reprovado" ? "destructive" :
-                                candidato.status === "entrevista" ? "secondary" :
-                                "outline"
-                              }
-                            >
-                              {candidato.status}
-                            </Badge>
-                            <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 text-yellow-500" />
-                              <span className="text-sm font-medium">{candidato.pontuacao}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                            <span>{candidato.email}</span>
-                            <span>{candidato.telefone}</span>
-                            <span>Candidatou-se em {new Date(candidato.dataCandidatura).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver Perfil
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Download className="h-4 w-4 mr-2" />
-                            Baixar CV
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Mensagem
-                          </Button>
-                          <Select defaultValue={candidato.status}>
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="candidatado">Candidatado</SelectItem>
-                              <SelectItem value="triagem">Triagem</SelectItem>
-                              <SelectItem value="entrevista">Entrevista</SelectItem>
-                              <SelectItem value="aprovado">Aprovado</SelectItem>
-                              <SelectItem value="reprovado">Reprovado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Nenhum candidato encontrado para esta vaga</p>
                 </div>
                 </TabsContent>
                 

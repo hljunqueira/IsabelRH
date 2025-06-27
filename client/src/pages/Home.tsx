@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { 
   Search, 
@@ -12,12 +13,51 @@ import {
   Heart,
   Users,
   Building,
-  UserPlus
+  UserPlus,
+  MapPin,
+  Clock,
+  DollarSign,
+  ChevronRight
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 import GNjPnSHd4wX4gM2H2En8qf from "@assets/GNjPnSHd4wX4gM2H2En8qf.png";
 
+interface Vaga {
+  id: string;
+  titulo: string;
+  empresa: string;
+  cidade: string;
+  estado: string;
+  salario?: string;
+  tipo: string;
+  descricao: string;
+  requisitos: string[];
+  createdAt: string;
+}
+
 export default function Home() {
+  const [vagas, setVagas] = useState<Vaga[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVagasDestaque();
+  }, []);
+
+  const fetchVagasDestaque = async () => {
+    try {
+      const response = await fetch('/api/vagas?limit=6&destaque=true');
+      if (response.ok) {
+        const data = await response.json();
+        setVagas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar vagas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -166,6 +206,125 @@ export default function Home() {
           </div>
         </div>
       </section>
+      
+      {/* Vagas em Destaque */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-isabel-blue mb-4">Vagas em Destaque</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Oportunidades exclusivas para impulsionar sua carreira
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-isabel-blue mx-auto mb-4"></div>
+              <p className="text-gray-600">Carregando vagas...</p>
+            </div>
+          ) : vagas.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {vagas.map((vaga) => (
+                  <Card key={vaga.id} className="hover:shadow-xl transition-shadow border-l-4 border-isabel-orange">
+                    <CardHeader>
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge variant="outline" className="text-isabel-blue border-isabel-blue">
+                          {vaga.tipo}
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          {new Date(vaga.createdAt).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                      <CardTitle className="text-xl text-isabel-blue line-clamp-2">
+                        {vaga.titulo}
+                      </CardTitle>
+                      <p className="text-gray-600 font-medium">{vaga.empresa}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center text-gray-600">
+                          <MapPin className="h-4 w-4 mr-2 text-isabel-orange" />
+                          <span className="text-sm">{vaga.cidade}, {vaga.estado}</span>
+                        </div>
+                        {vaga.salario && (
+                          <div className="flex items-center text-gray-600">
+                            <DollarSign className="h-4 w-4 mr-2 text-isabel-orange" />
+                            <span className="text-sm">{vaga.salario}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center text-gray-600">
+                          <Clock className="h-4 w-4 mr-2 text-isabel-orange" />
+                          <span className="text-sm">Publicada há {Math.floor((Date.now() - new Date(vaga.createdAt).getTime()) / (1000 * 60 * 60 * 24))} dias</span>
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-700 text-sm mb-4 line-clamp-3">
+                        {vaga.descricao}
+                      </p>
+                      
+                      {vaga.requisitos.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-isabel-blue mb-2">Principais requisitos:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {vaga.requisitos.slice(0, 3).map((req, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {req}
+                              </Badge>
+                            ))}
+                            {vaga.requisitos.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{vaga.requisitos.length - 3} mais
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2">
+                        <Link href="/candidato">
+                          <Button className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90">
+                            Candidatar-se
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
+                        >
+                          Ver mais
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              <div className="text-center">
+                <Link href="/candidato">
+                  <Button size="lg" className="bg-isabel-blue hover:bg-isabel-blue/90">
+                    Ver Todas as Vagas
+                    <ChevronRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Nenhuma vaga disponível</h3>
+              <p className="text-gray-600 mb-6">Cadastre-se para ser notificado sobre novas oportunidades!</p>
+              <Link href="/candidato">
+                <Button className="bg-isabel-orange hover:bg-isabel-orange/90">
+                  Cadastrar-se como Candidato
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+      
       {/* Mission, Vision, Values */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

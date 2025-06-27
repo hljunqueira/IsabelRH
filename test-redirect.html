@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Redirecionamentos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+        .admin { background: #3b82f6; color: white; }
+        .empresa { background: #f97316; color: white; }
+        .candidato { background: #10b981; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Redirecionamentos - Isabel RH</h1>
+    
+    <p>Clique nos botões para testar se as páginas estão acessíveis:</p>
+    
+    <button class="admin" onclick="window.open('http://localhost:5174/admin', '_blank')">
+        📍 Testar /admin
+    </button>
+    
+    <button class="empresa" onclick="window.open('http://localhost:5174/empresa', '_blank')">
+        📍 Testar /empresa
+    </button>
+    
+    <button class="candidato" onclick="window.open('http://localhost:5174/candidato', '_blank')">
+        📍 Testar /candidato
+    </button>
+    
+    <hr>
+    
+    <button onclick="window.open('http://localhost:5174/login', '_blank')">
+        🔑 Ir para Login
+    </button>
+    
+    <hr>
+    
+    <h2>🔍 Resultados:</h2>
+    <p><strong>✅ Funcionou:</strong> Página carregou corretamente</p>
+    <p><strong>❌ Erro:</strong> Página vazia, erro ou redirecionamento incorreto</p>
+    
+    <h3>📝 Instruções:</h3>
+    <ol>
+        <li>Clique em cada botão de teste</li>
+        <li>Verifique se a página carrega o conteúdo correto</li>
+        <li>Se houver problema, anote qual página</li>
+    </ol>
+    
+    <h3>🔑 Para testar login:</h3>
+    <p><strong>Admin:</strong> admin@isabelrh.com.br / 123456</p>
+    <p><strong>Empresa:</strong> empresa@teste.com.br / 123456</p>
+    <p><strong>Candidato:</strong> candidato@teste.com / 123456</p>
+</body>
+</html> 

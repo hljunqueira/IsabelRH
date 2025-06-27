@@ -25,7 +25,6 @@
   --input: hsl(214, 32%, 91%);
   --ring: hsl(24, 85%, 57%);
   --radius: 0.5rem;
-  
   /* Brand colors */
   --isabel-orange: hsl(24, 85%, 57%);
   --isabel-blue: hsl(207, 55%, 24%);
@@ -55,11 +54,12 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-background text-foreground font-inter antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -92,3 +92,71 @@
     font-family: 'Inter', sans-serif;
   }
 }
+
+@layer components {
+  /* Fix para dropdowns transparentes - aplica fundo sólido globalmente */
+  [data-radix-select-content] {
+    background-color: white !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+    backdrop-filter: none !important;
+  }
+  
+  .dark [data-radix-select-content] {
+    background-color: hsl(var(--popover)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+}
+
+/* 404 Page Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-delayed {
+  0%, 50% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-spin-slow { 
+  animation: spin-slow 8s linear infinite; 
+}
+
+.animate-fade-in { 
+  animation: fade-in 1s ease-out; 
+}
+
+.animate-fade-in-delayed { 
+  animation: fade-in-delayed 2s ease-out; 
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Loading animations */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 2s ease-in-out infinite;
+} 

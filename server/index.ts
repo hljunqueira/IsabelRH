@@ -1,8 +1,32 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
 
 const app = express();
+
+// Configurar CORS para permitir acesso do frontend
+app.use(cors({
+  origin: [
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173', 
+    'http://localhost:3000', 
+    'http://localhost:5174', 
+    'http://127.0.0.1:5174',
+    'file://', // Permitir arquivos locais
+    'null', // Permitir origin null (arquivos locais)
+    // Railway production URLs
+    'https://isabelrh-production.up.railway.app',
+    'https://isabelrh.railway.app',
+    // Domínio personalizado (quando configurado)
+    'https://isabelrh.com.br',
+    'https://www.isabelrh.com.br'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with']
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
@@ -59,11 +83,10 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 5001;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "0.0.0.0" // Mudança: permitir acesso de qualquer IP
   }, () => {
     log(`serving on port ${port}`);
   });

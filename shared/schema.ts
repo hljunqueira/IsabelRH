@@ -21,7 +21,7 @@ export const prioridadeEnum = pgEnum('prioridade', ['baixa', 'media', 'alta', 'u
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  senha: varchar("senha", { length: 255 }).notNull(),
+  senha: varchar("senha", { length: 255 }),
   tipo: tipoUsuarioEnum("tipo").notNull(),
   criadoEm: timestamp("criado_em").defaultNow().notNull(),
 });

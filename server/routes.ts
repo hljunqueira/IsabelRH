@@ -15,6 +15,14 @@ import {
   insertTestesDiscSchema
 } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { obterCandidatosRanking, obterClassificacaoScore } from "./ranking";
+import { sistemaTriagem } from "./triagem";
+import { sistemaComunicacao } from "./comunicacao";
+import { sistemaParsing } from "./parsing";
+import { sistemaRelatorios } from "./relatorios";
+import { sistemaHunting } from "./hunting";
+import { sistemaMultiCliente } from "./multicliente";
+import { authenticateUser, getAuthenticatedUser, supabase } from "./lib/supabase";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -58,6 +66,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ROTA DE LOGIN DESABILITADA - Use Supabase Auth no frontend
+  // A autenticação deve ser feita via supabase.auth.signInWithPassword no frontend
+  // Esta rota foi mantida apenas para referência, mas não deve ser usada
+  /*
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, senha } = req.body;
@@ -87,6 +99,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Erro no login" });
+    }
+  });
+  */
+
+  // Rota para obter dados do usuário autenticado (requer JWT do Supabase)
+  app.get("/api/auth/me", authenticateUser, async (req, res) => {
+    try {
+      console.log('🔐 Auth/me: Iniciando verificação de usuário...');
+      const user = getAuthenticatedUser(req);
+      
+      if (!user || !user.id) {
+        console.error('❌ Auth/me: Usuário não encontrado no token');
+        return res.status(401).json({ message: "Token inválido - usuário não encontrado" });
+      }
+      
+      console.log('👤 Auth/me: Buscando usuário ID:', user.id);
+      
+      // Verificar se Supabase está configurado
+      if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error('❌ Auth/me: Variáveis de ambiente do Supabase não configuradas');
+        return res.status(500).json({ 
+          message: "Configuração do Supabase ausente",
+          details: "Verifique SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no arquivo .env"
+        });
+      }
+      
+      // Buscar dados diretamente do Supabase Auth
+      const { data: usuario, error: usuarioError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (usuarioError) {
+        console.error('❌ Auth/me: Erro ao buscar usuário no Supabase:', usuarioError);
+        
+        if (usuarioError.code === '42P01') {
+          return res.status(500).json({ 
+            message: "Tabela 'usuarios' não existe no Supabase",
+            details: "Execute o script SQL fornecido no arquivo CONFIGURE-SUPABASE.md"
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: "Erro no banco de dados", 
+          details: usuarioError.message,
+          code: usuarioError.code 
+        });
+      }
+      
+      if (!usuario) {
+        console.error('❌ Auth/me: Usuário não encontrado na base de dados:', user.id);
+        return res.status(404).json({ message: "Usuário não encontrado na base de dados" });
+      }
+      
+      console.log('✅ Auth/me: Usuário encontrado:', usuario.email, 'Tipo:', usuario.type);
+      
+      // Get profile based on user type
+      let profile = null;
+      if (usuario.type === "candidato") {
+        console.log('📄 Auth/me: Buscando perfil de candidato...');
+        const { data: candidato, error: candidatoError } = await supabase
+          .from('candidatos')
+          .select('*')
+          .eq('id', usuario.id)
+          .single();
+        
+        if (candidatoError && candidatoError.code !== 'PGRST116') {
+          console.error('❌ Auth/me: Erro ao buscar candidato:', candidatoError);
+        }
+        profile = candidato;
+      } else if (usuario.type === "empresa") {
+        console.log('🏢 Auth/me: Buscando perfil de empresa...');
+        const { data: empresa, error: empresaError } = await supabase
+          .from('empresas')
+          .select('*')
+          .eq('id', usuario.id)
+          .single();
+        
+        if (empresaError && empresaError.code !== 'PGRST116') {
+          console.error('❌ Auth/me: Erro ao buscar empresa:', empresaError);
+        }
+        profile = empresa;
+      }
+      
+      console.log('🎉 Auth/me: Dados retornados com sucesso');
+      
+      res.json({ 
+        usuario: { ...usuario, senha: undefined },
+        profile 
+      });
+    } catch (error) {
+      console.error("💥 Auth/me: Erro geral:", error);
+      
+      if (error.message?.includes('connect ECONNREFUSED')) {
+        return res.status(500).json({ 
+          message: "Erro de conexão com Supabase",
+          details: "Verifique se o SUPABASE_URL está correto e se o projeto está ativo"
+        });
+      }
+      
+      res.status(500).json({ 
+        message: "Erro interno do servidor", 
+        details: error.message || "Erro desconhecido" 
+      });
     }
   });
 
@@ -681,6 +798,809 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao criar dados de teste:", error);
       res.status(500).json({ message: "Erro ao criar dados de teste" });
+    }
+  });
+
+  // Get candidates with ranking for a specific job
+  app.get("/api/vagas/:vagaId/candidatos-ranking", async (req, res) => {
+    try {
+      const { vagaId } = req.params;
+      const candidatosComScore = await obterCandidatosRanking(vagaId);
+      
+      // Adicionar classificação ao resultado
+      const candidatosComClassificacao = candidatosComScore.map(candidato => ({
+        ...candidato,
+        classificacao: obterClassificacaoScore(candidato.score)
+      }));
+      
+      res.json(candidatosComClassificacao);
+    } catch (error) {
+      console.error("Get candidatos ranking error:", error);
+      res.status(500).json({ message: "Erro ao obter ranking de candidatos" });
+    }
+  });
+
+  // Apply automatic screening for a job
+  app.post("/api/vagas/:vagaId/triagem-automatica", async (req, res) => {
+    try {
+      const { vagaId } = req.params;
+      const resultados = await sistemaTriagem.aplicarTriagemAutomatica(vagaId);
+      
+      res.json({
+        message: "Triagem automática aplicada com sucesso",
+        resultados,
+        totalProcessados: resultados.length
+      });
+    } catch (error) {
+      console.error("Apply automatic screening error:", error);
+      res.status(500).json({ message: "Erro ao aplicar triagem automática" });
+    }
+  });
+
+  // Get screening statistics for a job
+  app.get("/api/vagas/:vagaId/estatisticas-triagem", async (req, res) => {
+    try {
+      const { vagaId } = req.params;
+      const estatisticas = await sistemaTriagem.obterEstatisticasTriagem(vagaId);
+      
+      res.json(estatisticas);
+    } catch (error) {
+      console.error("Get screening statistics error:", error);
+      res.status(500).json({ message: "Erro ao obter estatísticas de triagem" });
+    }
+  });
+
+  // Create new screening filter
+  app.post("/api/filtros-triagem", async (req, res) => {
+    try {
+      const filtroData = req.body;
+      const novoFiltro = await sistemaTriagem.criarFiltro(filtroData);
+      
+      res.json(novoFiltro);
+    } catch (error) {
+      console.error("Create screening filter error:", error);
+      res.status(400).json({ message: "Erro ao criar filtro de triagem" });
+    }
+  });
+
+  // Get screening filters
+  app.get("/api/filtros-triagem", async (req, res) => {
+    try {
+      const { vagaId } = req.query;
+      const filtros = await sistemaTriagem.obterFiltros(vagaId as string);
+      
+      res.json(filtros);
+    } catch (error) {
+      console.error("Get screening filters error:", error);
+      res.status(500).json({ message: "Erro ao obter filtros de triagem" });
+    }
+  });
+
+  // Communication endpoints
+  // Get conversations for user
+  app.get("/api/conversas/:usuarioId", async (req, res) => {
+    try {
+      const { usuarioId } = req.params;
+      const { tipo } = req.query;
+      
+      if (!tipo || (tipo !== 'candidato' && tipo !== 'empresa')) {
+        return res.status(400).json({ message: "Tipo de usuário deve ser 'candidato' ou 'empresa'" });
+      }
+      
+      const conversas = await sistemaComunicacao.obterConversas(usuarioId, tipo as 'candidato' | 'empresa');
+      res.json(conversas);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "Erro ao obter conversas" });
+    }
+  });
+
+  // Get messages for conversation
+  app.get("/api/conversas/:conversaId/mensagens", async (req, res) => {
+    try {
+      const { conversaId } = req.params;
+      const mensagens = await sistemaComunicacao.obterMensagens(conversaId);
+      res.json(mensagens);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "Erro ao obter mensagens" });
+    }
+  });
+
+  // Send message
+  app.post("/api/conversas/:conversaId/mensagens", async (req, res) => {
+    try {
+      const { conversaId } = req.params;
+      const { remetenteId, remetenteTipo, destinatarioId, destinatarioTipo, conteudo, tipo, templateId } = req.body;
+      
+      const mensagem = await sistemaComunicacao.enviarMensagem(
+        conversaId,
+        remetenteId,
+        remetenteTipo,
+        destinatarioId,
+        destinatarioTipo,
+        conteudo,
+        tipo,
+        templateId
+      );
+      
+      res.json(mensagem);
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(400).json({ message: "Erro ao enviar mensagem" });
+    }
+  });
+
+  // Send template message
+  app.post("/api/conversas/:conversaId/template", async (req, res) => {
+    try {
+      const { conversaId } = req.params;
+      const { remetenteId, remetenteTipo, destinatarioId, destinatarioTipo, templateId, variaveis } = req.body;
+      
+      const mensagem = await sistemaComunicacao.enviarMensagemTemplate(
+        conversaId,
+        remetenteId,
+        remetenteTipo,
+        destinatarioId,
+        destinatarioTipo,
+        templateId,
+        variaveis
+      );
+      
+      res.json(mensagem);
+    } catch (error) {
+      console.error("Send template message error:", error);
+      res.status(400).json({ message: "Erro ao enviar mensagem template" });
+    }
+  });
+
+  // Mark message as read
+  app.patch("/api/mensagens/:mensagemId/lida", async (req, res) => {
+    try {
+      const { mensagemId } = req.params;
+      await sistemaComunicacao.marcarComoLida(mensagemId);
+      res.json({ message: "Mensagem marcada como lida" });
+    } catch (error) {
+      console.error("Mark message as read error:", error);
+      res.status(500).json({ message: "Erro ao marcar mensagem como lida" });
+    }
+  });
+
+  // Get message templates
+  app.get("/api/templates-mensagem", async (req, res) => {
+    try {
+      const { categoria } = req.query;
+      const templates = await sistemaComunicacao.obterTemplates(categoria as string);
+      res.json(templates);
+    } catch (error) {
+      console.error("Get message templates error:", error);
+      res.status(500).json({ message: "Erro ao obter templates de mensagem" });
+    }
+  });
+
+  // Create message template
+  app.post("/api/templates-mensagem", async (req, res) => {
+    try {
+      const templateData = req.body;
+      const novoTemplate = await sistemaComunicacao.criarTemplate(templateData);
+      res.json(novoTemplate);
+    } catch (error) {
+      console.error("Create message template error:", error);
+      res.status(400).json({ message: "Erro ao criar template de mensagem" });
+    }
+  });
+
+  // Get notifications
+  app.get("/api/notificacoes/:usuarioId", async (req, res) => {
+    try {
+      const { usuarioId } = req.params;
+      const { naoLidas } = req.query;
+      
+      const notificacoes = await sistemaComunicacao.obterNotificacoes(
+        usuarioId, 
+        naoLidas === 'true'
+      );
+      
+      res.json(notificacoes);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ message: "Erro ao obter notificações" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notificacoes/:notificacaoId/lida", async (req, res) => {
+    try {
+      const { notificacaoId } = req.params;
+      await sistemaComunicacao.marcarNotificacaoComoLida(notificacaoId);
+      res.json({ message: "Notificação marcada como lida" });
+    } catch (error) {
+      console.error("Mark notification as read error:", error);
+      res.status(500).json({ message: "Erro ao marcar notificação como lida" });
+    }
+  });
+
+  // Get communication statistics
+  app.get("/api/comunicacao/estatisticas/:usuarioId", async (req, res) => {
+    try {
+      const { usuarioId } = req.params;
+      const estatisticas = await sistemaComunicacao.obterEstatisticasComunicacao(usuarioId);
+      res.json(estatisticas);
+    } catch (error) {
+      console.error("Get communication statistics error:", error);
+      res.status(500).json({ message: "Erro ao obter estatísticas de comunicação" });
+    }
+  });
+
+  // Resume parsing endpoints
+  // Process resume content
+  app.post("/api/parsing/curriculo", async (req, res) => {
+    try {
+      const { conteudo, candidatoId } = req.body;
+      
+      if (!conteudo) {
+        return res.status(400).json({ message: "Conteúdo do currículo é obrigatório" });
+      }
+      
+      const resultado = await sistemaParsing.processarCurriculo(conteudo, candidatoId);
+      res.json(resultado);
+    } catch (error) {
+      console.error("Process resume error:", error);
+      res.status(500).json({ message: "Erro ao processar currículo" });
+    }
+  });
+
+  // Apply extracted data to candidate profile
+  app.post("/api/parsing/aplicar/:candidatoId", async (req, res) => {
+    try {
+      const { candidatoId } = req.params;
+      const { dados } = req.body;
+      
+      if (!dados) {
+        return res.status(400).json({ message: "Dados extraídos são obrigatórios" });
+      }
+      
+      const sucesso = await sistemaParsing.aplicarDadosExtraidos(candidatoId, dados);
+      
+      if (sucesso) {
+        res.json({ message: "Dados aplicados com sucesso" });
+      } else {
+        res.status(400).json({ message: "Erro ao aplicar dados" });
+      }
+    } catch (error) {
+      console.error("Apply extracted data error:", error);
+      res.status(500).json({ message: "Erro ao aplicar dados extraídos" });
+    }
+  });
+
+  // Reports and dashboards endpoints
+  // Get recruitment KPIs
+  app.get("/api/relatorios/kpi", async (req, res) => {
+    try {
+      const kpi = await sistemaRelatorios.obterKPIRecrutamento();
+      res.json(kpi);
+    } catch (error) {
+      console.error("Get recruitment KPIs error:", error);
+      res.status(500).json({ message: "Erro ao obter KPIs de recrutamento" });
+    }
+  });
+
+  // Get process selection metrics for a job
+  app.get("/api/relatorios/vagas/:vagaId/metricas", async (req, res) => {
+    try {
+      const { vagaId } = req.params;
+      const metricas = await sistemaRelatorios.obterMetricasProcessoSeletivo(vagaId);
+      res.json(metricas);
+    } catch (error) {
+      console.error("Get process selection metrics error:", error);
+      res.status(500).json({ message: "Erro ao obter métricas do processo seletivo" });
+    }
+  });
+
+  // Get monthly report
+  app.get("/api/relatorios/mensal/:mes/:ano", async (req, res) => {
+    try {
+      const { mes, ano } = req.params;
+      const relatorio = await sistemaRelatorios.obterRelatorioMensal(parseInt(mes), parseInt(ano));
+      res.json(relatorio);
+    } catch (error) {
+      console.error("Get monthly report error:", error);
+      res.status(500).json({ message: "Erro ao obter relatório mensal" });
+    }
+  });
+
+  // Get chart data for applications by month
+  app.get("/api/relatorios/graficos/candidaturas-mes", async (req, res) => {
+    try {
+      const { meses } = req.query;
+      const dados = await sistemaRelatorios.obterDadosGraficoCandidaturasPorMes(
+        meses ? parseInt(meses as string) : 12
+      );
+      res.json(dados);
+    } catch (error) {
+      console.error("Get applications by month chart error:", error);
+      res.status(500).json({ message: "Erro ao obter dados do gráfico" });
+    }
+  });
+
+  // Get chart data for application status
+  app.get("/api/relatorios/graficos/status-candidaturas", async (req, res) => {
+    try {
+      const dados = await sistemaRelatorios.obterDadosGraficoStatusCandidaturas();
+      res.json(dados);
+    } catch (error) {
+      console.error("Get application status chart error:", error);
+      res.status(500).json({ message: "Erro ao obter dados do gráfico de status" });
+    }
+  });
+
+  // Get chart data for most sought after areas
+  app.get("/api/relatorios/graficos/areas-procuradas", async (req, res) => {
+    try {
+      const dados = await sistemaRelatorios.obterDadosGraficoAreasMaisProcuradas();
+      res.json(dados);
+    } catch (error) {
+      console.error("Get most sought after areas chart error:", error);
+      res.status(500).json({ message: "Erro ao obter dados do gráfico de áreas" });
+    }
+  });
+
+  // Export report to PDF
+  app.post("/api/relatorios/exportar/pdf", async (req, res) => {
+    try {
+      const { dados, tipo } = req.body;
+      const nomeArquivo = await sistemaRelatorios.exportarRelatorioPDF(dados, tipo);
+      res.json({ nomeArquivo, url: `/downloads/${nomeArquivo}` });
+    } catch (error) {
+      console.error("Export report to PDF error:", error);
+      res.status(500).json({ message: "Erro ao exportar relatório PDF" });
+    }
+  });
+
+  // Export report to Excel
+  app.post("/api/relatorios/exportar/excel", async (req, res) => {
+    try {
+      const { dados, tipo } = req.body;
+      const nomeArquivo = await sistemaRelatorios.exportarRelatorioExcel(dados, tipo);
+      res.json({ nomeArquivo, url: `/downloads/${nomeArquivo}` });
+    } catch (error) {
+      console.error("Export report to Excel error:", error);
+      res.status(500).json({ message: "Erro ao exportar relatório Excel" });
+    }
+  });
+
+  // Talent hunting endpoints
+  // Create hunting campaign
+  app.post("/api/hunting/campanhas", async (req, res) => {
+    try {
+      const campanhaData = req.body;
+      const novaCampanha = await sistemaHunting.criarCampanha(campanhaData);
+      res.json(novaCampanha);
+    } catch (error) {
+      console.error("Create hunting campaign error:", error);
+      res.status(400).json({ message: "Erro ao criar campanha de hunting" });
+    }
+  });
+
+  // Get hunting campaigns
+  app.get("/api/hunting/campanhas", async (req, res) => {
+    try {
+      const { vagaId } = req.query;
+      const campanhas = await sistemaHunting.obterCampanhas(vagaId as string);
+      res.json(campanhas);
+    } catch (error) {
+      console.error("Get hunting campaigns error:", error);
+      res.status(500).json({ message: "Erro ao obter campanhas de hunting" });
+    }
+  });
+
+  // Search for talents
+  app.post("/api/hunting/campanhas/:campanhaId/buscar", async (req, res) => {
+    try {
+      const { campanhaId } = req.params;
+      const resultado = await sistemaHunting.buscarTalentos(campanhaId);
+      res.json(resultado);
+    } catch (error) {
+      console.error("Search talents error:", error);
+      res.status(500).json({ message: "Erro ao buscar talentos" });
+    }
+  });
+
+  // Contact talent
+  app.post("/api/hunting/perfis/:perfilId/contatar", async (req, res) => {
+    try {
+      const { perfilId } = req.params;
+      const { templateId, variaveis } = req.body;
+      
+      const sucesso = await sistemaHunting.contatarTalento(perfilId, templateId, variaveis);
+      
+      if (sucesso) {
+        res.json({ message: "Talento contatado com sucesso" });
+      } else {
+        res.status(400).json({ message: "Erro ao contatar talento" });
+      }
+    } catch (error) {
+      console.error("Contact talent error:", error);
+      res.status(500).json({ message: "Erro ao contatar talento" });
+    }
+  });
+
+  // Update profile status
+  app.patch("/api/hunting/perfis/:perfilId/status", async (req, res) => {
+    try {
+      const { perfilId } = req.params;
+      const { status, observacoes } = req.body;
+      
+      await sistemaHunting.atualizarStatusPerfil(perfilId, status, observacoes);
+      res.json({ message: "Status atualizado com sucesso" });
+    } catch (error) {
+      console.error("Update profile status error:", error);
+      res.status(500).json({ message: "Erro ao atualizar status do perfil" });
+    }
+  });
+
+  // Get hunting profiles
+  app.get("/api/hunting/perfis", async (req, res) => {
+    try {
+      const { campanhaId, status } = req.query;
+      const perfis = await sistemaHunting.obterPerfis(
+        campanhaId as string,
+        status as any
+      );
+      res.json(perfis);
+    } catch (error) {
+      console.error("Get hunting profiles error:", error);
+      res.status(500).json({ message: "Erro ao obter perfis de hunting" });
+    }
+  });
+
+  // Get contact templates
+  app.get("/api/hunting/templates", async (req, res) => {
+    try {
+      const templates = await sistemaHunting.obterTemplatesContato();
+      res.json(templates);
+    } catch (error) {
+      console.error("Get contact templates error:", error);
+      res.status(500).json({ message: "Erro ao obter templates de contato" });
+    }
+  });
+
+  // Create contact template
+  app.post("/api/hunting/templates", async (req, res) => {
+    try {
+      const templateData = req.body;
+      const novoTemplate = await sistemaHunting.criarTemplateContato(templateData);
+      res.json(novoTemplate);
+    } catch (error) {
+      console.error("Create contact template error:", error);
+      res.status(400).json({ message: "Erro ao criar template de contato" });
+    }
+  });
+
+  // Get hunting statistics
+  app.get("/api/hunting/estatisticas", async (req, res) => {
+    try {
+      const { campanhaId } = req.query;
+      const estatisticas = await sistemaHunting.obterEstatisticasHunting(campanhaId as string);
+      res.json(estatisticas);
+    } catch (error) {
+      console.error("Get hunting statistics error:", error);
+      res.status(500).json({ message: "Erro ao obter estatísticas de hunting" });
+    }
+  });
+
+  // Multi-client endpoints
+  // Get all clients
+  app.get("/api/clientes", async (req, res) => {
+    try {
+      const clientes = await sistemaMultiCliente.obterTodosClientes();
+      res.json(clientes);
+    } catch (error) {
+      console.error("Get all clients error:", error);
+      res.status(500).json({ message: "Erro ao obter clientes" });
+    }
+  });
+
+  // Get specific client
+  app.get("/api/clientes/:clienteId", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const cliente = await sistemaMultiCliente.obterCliente(clienteId);
+      
+      if (!cliente) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+      
+      res.json(cliente);
+    } catch (error) {
+      console.error("Get client error:", error);
+      res.status(500).json({ message: "Erro ao obter cliente" });
+    }
+  });
+
+  // Create new client
+  app.post("/api/clientes", async (req, res) => {
+    try {
+      const clienteData = req.body;
+      const novoCliente = await sistemaMultiCliente.criarCliente(clienteData);
+      res.json(novoCliente);
+    } catch (error) {
+      console.error("Create client error:", error);
+      res.status(400).json({ message: "Erro ao criar cliente" });
+    }
+  });
+
+  // Update client
+  app.put("/api/clientes/:clienteId", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const dados = req.body;
+      
+      const clienteAtualizado = await sistemaMultiCliente.atualizarCliente(clienteId, dados);
+      
+      if (!clienteAtualizado) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+      
+      res.json(clienteAtualizado);
+    } catch (error) {
+      console.error("Update client error:", error);
+      res.status(500).json({ message: "Erro ao atualizar cliente" });
+    }
+  });
+
+  // Get client users
+  app.get("/api/clientes/:clienteId/usuarios", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const usuarios = await sistemaMultiCliente.obterUsuariosCliente(clienteId);
+      res.json(usuarios);
+    } catch (error) {
+      console.error("Get client users error:", error);
+      res.status(500).json({ message: "Erro ao obter usuários do cliente" });
+    }
+  });
+
+  // Add user to client
+  app.post("/api/clientes/:clienteId/usuarios", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const usuarioData = req.body;
+      
+      const novoUsuario = await sistemaMultiCliente.adicionarUsuarioCliente({
+        ...usuarioData,
+        clienteId
+      });
+      
+      res.json(novoUsuario);
+    } catch (error) {
+      console.error("Add user to client error:", error);
+      res.status(400).json({ message: "Erro ao adicionar usuário ao cliente" });
+    }
+  });
+
+  // Check user permission
+  app.get("/api/permissoes/verificar/:usuarioId/:permissao", async (req, res) => {
+    try {
+      const { usuarioId, permissao } = req.params;
+      const temPermissao = await sistemaMultiCliente.verificarPermissao(usuarioId, permissao);
+      res.json({ temPermissao });
+    } catch (error) {
+      console.error("Check permission error:", error);
+      res.status(500).json({ message: "Erro ao verificar permissão" });
+    }
+  });
+
+  // Get client configuration
+  app.get("/api/clientes/:clienteId/configuracao", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const configuracao = await sistemaMultiCliente.obterConfiguracaoCliente(clienteId);
+      
+      if (!configuracao) {
+        return res.status(404).json({ message: "Configuração não encontrada" });
+      }
+      
+      res.json(configuracao);
+    } catch (error) {
+      console.error("Get client configuration error:", error);
+      res.status(500).json({ message: "Erro ao obter configuração do cliente" });
+    }
+  });
+
+  // Update client configuration
+  app.put("/api/clientes/:clienteId/configuracao", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const configuracao = req.body;
+      
+      const configuracaoAtualizada = await sistemaMultiCliente.atualizarConfiguracaoCliente(clienteId, configuracao);
+      
+      if (!configuracaoAtualizada) {
+        return res.status(404).json({ message: "Cliente não encontrado" });
+      }
+      
+      res.json(configuracaoAtualizada);
+    } catch (error) {
+      console.error("Update client configuration error:", error);
+      res.status(500).json({ message: "Erro ao atualizar configuração do cliente" });
+    }
+  });
+
+  // Get client statistics
+  app.get("/api/clientes/:clienteId/estatisticas", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const estatisticas = await sistemaMultiCliente.obterEstatisticasCliente(clienteId);
+      res.json(estatisticas);
+    } catch (error) {
+      console.error("Get client statistics error:", error);
+      res.status(500).json({ message: "Erro ao obter estatísticas do cliente" });
+    }
+  });
+
+  // Generate client billing
+  app.post("/api/clientes/:clienteId/faturamento", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const { mes, ano } = req.body;
+      
+      const faturamento = await sistemaMultiCliente.gerarFaturamento(clienteId, mes, ano);
+      res.json(faturamento);
+    } catch (error) {
+      console.error("Generate client billing error:", error);
+      res.status(500).json({ message: "Erro ao gerar faturamento" });
+    }
+  });
+
+  // Get client billings
+  app.get("/api/clientes/:clienteId/faturamentos", async (req, res) => {
+    try {
+      const { clienteId } = req.params;
+      const faturamentos = await sistemaMultiCliente.obterFaturamentosCliente(clienteId);
+      res.json(faturamentos);
+    } catch (error) {
+      console.error("Get client billings error:", error);
+      res.status(500).json({ message: "Erro ao obter faturamentos do cliente" });
+    }
+  });
+
+  // Mark billing as paid
+  app.patch("/api/faturamentos/:faturamentoId/pago", async (req, res) => {
+    try {
+      const { faturamentoId } = req.params;
+      await sistemaMultiCliente.marcarFaturamentoComoPago(faturamentoId);
+      res.json({ message: "Faturamento marcado como pago" });
+    } catch (error) {
+      console.error("Mark billing as paid error:", error);
+      res.status(500).json({ message: "Erro ao marcar faturamento como pago" });
+    }
+  });
+
+  // Check client limits
+  app.get("/api/clientes/:clienteId/limites/:tipo", async (req, res) => {
+    try {
+      const { clienteId, tipo } = req.params;
+      const limites = await sistemaMultiCliente.verificarLimitesCliente(clienteId, tipo as 'usuarios' | 'vagas');
+      res.json(limites);
+    } catch (error) {
+      console.error("Check client limits error:", error);
+      res.status(500).json({ message: "Erro ao verificar limites do cliente" });
+    }
+  });
+
+  // Get clients expiring soon
+  app.get("/api/clientes/vencendo", async (req, res) => {
+    try {
+      const clientes = await sistemaMultiCliente.obterClientesVencendo();
+      res.json(clientes);
+    } catch (error) {
+      console.error("Get expiring clients error:", error);
+      res.status(500).json({ message: "Erro ao obter clientes vencendo" });
+    }
+  });
+
+  // Get inactive clients
+  app.get("/api/clientes/inativos", async (req, res) => {
+    try {
+      const clientes = await sistemaMultiCliente.obterClientesInativos();
+      res.json(clientes);
+    } catch (error) {
+      console.error("Get inactive clients error:", error);
+      res.status(500).json({ message: "Erro ao obter clientes inativos" });
+    }
+  });
+
+  // Recuperação de senha
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      console.log('📧 Forgot Password: Solicitação para:', email);
+      
+      if (!email) {
+        return res.status(400).json({ 
+          message: 'E-mail é obrigatório' 
+        });
+      }
+
+      // VERSÃO ATUAL - SIMPLES (DESENVOLVIMENTO)
+      // Verificar se usuário existe
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, email, name')
+        .eq('email', email)
+        .single();
+
+      if (userError || !user) {
+        console.log('❌ Forgot Password: Usuário não encontrado:', email);
+        // Por segurança, retornamos sucesso mesmo se o e-mail não existir
+        return res.json({ 
+          message: 'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.' 
+        });
+      }
+
+      // Gerar token de recuperação (simples para demonstração)
+      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hora
+
+      // Salvar token na base de dados (aqui vamos simular o envio)
+      console.log('🔑 Reset Token gerado para', email, ':', resetToken);
+      console.log('⏰ Token expira em:', resetExpires);
+
+      // Em produção, aqui você enviaria um e-mail real
+      // Para esta demonstração, apenas logamos
+      console.log(`
+📧 E-MAIL DE RECUPERAÇÃO DE SENHA (SIMULADO)
+Para: ${email}
+Assunto: Redefinir senha - Isabel Cunha RH
+
+Olá ${user.name},
+
+Você solicitou a redefinição de sua senha na plataforma Isabel Cunha RH.
+
+Clique no link abaixo para redefinir sua senha:
+${process.env.FRONTEND_URL || 'http://localhost:5174'}/reset-password?token=${resetToken}
+
+Este link expira em 1 hora.
+
+Se você não solicitou esta redefinição, ignore este e-mail.
+
+Atenciosamente,
+Equipe Isabel Cunha RH
+      `);
+
+      res.json({ 
+        message: 'Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha.',
+        // Em desenvolvimento, incluir o token para facilitar testes
+        ...(process.env.NODE_ENV === 'development' && { resetToken, resetExpires })
+      });
+
+      // VERSÃO SUPABASE AUTH NATIVA (COMENTADA - PRODUÇÃO)
+      /*
+      // Esta seria a implementação com Supabase Auth nativo:
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5174'}/reset-password`
+      });
+
+      if (error) {
+        console.log('❌ Supabase Auth Error:', error.message);
+        return res.status(400).json({ 
+          message: 'Erro ao enviar e-mail de recuperação. Tente novamente.' 
+        });
+      }
+
+      console.log('✅ Supabase enviou e-mail de recuperação para:', email);
+      res.json({ 
+        message: 'E-mail de recuperação enviado com sucesso!' 
+      });
+      */
+
+    } catch (error) {
+      console.error('💥 Erro na recuperação de senha:', error);
+      res.status(500).json({ 
+        message: 'Erro interno do servidor' 
+      });
     }
   });
 

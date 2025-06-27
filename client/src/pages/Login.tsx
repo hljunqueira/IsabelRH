@@ -7,8 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { UserRoundCheck, Building, Eye, EyeOff } from "lucide-react";
@@ -51,18 +49,19 @@ const formatCPF = (value: string) => {
 };
 
 export default function Login() {
-  const { toast } = useToast();
+  const { toast, success, error, warning } = useToast();
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const { signIn, signUp, loading } = useAuth();
   
   const [loginData, setLoginData] = useState({
     email: "",
-    senha: "",
+    password: "",
   });
 
   const [registerData, setRegisterData] = useState({
     email: "",
-    senha: "",
+    password: "",
     tipo: "" as "candidato" | "empresa" | "",
     // Candidato fields
     nome: "",
@@ -86,115 +85,38 @@ export default function Login() {
 
   const [adminData, setAdminData] = useState({
     email: "",
-    senha: "",
+    password: "",
   });
 
-  const { login: authLogin } = useAuth();
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
+      warning("E-mail necessário", "Por favor, insira seu e-mail no campo acima.");
+      return;
+    }
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: typeof loginData) => {
-      // Verificar se são credenciais de teste
-      if (data.email === "candidato@teste.com" && data.senha === "123456") {
-        return {
-          usuario: {
-            id: "candidato-teste",
-            email: "candidato@teste.com",
-            tipo: "candidato",
-            criadoEm: new Date(),
-          },
-          profile: {
-            id: "candidato-teste",
-            nome: "João Silva",
-            telefone: "(48) 99999-9999",
-            linkedin: "linkedin.com/in/joao-silva",
-            curriculoUrl: null,
-            areasInteresse: ["Tecnologia", "Marketing"],
-            criadoEm: new Date(),
-          },
-        };
-      }
-      
-      if (data.email === "empresa@teste.com" && data.senha === "123456") {
-        return {
-          usuario: {
-            id: "empresa-teste",
-            email: "empresa@teste.com",
-            tipo: "empresa",
-            criadoEm: new Date(),
-          },
-          profile: {
-            id: "empresa-teste",
-            nome: "Tech Solutions LTDA",
-            cnpj: "12.345.678/0001-90",
-            setor: "Tecnologia",
-            criadoEm: new Date(),
-          },
-        };
-      }
-      
-      // Se não for usuário de teste, tentar login normal
-      const response = await apiRequest("POST", "/api/auth/login", data);
-      return await response.json();
-    },
-    onSuccess: async (data) => {
-      // Atualizar o contexto de autenticação
-      await authLogin(loginData.email, loginData.senha);
-      
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo(a) de volta!",
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
-      
-      // Redirecionar após atualizar o contexto com pequeno delay
-      setTimeout(() => {
-        if (data.usuario.tipo === "candidato") {
-          setLocation("/candidato");
-        } else if (data.usuario.tipo === "empresa") {
-          setLocation("/empresa");
-        } else if (data.usuario.tipo === "admin") {
-          setLocation("/admin");
-        }
-      }, 500);
-    },
-    onError: () => {
-      toast({
-        title: "Erro no login",
-        description: "Email ou senha inválidos.",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/auth/register", data);
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      localStorage.setItem("auth-user", JSON.stringify(data));
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo(a) à Isabel Cunha RH!",
-      });
-      
-      if (data.usuario.tipo === "candidato") {
-        setLocation("/candidato");
-      } else if (data.usuario.tipo === "empresa") {
-        setLocation("/empresa");
+      if (response.ok) {
+        success("E-mail enviado!", "Verifique sua caixa de entrada para redefinir sua senha.");
+      } else {
+        throw new Error('E-mail não encontrado');
       }
-    },
-    onError: () => {
-      toast({
-        title: "Erro no cadastro",
-        description: "Verifique os dados e tente novamente.",
-        variant: "destructive",
-      });
-    },
-  });
+    } catch (error) {
+      error("Erro ao enviar e-mail", "Verifique se o e-mail está correto ou tente novamente mais tarde.");
+    }
+  };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginData.email || !loginData.senha) {
+    
+    if (!loginData.email || !loginData.password) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha email e senha.",
@@ -202,13 +124,29 @@ export default function Login() {
       });
       return;
     }
-    loginMutation.mutate(loginData);
+
+    try {
+      await signIn(loginData.email, loginData.password);
+      
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo(a) de volta!",
+      });
+      
+      // O redirecionamento será feito automaticamente pelo signIn
+    } catch (error: any) {
+      toast({
+        title: "Erro no login",
+        description: error.message || "Email ou senha inválidos.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!registerData.email || !registerData.senha || !registerData.tipo) {
+    if (!registerData.email || !registerData.password || !registerData.tipo) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -217,88 +155,62 @@ export default function Login() {
       return;
     }
 
-    let submitData: any = {
-      email: registerData.email,
-      senha: registerData.senha,
-      tipo: registerData.tipo,
-    };
+    try {
+      const userData = {
+        name: registerData.tipo === 'candidato' ? registerData.nome : registerData.nomeEmpresa,
+        type: registerData.tipo,
+        // Dados adicionais podem ser salvos em tabelas específicas após o cadastro
+      };
 
-    if (registerData.tipo === "candidato") {
-      if (!registerData.nome) {
-        toast({
-          title: "Nome obrigatório",
-          description: "Por favor, preencha seu nome.",
-          variant: "destructive",
-        });
-        return;
+      await signUp(registerData.email, registerData.password, userData);
+      
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Bem-vindo(a) à Isabel Cunha RH!",
+      });
+      
+      // Redirecionar baseado no tipo de usuário
+      if (registerData.tipo === "candidato") {
+        setLocation("/candidato");
+      } else if (registerData.tipo === "empresa") {
+        setLocation("/empresa");
       }
-      submitData = {
-        ...submitData,
-        nome: registerData.nome,
-        telefone: registerData.telefone,
-        cpf: registerData.cpf,
-        dataNascimento: registerData.dataNascimento,
-        linkedin: registerData.linkedin,
-        areasInteresse: registerData.areasInteresse,
-        cidade: registerData.cidade,
-        estado: registerData.estado,
-        cep: registerData.cep,
-        endereco: registerData.endereco,
-        nivelEscolaridade: registerData.escolaridade,
-        objetivoProfissional: registerData.objetivos,
-        experiencia: registerData.experiencia,
-      };
-    } else if (registerData.tipo === "empresa") {
-      if (!registerData.nomeEmpresa) {
-        toast({
-          title: "Nome da empresa obrigatório",
-          description: "Por favor, preencha o nome da empresa.",
-          variant: "destructive",
-        });
-        return;
-      }
-      submitData = {
-        ...submitData,
-        nome: registerData.nomeEmpresa,
-        cnpj: registerData.cnpj,
-        setor: registerData.setor,
-      };
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Verifique os dados e tente novamente.",
+        variant: "destructive",
+      });
     }
-
-    registerMutation.mutate(submitData);
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Fazer login real via API
+    if (!adminData.email || !adminData.password) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha email e senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const response = await apiRequest("POST", "/api/auth/login", {
-        email: adminData.email,
-        senha: adminData.senha
+      await signIn(adminData.email, adminData.password);
+      
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Bem-vindo(a) ao painel administrativo!",
       });
       
-      const data = await response.json();
-      
-      if (data.usuario && data.usuario.tipo === "admin") {
-        await authLogin(adminData.email, adminData.senha);
-        localStorage.setItem("auth-user", JSON.stringify(data));
-        toast({ title: "Login administrativo realizado com sucesso!" });
-        setTimeout(() => {
-          setLocation("/admin");
-        }, 500);
-      } else {
-        toast({ 
-          title: "Acesso negado", 
-          description: "Esta área é exclusiva para administradores",
-          variant: "destructive" 
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: "Credenciais administrativas inválidas", 
-        description: "Email ou senha incorretos",
-        variant: "destructive" 
+      // O redirecionamento será feito automaticamente pelo signIn
+    } catch (error: any) {
+      console.error('Erro no login admin:', error);
+      toast({
+        title: "Erro no login",
+        description: error.message || "Credenciais inválidas.",
+        variant: "destructive",
       });
     }
   };
@@ -351,8 +263,8 @@ export default function Login() {
                         <Input
                           id="login-password"
                           type={showPassword ? "text" : "password"}
-                          value={loginData.senha}
-                          onChange={(e) => setLoginData(prev => ({ ...prev, senha: e.target.value }))}
+                          value={loginData.password}
+                          onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                           placeholder="Digite sua senha"
                           required
                         />
@@ -375,10 +287,21 @@ export default function Login() {
                     <Button 
                       type="submit" 
                       className="w-full bg-isabel-orange hover:bg-isabel-orange/90"
-                      disabled={loginMutation.isPending}
+                      disabled={loading}
                     >
-                      {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                      {loading ? "Entrando..." : "Entrar"}
                     </Button>
+                    
+                    <div className="text-center mt-4">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="text-isabel-blue hover:text-isabel-orange p-0"
+                        onClick={() => handleForgotPassword(loginData.email)}
+                      >
+                        Esqueceu sua senha?
+                      </Button>
+                    </div>
                   </form>
                 </CardContent>
               </TabsContent>
@@ -407,8 +330,8 @@ export default function Login() {
                         <Input
                           id="register-password"
                           type={showPassword ? "text" : "password"}
-                          value={registerData.senha}
-                          onChange={(e) => setRegisterData(prev => ({ ...prev, senha: e.target.value }))}
+                          value={registerData.password}
+                          onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
                           placeholder="Digite sua senha"
                           required
                         />
@@ -683,9 +606,9 @@ export default function Login() {
                     <Button 
                       type="submit" 
                       className="w-full bg-isabel-blue hover:bg-isabel-blue/90"
-                      disabled={registerMutation.isPending}
+                      disabled={loading}
                     >
-                      {registerMutation.isPending ? "Cadastrando..." : "Criar Conta"}
+                      {loading ? "Cadastrando..." : "Criar Conta"}
                     </Button>
                   </form>
                 </CardContent>
@@ -715,14 +638,12 @@ export default function Login() {
                       <Input
                         id="admin-password"
                         type="password"
-                        value={adminData.senha}
-                        onChange={(e) => setAdminData(prev => ({ ...prev, senha: e.target.value }))}
+                        value={adminData.password}
+                        onChange={(e) => setAdminData(prev => ({ ...prev, password: e.target.value }))}
                         placeholder="Digite sua senha"
                         required
                       />
                     </div>
-                    
-
                     
                     <Button 
                       type="submit" 

@@ -168,6 +168,39 @@ function toast({ ...props }: Toast) {
   }
 }
 
+// Métodos de conveniência para diferentes tipos de toast
+function success(message: string, description?: string) {
+  return toast({
+    variant: "success",
+    title: message,
+    description,
+  })
+}
+
+function error(message: string, description?: string) {
+  return toast({
+    variant: "destructive",
+    title: message,
+    description,
+  })
+}
+
+function warning(message: string, description?: string) {
+  return toast({
+    variant: "warning",
+    title: message,
+    description,
+  })
+}
+
+function info(message: string, description?: string) {
+  return toast({
+    variant: "info",
+    title: message,
+    description,
+  })
+}
+
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
@@ -184,6 +217,10 @@ function useToast() {
   return {
     ...state,
     toast,
+    success,
+    error,
+    warning,
+    info,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   }
 }

@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
-import { X } from "lucide-react"
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -29,7 +29,13 @@ const toastVariants = cva(
       variant: {
         default: "border bg-background text-foreground",
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "destructive group border-red-500 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-900 dark:text-red-50",
+        success:
+          "success group border-green-500 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-900 dark:text-green-50",
+        warning:
+          "warning group border-yellow-500 bg-yellow-50 text-yellow-900 dark:border-yellow-900 dark:bg-yellow-900 dark:text-yellow-50",
+        info:
+          "info group border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-900 dark:text-blue-50",
       },
     },
     defaultVariants: {
@@ -110,6 +116,24 @@ const ToastDescription = React.forwardRef<
 ))
 ToastDescription.displayName = ToastPrimitives.Description.displayName
 
+// Ícones para cada tipo de toast
+const ToastIcon = ({ variant }: { variant?: VariantProps<typeof toastVariants>["variant"] }) => {
+  const iconProps = { className: "h-5 w-5 flex-shrink-0" };
+  
+  switch (variant) {
+    case "success":
+      return <CheckCircle {...iconProps} className="h-5 w-5 flex-shrink-0 text-green-600" />;
+    case "destructive":
+      return <AlertCircle {...iconProps} className="h-5 w-5 flex-shrink-0 text-red-600" />;
+    case "warning":
+      return <AlertTriangle {...iconProps} className="h-5 w-5 flex-shrink-0 text-yellow-600" />;
+    case "info":
+      return <Info {...iconProps} className="h-5 w-5 flex-shrink-0 text-blue-600" />;
+    default:
+      return <Info {...iconProps} className="h-5 w-5 flex-shrink-0 text-gray-600" />;
+  }
+};
+
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
@@ -124,4 +148,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  ToastIcon,
 }
