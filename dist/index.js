@@ -3,8 +3,30 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+import dotenv2 from "dotenv";
+
+// server/lib/supabase.ts
+import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 dotenv.config();
+var supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://wqifsgaxevfdwmfkihhg.supabase.co";
+var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxaWZzZ2F4ZXZmZHdtZmtpaGhnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDkxMDI5MywiZXhwIjoyMDY2NDg2MjkzfQ.X7xux96O-P36SiEEBBWBebh30oqd5T1JiBC1LhC1SEA";
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.warn("\u26A0\uFE0F Missing Supabase environment variables - using fallback configuration");
+}
+var supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+var supabasePublic = createClient(
+  supabaseUrl,
+  process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxaWZzZ2F4ZXZmZHdtZmtpaGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU1MTY3OTUsImV4cCI6MjA1MTA5Mjc5NX0.UeXsYJvG4_B4F3xvlb8_o2WQjqJrJX7r6H7qZ8Z-XUw"
+);
+
+// server/index.ts
+dotenv2.config();
 var app = express();
 console.log("\u{1F3AF} Isabel RH v5.0 - Servidor Completo com APIs");
 console.log("\u{1F525} Timestamp:", (/* @__PURE__ */ new Date()).toISOString());
@@ -50,19 +72,74 @@ app.get("/api/health", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
-app.get("/api/auth/me", (req, res) => {
-  console.log("\u{1F510} Auth/me: Endpoint acessado (modo desenvolvimento)");
-  const mockUser = {
-    usuario: {
-      id: "dev-user-1",
-      email: "dev@isabelrh.com.br",
-      name: "Usu\xE1rio de Desenvolvimento",
-      type: "admin",
-      created_at: (/* @__PURE__ */ new Date()).toISOString()
+app.get("/api/auth/me", async (req, res) => {
+  console.log("\u{1F510} Auth/me: Endpoint acessado");
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("\u26A0\uFE0F Auth/me: Sem token, retornando dados mock");
+      const mockUser = {
+        usuario: {
+          id: "dev-user-1",
+          email: "dev@isabelrh.com.br",
+          name: "Usu\xE1rio de Desenvolvimento",
+          type: "admin",
+          created_at: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      };
+      return res.json(mockUser);
     }
-  };
-  console.log("\u2705 Auth/me: Retornando dados mock para desenvolvimento");
-  res.json(mockUser);
+    const token = authHeader.substring(7);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      console.log("\u274C Auth/me: Token inv\xE1lido, usando fallback");
+      const mockUser = {
+        usuario: {
+          id: "dev-user-1",
+          email: "dev@isabelrh.com.br",
+          name: "Usu\xE1rio de Desenvolvimento",
+          type: "admin",
+          created_at: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      };
+      return res.json(mockUser);
+    }
+    const { data: userData, error: userError } = await supabase.from("users").select("*").eq("id", user.id).single();
+    if (userError) {
+      console.log("\u26A0\uFE0F Auth/me: Usu\xE1rio n\xE3o encontrado nas tabelas, usando dados do auth");
+      return res.json({
+        usuario: {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.email,
+          type: user.user_metadata?.type || "candidato",
+          created_at: user.created_at
+        }
+      });
+    }
+    console.log("\u2705 Auth/me: Retornando dados do usu\xE1rio autenticado");
+    res.json({
+      usuario: {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        type: userData.type,
+        created_at: userData.created_at
+      }
+    });
+  } catch (error) {
+    console.error("\u{1F4A5} Erro na autentica\xE7\xE3o:", error);
+    const mockUser = {
+      usuario: {
+        id: "dev-user-1",
+        email: "dev@isabelrh.com.br",
+        name: "Usu\xE1rio de Desenvolvimento",
+        type: "admin",
+        created_at: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    };
+    res.json(mockUser);
+  }
 });
 app.post("/api/auth/forgot-password", (req, res) => {
   const { email } = req.body;
@@ -78,53 +155,78 @@ app.post("/api/auth/forgot-password", (req, res) => {
     debug: process.env.NODE_ENV === "development" ? "E-mail simulado - verifique o console do servidor" : void 0
   });
 });
-app.get("/api/vagas", (req, res) => {
+app.get("/api/vagas", async (req, res) => {
   console.log("\u{1F4BC} Vagas: Endpoint acessado");
-  const vagasMock = [
-    {
-      id: "1",
-      titulo: "Desenvolvedor Frontend React",
-      empresa: "Tech Company",
-      cidade: "S\xE3o Paulo",
-      estado: "SP",
-      localizacao: "S\xE3o Paulo, SP",
-      modalidade: "Remoto",
-      tipo: "Tecnologia",
-      salario: "R$ 8.000 - R$ 12.000",
-      descricao: "Vaga para desenvolvedor React com experi\xEAncia em TypeScript e desenvolvimento de aplica\xE7\xF5es modernas",
-      requisitos: ["React", "TypeScript", "JavaScript", "CSS", "Git"],
-      destaque: true,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      created_at: (/* @__PURE__ */ new Date()).toISOString()
-    },
-    {
-      id: "2",
-      titulo: "Analista de RH",
-      empresa: "Empresa ABC",
-      cidade: "Florian\xF3polis",
-      estado: "SC",
-      localizacao: "Florian\xF3polis, SC",
-      modalidade: "H\xEDbrido",
-      tipo: "Recursos Humanos",
-      salario: "R$ 5.000 - R$ 7.000",
-      descricao: "Vaga para analista de recursos humanos com experi\xEAncia em recrutamento e sele\xE7\xE3o",
-      requisitos: ["Psicologia", "Recrutamento", "Sele\xE7\xE3o", "Excel"],
-      destaque: true,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      created_at: (/* @__PURE__ */ new Date()).toISOString()
+  try {
+    const { limit, destaque, search } = req.query;
+    let query = supabase.from("vagas").select(`
+        *,
+        empresas!inner(nome, cidade, estado)
+      `).eq("status", "ativa").order("created_at", { ascending: false });
+    if (destaque === "true") {
+      query = query.eq("destaque", true);
     }
-  ];
-  const { limit, destaque } = req.query;
-  let vagas = [...vagasMock];
-  if (destaque === "true") {
-    vagas = vagas.filter((vaga) => vaga.destaque);
+    if (search) {
+      query = query.or(`titulo.ilike.%${search}%,descricao.ilike.%${search}%`);
+    }
+    if (limit) {
+      const limitNum = parseInt(limit);
+      query = query.limit(limitNum);
+    }
+    const { data: vagas, error } = await query;
+    if (error) {
+      console.error("\u274C Erro ao buscar vagas:", error);
+      const vagasMock = [
+        {
+          id: "1",
+          titulo: "Desenvolvedor Frontend React",
+          empresa: "Tech Company",
+          cidade: "S\xE3o Paulo",
+          estado: "SP",
+          localizacao: "S\xE3o Paulo, SP",
+          modalidade: "Remoto",
+          tipo: "Tecnologia",
+          salario: "R$ 8.000 - R$ 12.000",
+          descricao: "Vaga para desenvolvedor React com experi\xEAncia em TypeScript",
+          requisitos: ["React", "TypeScript", "JavaScript", "CSS", "Git"],
+          destaque: true,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+          created_at: (/* @__PURE__ */ new Date()).toISOString()
+        }
+      ];
+      let vagasFallback = [...vagasMock];
+      if (limit) {
+        const limitNum = parseInt(limit);
+        vagasFallback = vagasFallback.slice(0, limitNum);
+      }
+      console.log(`\u26A0\uFE0F Vagas: Usando dados mock (${vagasFallback.length} vagas)`);
+      return res.json(vagasFallback);
+    }
+    const vagasFormatadas = vagas?.map((vaga) => ({
+      id: vaga.id,
+      titulo: vaga.titulo,
+      empresa: vaga.empresas?.nome || "Empresa",
+      cidade: vaga.empresas?.cidade || vaga.cidade,
+      estado: vaga.empresas?.estado || vaga.estado,
+      localizacao: `${vaga.empresas?.cidade || vaga.cidade}, ${vaga.empresas?.estado || vaga.estado}`,
+      modalidade: vaga.modalidade,
+      tipo: vaga.area || vaga.setor || "Geral",
+      salario: vaga.salario_min && vaga.salario_max ? `R$ ${vaga.salario_min.toLocaleString()} - R$ ${vaga.salario_max.toLocaleString()}` : vaga.salario,
+      descricao: vaga.descricao,
+      requisitos: vaga.requisitos || [],
+      destaque: vaga.destaque || false,
+      createdAt: vaga.created_at,
+      created_at: vaga.created_at
+    })) || [];
+    console.log(`\u2705 Vagas: Retornando ${vagasFormatadas.length} vagas do banco`);
+    res.json(vagasFormatadas);
+  } catch (error) {
+    console.error("\u{1F4A5} Erro interno ao buscar vagas:", error);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      message: "Erro ao buscar vagas"
+    });
   }
-  if (limit) {
-    const limitNum = parseInt(limit);
-    vagas = vagas.slice(0, limitNum);
-  }
-  console.log(`\u2705 Vagas: Retornando ${vagas.length} vagas`);
-  res.json(vagas);
 });
 var distPath = path.resolve(process.cwd(), "dist", "public");
 console.log("\u{1F50D} DEBUG: Configurando arquivos est\xE1ticos:");

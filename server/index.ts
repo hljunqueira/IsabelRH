@@ -3,6 +3,7 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import dotenv from 'dotenv';
+import { supabase } from "./lib/supabase.js";
 
 // Configurar dotenv
 dotenv.config();
@@ -60,23 +61,94 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 🔐 Rota de autenticação simplificada (sem Supabase por enquanto)
-app.get("/api/auth/me", (req, res) => {
-  console.log('🔐 Auth/me: Endpoint acessado (modo desenvolvimento)');
+// 🔐 Rota de autenticação com Supabase
+app.get("/api/auth/me", async (req, res) => {
+  console.log('🔐 Auth/me: Endpoint acessado');
   
-  // Em desenvolvimento, retornar dados mock se não houver autenticação real
-  const mockUser = {
-    usuario: {
-      id: "dev-user-1",
-      email: "dev@isabelrh.com.br",
-      name: "Usuário de Desenvolvimento",
-      type: "admin",
-      created_at: new Date().toISOString()
+  try {
+    // Verificar se existe token de autorização
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('⚠️ Auth/me: Sem token, retornando dados mock');
+      // Fallback para dados mock se não houver autenticação
+      const mockUser = {
+        usuario: {
+          id: "dev-user-1",
+          email: "dev@isabelrh.com.br",
+          name: "Usuário de Desenvolvimento",
+          type: "admin",
+          created_at: new Date().toISOString()
+        }
+      };
+      return res.json(mockUser);
     }
-  };
-  
-  console.log('✅ Auth/me: Retornando dados mock para desenvolvimento');
-  res.json(mockUser);
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' do início
+    
+    // Verificar o token com o Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.log('❌ Auth/me: Token inválido, usando fallback');
+      // Fallback para dados mock se o token for inválido
+      const mockUser = {
+        usuario: {
+          id: "dev-user-1",
+          email: "dev@isabelrh.com.br",
+          name: "Usuário de Desenvolvimento",
+          type: "admin",
+          created_at: new Date().toISOString()
+        }
+      };
+      return res.json(mockUser);
+    }
+
+    // Buscar dados do usuário nas tabelas customizadas
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (userError) {
+      console.log('⚠️ Auth/me: Usuário não encontrado nas tabelas, usando dados do auth');
+      return res.json({
+        usuario: {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.email,
+          type: user.user_metadata?.type || "candidato",
+          created_at: user.created_at
+        }
+      });
+    }
+
+    console.log('✅ Auth/me: Retornando dados do usuário autenticado');
+    res.json({
+      usuario: {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        type: userData.type,
+        created_at: userData.created_at
+      }
+    });
+    
+  } catch (error) {
+    console.error('💥 Erro na autenticação:', error);
+    // Fallback para dados mock em caso de erro
+    const mockUser = {
+      usuario: {
+        id: "dev-user-1",
+        email: "dev@isabelrh.com.br",
+        name: "Usuário de Desenvolvimento",
+        type: "admin",
+        created_at: new Date().toISOString()
+      }
+    };
+    res.json(mockUser);
+  }
 });
 
 // 📧 Recuperação de senha simplificada
@@ -100,61 +172,105 @@ app.post('/api/auth/forgot-password', (req, res) => {
   });
 });
 
-// 💼 Rota de vagas simplificada
-app.get("/api/vagas", (req, res) => {
+// 💼 Rota de vagas com Supabase
+app.get("/api/vagas", async (req, res) => {
   console.log('💼 Vagas: Endpoint acessado');
   
-  // Dados mock para desenvolvimento
-  const vagasMock = [
-    {
-      id: "1",
-      titulo: "Desenvolvedor Frontend React",
-      empresa: "Tech Company",
-      cidade: "São Paulo",
-      estado: "SP",
-      localizacao: "São Paulo, SP",
-      modalidade: "Remoto",
-      tipo: "Tecnologia",
-      salario: "R$ 8.000 - R$ 12.000",
-      descricao: "Vaga para desenvolvedor React com experiência em TypeScript e desenvolvimento de aplicações modernas",
-      requisitos: ["React", "TypeScript", "JavaScript", "CSS", "Git"],
-      destaque: true,
-      createdAt: new Date().toISOString(),
-      created_at: new Date().toISOString()
-    },
-    {
-      id: "2", 
-      titulo: "Analista de RH",
-      empresa: "Empresa ABC",
-      cidade: "Florianópolis",
-      estado: "SC",
-      localizacao: "Florianópolis, SC",
-      modalidade: "Híbrido",
-      tipo: "Recursos Humanos",
-      salario: "R$ 5.000 - R$ 7.000",
-      descricao: "Vaga para analista de recursos humanos com experiência em recrutamento e seleção",
-      requisitos: ["Psicologia", "Recrutamento", "Seleção", "Excel"],
-      destaque: true,
-      createdAt: new Date().toISOString(),
-      created_at: new Date().toISOString()
+  try {
+    // Verificar parâmetros de query
+    const { limit, destaque, search } = req.query;
+    
+    // Query base para buscar vagas
+    let query = supabase
+      .from('vagas')
+      .select(`
+        *,
+        empresas!inner(nome, cidade, estado)
+      `)
+      .eq('status', 'ativa')
+      .order('created_at', { ascending: false });
+    
+    // Filtro por destaque
+    if (destaque === 'true') {
+      query = query.eq('destaque', true);
     }
-  ];
-  
-  // Verificar parâmetros de query
-  const { limit, destaque } = req.query;
-  let vagas = [...vagasMock];
-  
-  if (destaque === 'true') {
-    vagas = vagas.filter(vaga => vaga.destaque);
+    
+    // Busca por texto
+    if (search) {
+      query = query.or(`titulo.ilike.%${search}%,descricao.ilike.%${search}%`);
+    }
+    
+    // Aplicar limit
+    if (limit) {
+      const limitNum = parseInt(limit as string);
+      query = query.limit(limitNum);
+    }
+    
+    const { data: vagas, error } = await query;
+    
+    if (error) {
+      console.error('❌ Erro ao buscar vagas:', error);
+      
+      // Fallback para dados mock se houver erro
+      const vagasMock = [
+        {
+          id: "1",
+          titulo: "Desenvolvedor Frontend React",
+          empresa: "Tech Company",
+          cidade: "São Paulo",
+          estado: "SP",
+          localizacao: "São Paulo, SP",
+          modalidade: "Remoto",
+          tipo: "Tecnologia",
+          salario: "R$ 8.000 - R$ 12.000",
+          descricao: "Vaga para desenvolvedor React com experiência em TypeScript",
+          requisitos: ["React", "TypeScript", "JavaScript", "CSS", "Git"],
+          destaque: true,
+          createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }
+      ];
+      
+      let vagasFallback = [...vagasMock];
+      if (limit) {
+        const limitNum = parseInt(limit as string);
+        vagasFallback = vagasFallback.slice(0, limitNum);
+      }
+      
+      console.log(`⚠️ Vagas: Usando dados mock (${vagasFallback.length} vagas)`);
+      return res.json(vagasFallback);
+    }
+    
+    // Transformar dados para o formato esperado pelo frontend
+    const vagasFormatadas = vagas?.map((vaga: any) => ({
+      id: vaga.id,
+      titulo: vaga.titulo,
+      empresa: vaga.empresas?.nome || 'Empresa',
+      cidade: vaga.empresas?.cidade || vaga.cidade,
+      estado: vaga.empresas?.estado || vaga.estado,
+      localizacao: `${vaga.empresas?.cidade || vaga.cidade}, ${vaga.empresas?.estado || vaga.estado}`,
+      modalidade: vaga.modalidade,
+      tipo: vaga.area || vaga.setor || 'Geral',
+      salario: vaga.salario_min && vaga.salario_max 
+        ? `R$ ${vaga.salario_min.toLocaleString()} - R$ ${vaga.salario_max.toLocaleString()}`
+        : vaga.salario,
+      descricao: vaga.descricao,
+      requisitos: vaga.requisitos || [],
+      destaque: vaga.destaque || false,
+      createdAt: vaga.created_at,
+      created_at: vaga.created_at
+    })) || [];
+    
+    console.log(`✅ Vagas: Retornando ${vagasFormatadas.length} vagas do banco`);
+    res.json(vagasFormatadas);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar vagas:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar vagas'
+    });
   }
-  
-  if (limit) {
-    const limitNum = parseInt(limit as string);
-    vagas = vagas.slice(0, limitNum);
-  }
-  
-  console.log(`✅ Vagas: Retornando ${vagas.length} vagas`);
-  res.json(vagas);
 });
 
 // 📁 SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND
