@@ -56,7 +56,7 @@ export default function AreaCandidato() {
   const [selectedVaga, setSelectedVaga] = useState<Vaga | null>(null);
   
   useEffect(() => {
-    if (!user || user.tipo !== "candidato") {
+    if (!user || user.type !== "candidato") {
       setLocation("/login");
     }
   }, [user, setLocation]);

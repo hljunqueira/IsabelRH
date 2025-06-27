@@ -73,7 +73,7 @@ export default function AreaEmpresa() {
   };
 
   useEffect(() => {
-    if (!user || user.tipo !== "empresa") {
+    if (!user || user.type !== "empresa") {
       setLocation("/login");
     }
   }, [user, setLocation]);

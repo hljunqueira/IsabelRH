@@ -315,7 +315,10 @@ export default function Admin() {
     propostasAprovadas: propostas.filter(p => p.aprovada === 'sim').length,
     faturamentoEstimado: servicos
       .filter(s => s.valor)
-      .reduce((acc, s) => acc + parseFloat(s.valor?.replace(/[^\d,]/g, '').replace(',', '.') || '0'), 0)
+      .reduce((acc, s) => {
+        const valorStr = typeof s.valor === 'string' ? s.valor : String(s.valor || '0');
+        return acc + parseFloat(valorStr.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+      }, 0)
   };
 
   // Função para mostrar confirmação de delete
@@ -758,7 +761,7 @@ export default function Admin() {
                       <div key={servico.id} className="p-4 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <h3 className="font-medium capitalize">{servico.tipoServico.replace('_', ' ')}</h3>
+                            <h3 className="font-medium capitalize">{String(servico.tipoServico || '').replace('_', ' ')}</h3>
                             <p className="text-sm text-gray-600 mt-1">{servico.descricao}</p>
                             {servico.valor && (
                               <p className="text-sm font-medium text-green-600 mt-2">{servico.valor}</p>
@@ -768,7 +771,7 @@ export default function Admin() {
                             servico.status === 'concluida' ? 'default' :
                             servico.status === 'em_andamento' ? 'secondary' : 'outline'
                           }>
-                            {servico.status.replace('_', ' ')}
+                            {String(servico.status || '').replace('_', ' ')}
                           </Badge>
                         </div>
                       </div>
@@ -883,7 +886,7 @@ export default function Admin() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <h3 className="font-medium">{empresa?.nome}</h3>
-                              <p className="text-sm text-gray-600 capitalize">{proposta.tipoServico.replace('_', ' ')}</p>
+                              <p className="text-sm text-gray-600 capitalize">{String(proposta.tipoServico || '').replace('_', ' ')}</p>
                               <p className="text-sm text-gray-600 mt-1">{proposta.descricao}</p>
                               <p className="text-sm font-medium text-green-600 mt-2">{proposta.valorProposto}</p>
                               {proposta.prazoEntrega && (

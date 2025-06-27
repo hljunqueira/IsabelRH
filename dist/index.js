@@ -72,91 +72,25 @@ app.get("/api/health", (req, res) => {
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
-var currentMockUser = null;
-app.post("/api/auth/mock-login", (req, res) => {
-  console.log("\u{1F3AD} Mock Login: Endpoint acessado");
-  const { email, password, type } = req.body;
-  const mockUsers = {
-    "admin@isabelrh.com.br": {
-      password: "admin123",
-      user: {
-        id: "dev-admin-1",
-        email: "admin@isabelrh.com.br",
-        name: "Administrador Isabel RH",
-        type: "admin",
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    },
-    "candidato@isabelrh.com.br": {
-      password: "candidato123",
-      user: {
-        id: "dev-candidato-1",
-        email: "candidato@isabelrh.com.br",
-        name: "Jo\xE3o Silva Santos",
-        type: "candidato",
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    },
-    "empresa@isabelrh.com.br": {
-      password: "empresa123",
-      user: {
-        id: "dev-empresa-1",
-        email: "empresa@isabelrh.com.br",
-        name: "Tech Innovate Ltda",
-        type: "empresa",
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    }
-  };
-  const mockCredential = mockUsers[email];
-  if (!mockCredential || mockCredential.password !== password) {
-    console.log("\u274C Mock Login: Credenciais inv\xE1lidas para:", email);
-    return res.status(401).json({ error: "Credenciais inv\xE1lidas" });
-  }
-  currentMockUser = { usuario: mockCredential.user };
-  console.log(`\u2705 Mock Login: Sucesso para ${mockCredential.user.type}:`, email);
-  res.json({
-    message: "Login realizado com sucesso",
-    usuario: mockCredential.user,
-    mock_token: `mock-${Date.now()}`
-  });
-});
 app.get("/api/auth/me", async (req, res) => {
   console.log("\u{1F510} Auth/me: Endpoint acessado");
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.log("\u26A0\uFE0F Auth/me: Sem token, usando fallback");
-      if (currentMockUser) {
-        console.log("\u{1F3AD} Mock: Retornando usu\xE1rio da sess\xE3o:", currentMockUser.usuario.type);
-        return res.json(currentMockUser);
-      }
-      const defaultMockUser = {
-        usuario: {
-          id: "dev-admin-1",
-          email: "admin@isabelrh.com.br",
-          name: "Administrador Isabel RH",
-          type: "admin",
-          created_at: (/* @__PURE__ */ new Date()).toISOString()
-        }
-      };
-      console.log("\u{1F3AD} Mock: Retornando dados de admin (padr\xE3o)");
-      return res.json(defaultMockUser);
+      console.log("\u274C Auth/me: Sem token de autoriza\xE7\xE3o");
+      return res.status(401).json({
+        error: "Token de autoriza\xE7\xE3o necess\xE1rio",
+        message: "Fa\xE7a login para acessar esta rota"
+      });
     }
     const token = authHeader.substring(7);
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) {
-      console.log("\u274C Auth/me: Token inv\xE1lido, usando fallback");
-      const mockUser = {
-        usuario: {
-          id: "dev-user-1",
-          email: "dev@isabelrh.com.br",
-          name: "Usu\xE1rio de Desenvolvimento",
-          type: "admin",
-          created_at: (/* @__PURE__ */ new Date()).toISOString()
-        }
-      };
-      return res.json(mockUser);
+      console.log("\u274C Auth/me: Token inv\xE1lido");
+      return res.status(401).json({
+        error: "Token inv\xE1lido",
+        message: "Fa\xE7a login novamente"
+      });
     }
     const { data: userData, error: userError } = await supabase.from("users").select("*").eq("id", user.id).single();
     if (userError) {
@@ -183,16 +117,10 @@ app.get("/api/auth/me", async (req, res) => {
     });
   } catch (error) {
     console.error("\u{1F4A5} Erro na autentica\xE7\xE3o:", error);
-    const mockUser = {
-      usuario: {
-        id: "dev-user-1",
-        email: "dev@isabelrh.com.br",
-        name: "Usu\xE1rio de Desenvolvimento",
-        type: "admin",
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    };
-    res.json(mockUser);
+    res.status(500).json({
+      error: "Erro interno do servidor",
+      message: "Erro ao verificar autentica\xE7\xE3o"
+    });
   }
 });
 app.post("/api/auth/forgot-password", (req, res) => {

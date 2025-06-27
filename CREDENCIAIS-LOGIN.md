@@ -1,71 +1,82 @@
-# 🔐 Credenciais de Login - Isabel RH
+# 🔐 Credenciais de Login - Sistema Isabel RH
 
-## ✅ **Sistema Híbrido de Autenticação**
+## ✅ **Sistema Atualizado - Apenas Supabase**
 
-O sistema agora prioriza **usuários reais do Supabase** e usa credenciais mock apenas como fallback.
+O sistema agora usa **exclusivamente usuários do Supabase**. Todo o sistema mock foi removido para maior segurança e simplicidade.
 
-### 🎯 **Como Funciona:**
-1. 🔐 **Primeiro**: Tenta autenticar com Supabase real
-2. 🎭 **Fallback**: Se falhar, usa credenciais mock para desenvolvimento
+## 👥 **Usuários Disponíveis**
 
----
-
-## 👥 **Credenciais Mock (Desenvolvimento)**
-
-### **Admin:**
+### 🔑 **Admin**
 - **Email:** `admin@isabelrh.com.br`
 - **Senha:** `admin123`
-- **Redireciona para:** `/admin`
+- **Acesso:** Painel administrativo completo (`/admin`)
 
-### **Candidato:**
+### 👤 **Candidato**
 - **Email:** `candidato@isabelrh.com.br`
-- **Senha:** `candidato123`  
-- **Redireciona para:** `/candidato`
+- **Senha:** `candidato123`
+- **Acesso:** Área do candidato (`/candidato`)
 
-### **Empresa:**
+### 🏢 **Empresa**
 - **Email:** `empresa@isabelrh.com.br`
 - **Senha:** `empresa123`
-- **Redireciona para:** `/empresa`
+- **Acesso:** Área da empresa (`/empresa`)
 
----
+## 🛠️ **Configuração no Supabase**
 
-## 📊 **Usuários Reais do Supabase**
+### **Método 1: SQL Editor (Recomendado)**
+1. Acesse o **SQL Editor** no painel do Supabase
+2. Execute o script: `scripts/criar-usuarios-supabase.sql`
+3. Verifique se os usuários foram criados corretamente
 
-Se você já cadastrou usuários reais no Supabase, use suas credenciais normais. O sistema:
+### **Método 2: Authentication Dashboard**
+1. Acesse **Authentication** → **Users** no Supabase
+2. Clique em **"Add user"**
+3. Adicione cada usuário com:
+   - Email e senha conforme acima
+   - **User Metadata:**
+     ```json
+     {
+       "name": "Nome do Usuário",
+       "type": "admin|candidato|empresa"
+     }
+     ```
 
-1. ✅ **Tenta login real primeiro**
-2. ✅ **Busca dados do banco**
-3. ✅ **Redireciona baseado no tipo de usuário**
-4. 🎭 **Usa mock apenas se falhar**
+## 🔄 **Redirecionamento Automático**
 
----
+Após o login bem-sucedido, o sistema redireciona automaticamente:
+- **Admin** → `/admin`
+- **Candidato** → `/candidato`
+- **Empresa** → `/empresa`
 
-## 🧪 **Testando o Sistema**
+## 🚀 **Para Produção**
 
-### **No Frontend (Página de Login):**
-1. Acesse `http://localhost:5001/login`
-2. Tente primeiro com suas credenciais reais do Supabase
-3. Se não funcionar, use as credenciais mock acima
+⚠️ **IMPORTANTE:** Altere essas senhas antes do deploy em produção!
 
-### **Via API Direta:**
-```bash
-# Testar candidato mock
-curl -X POST http://localhost:5001/api/auth/mock-login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"candidato@isabelrh.com.br","password":"candidato123"}'
+1. **Crie usuários reais** com senhas seguras
+2. **Remova os usuários de teste** do ambiente de produção
+3. **Configure políticas RLS** adequadas no Supabase
+4. **Ative verificação de email** se necessário
 
-# Verificar usuário logado
-curl http://localhost:5001/api/auth/me
-```
+## ✅ **Status do Sistema**
 
----
+- ✅ Sistema mock removido
+- ✅ Autenticação 100% Supabase
+- ✅ Redirecionamento baseado em tipo de usuário
+- ✅ Tokens JWT seguros
+- ✅ Sessões persistentes
 
-## 🎊 **PROBLEMA RESOLVIDO!**
+## 🐛 **Solução de Problemas**
 
-Agora todos os tipos de usuário redirecionam corretamente:
+### **Login não funciona:**
+1. Verifique se os usuários existem no Supabase Auth
+2. Confirme as variáveis de ambiente (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+3. Execute o script SQL para criar os usuários
 
-✅ **Admin** → `/admin`  
-✅ **Candidato** → `/candidato`  
-✅ **Empresa** → `/empresa`  
+### **Redirecionamento falha:**
+1. Verifique se o `user_metadata` contém o campo `type`
+2. Confirme se as páginas `/admin`, `/candidato`, `/empresa` existem
 
-O sistema é **100% funcional** tanto com usuários reais quanto mock! 
+### **Erro de token:**
+1. Limpe o localStorage do navegador
+2. Faça logout e login novamente
+3. Verifique se a chave `SUPABASE_SERVICE_KEY` está correta 

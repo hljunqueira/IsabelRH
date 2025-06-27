@@ -61,65 +61,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 💾 Sistema simples de sessão mock para desenvolvimento
-let currentMockUser: any = null;
-
-// 🔐 Rota de login mock para desenvolvimento
-app.post("/api/auth/mock-login", (req, res) => {
-  console.log('🎭 Mock Login: Endpoint acessado');
-  const { email, password, type } = req.body;
-  
-  // Credenciais mock para desenvolvimento
-  const mockUsers = {
-    'admin@isabelrh.com.br': {
-      password: 'admin123',
-      user: {
-        id: "dev-admin-1",
-        email: "admin@isabelrh.com.br",
-        name: "Administrador Isabel RH",
-        type: "admin",
-        created_at: new Date().toISOString()
-      }
-    },
-    'candidato@isabelrh.com.br': {
-      password: 'candidato123',
-      user: {
-        id: "dev-candidato-1",
-        email: "candidato@isabelrh.com.br",
-        name: "João Silva Santos",
-        type: "candidato",
-        created_at: new Date().toISOString()
-      }
-    },
-    'empresa@isabelrh.com.br': {
-      password: 'empresa123',
-      user: {
-        id: "dev-empresa-1",
-        email: "empresa@isabelrh.com.br",
-        name: "Tech Innovate Ltda",
-        type: "empresa",
-        created_at: new Date().toISOString()
-      }
-    }
-  };
-  
-  const mockCredential = mockUsers[email as keyof typeof mockUsers];
-  
-  if (!mockCredential || mockCredential.password !== password) {
-    console.log('❌ Mock Login: Credenciais inválidas para:', email);
-    return res.status(401).json({ error: 'Credenciais inválidas' });
-  }
-  
-  // Salvar usuário atual na "sessão" mock
-  currentMockUser = { usuario: mockCredential.user };
-  
-  console.log(`✅ Mock Login: Sucesso para ${mockCredential.user.type}:`, email);
-  res.json({ 
-    message: 'Login realizado com sucesso',
-    usuario: mockCredential.user,
-    mock_token: `mock-${Date.now()}`
-  });
-});
+// Removido sistema mock - usando apenas Supabase
 
 // 🔐 Rota de autenticação com Supabase
 app.get("/api/auth/me", async (req, res) => {
@@ -130,27 +72,11 @@ app.get("/api/auth/me", async (req, res) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('⚠️ Auth/me: Sem token, usando fallback');
-      
-      // Se existe usuário mock logado, retornar
-      if (currentMockUser) {
-        console.log('🎭 Mock: Retornando usuário da sessão:', currentMockUser.usuario.type);
-        return res.json(currentMockUser);
-      }
-      
-      // Senão, retornar admin como padrão
-      const defaultMockUser = {
-        usuario: {
-          id: "dev-admin-1",
-          email: "admin@isabelrh.com.br",
-          name: "Administrador Isabel RH",
-          type: "admin",
-          created_at: new Date().toISOString()
-        }
-      };
-      
-      console.log('🎭 Mock: Retornando dados de admin (padrão)');
-      return res.json(defaultMockUser);
+      console.log('❌ Auth/me: Sem token de autorização');
+      return res.status(401).json({ 
+        error: 'Token de autorização necessário',
+        message: 'Faça login para acessar esta rota'
+      });
     }
 
     const token = authHeader.substring(7); // Remove 'Bearer ' do início
@@ -159,18 +85,11 @@ app.get("/api/auth/me", async (req, res) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
-      console.log('❌ Auth/me: Token inválido, usando fallback');
-      // Fallback para dados mock se o token for inválido
-      const mockUser = {
-        usuario: {
-          id: "dev-user-1",
-          email: "dev@isabelrh.com.br",
-          name: "Usuário de Desenvolvimento",
-          type: "admin",
-          created_at: new Date().toISOString()
-        }
-      };
-      return res.json(mockUser);
+      console.log('❌ Auth/me: Token inválido');
+      return res.status(401).json({ 
+        error: 'Token inválido',
+        message: 'Faça login novamente'
+      });
     }
 
     // Buscar dados do usuário nas tabelas customizadas
@@ -206,17 +125,10 @@ app.get("/api/auth/me", async (req, res) => {
     
   } catch (error) {
     console.error('💥 Erro na autenticação:', error);
-    // Fallback para dados mock em caso de erro
-    const mockUser = {
-      usuario: {
-        id: "dev-user-1",
-        email: "dev@isabelrh.com.br",
-        name: "Usuário de Desenvolvimento",
-        type: "admin",
-        created_at: new Date().toISOString()
-      }
-    };
-    res.json(mockUser);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao verificar autenticação'
+    });
   }
 });
 

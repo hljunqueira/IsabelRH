@@ -108,7 +108,7 @@ export default function Login() {
       } else {
         throw new Error('E-mail não encontrado');
       }
-    } catch (error) {
+    } catch (emailError) {
       error("Erro ao enviar e-mail", "Verifique se o e-mail está correto ou tente novamente mais tarde.");
     }
   };
@@ -133,7 +133,73 @@ export default function Login() {
         description: "Bem-vindo(a) de volta!",
       });
       
-      // O redirecionamento será feito automaticamente pelo signIn
+      // Aguardar um pouco e buscar dados do usuário para redirecionamento
+      setTimeout(async () => {
+        const authData = localStorage.getItem("auth-user");
+        if (authData) {
+          try {
+            const userData = JSON.parse(authData);
+            const userType = userData.usuario?.type || userData.type;
+            
+            console.log('🔍 Login: Redirecionando usuário tipo:', userType);
+            
+            switch (userType) {
+              case 'admin':
+                console.log('➡️ Redirecionando para /admin');
+                setLocation('/admin');
+                break;
+              case 'empresa':
+                console.log('➡️ Redirecionando para /empresa');
+                setLocation('/empresa');
+                break;
+              case 'candidato':
+                console.log('➡️ Redirecionando para /candidato');
+                setLocation('/candidato');
+                break;
+              default:
+                console.warn('⚠️ Tipo de usuário não reconhecido:', userType);
+                setLocation('/');
+            }
+          } catch (parseError: any) {
+            console.error('❌ Erro ao processar dados do usuário:', parseError);
+            setLocation('/');
+          }
+        } else {
+          console.warn('⚠️ Dados do usuário não encontrados, aguardando mais...');
+          // Tentar novamente após mais tempo
+          setTimeout(() => {
+            const retryData = localStorage.getItem("auth-user");
+            if (retryData) {
+              try {
+                const userData = JSON.parse(retryData);
+                const userType = userData.usuario?.type || userData.type;
+                console.log('🔍 Login (retry): Redirecionando usuário tipo:', userType);
+                
+                switch (userType) {
+                  case 'admin':
+                    setLocation('/admin');
+                    break;
+                  case 'empresa':
+                    setLocation('/empresa');
+                    break;
+                  case 'candidato':
+                    setLocation('/candidato');
+                    break;
+                  default:
+                    setLocation('/');
+                }
+              } catch (retryError) {
+                console.error('❌ Erro no retry:', retryError);
+                setLocation('/');
+              }
+            } else {
+              console.warn('⚠️ Ainda sem dados após retry, indo para home');
+              setLocation('/');
+            }
+          }, 800);
+        }
+      }, 300);
+      
     } catch (error: any) {
       toast({
         title: "Erro no login",
@@ -204,7 +270,55 @@ export default function Login() {
         description: "Bem-vindo(a) ao painel administrativo!",
       });
       
-      // O redirecionamento será feito automaticamente pelo signIn
+      // Aguardar um pouco e buscar dados do usuário para redirecionamento
+      setTimeout(async () => {
+        const authData = localStorage.getItem("auth-user");
+        if (authData) {
+          try {
+            const userData = JSON.parse(authData);
+            const userType = userData.usuario?.type || userData.type;
+            
+            console.log('🔍 Admin Login: Redirecionando usuário tipo:', userType);
+            
+            if (userType === 'admin') {
+              console.log('➡️ Redirecionando para /admin');
+              setLocation('/admin');
+            } else {
+              console.warn('⚠️ Usuário não é admin:', userType);
+              setLocation('/');
+            }
+          } catch (parseError: any) {
+            console.error('❌ Erro ao processar dados do usuário:', parseError);
+            setLocation('/');
+          }
+        } else {
+          console.warn('⚠️ Dados do usuário não encontrados, aguardando mais...');
+          // Tentar novamente após mais tempo
+          setTimeout(() => {
+            const retryData = localStorage.getItem("auth-user");
+            if (retryData) {
+              try {
+                const userData = JSON.parse(retryData);
+                const userType = userData.usuario?.type || userData.type;
+                console.log('🔍 Admin Login (retry): Redirecionando usuário tipo:', userType);
+                
+                if (userType === 'admin') {
+                  setLocation('/admin');
+                } else {
+                  setLocation('/');
+                }
+              } catch (retryError) {
+                console.error('❌ Erro no retry:', retryError);
+                setLocation('/');
+              }
+            } else {
+              console.warn('⚠️ Ainda sem dados após retry, indo para home');
+              setLocation('/');
+            }
+          }, 800);
+        }
+      }, 300);
+      
     } catch (error: any) {
       console.error('Erro no login admin:', error);
       toast({
