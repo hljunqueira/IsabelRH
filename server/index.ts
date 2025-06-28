@@ -391,6 +391,39 @@ app.get("/api/admin/candidatos", async (req, res) => {
   }
 });
 
+// 👤 Rota para buscar candidato específico
+app.get("/api/candidatos/:id", async (req, res) => {
+  console.log('👤 Candidatos: Buscar candidato específico', req.params.id);
+  
+  try {
+    const { id } = req.params;
+    
+    const { data: candidato, error } = await supabase
+      .from('candidatos')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao buscar candidato:', error);
+      return res.status(404).json({ 
+        error: 'Candidato não encontrado',
+        message: error.message 
+      });
+    }
+    
+    console.log('✅ Candidato encontrado:', candidato.nome);
+    res.json(candidato);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar candidato:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar candidato'
+    });
+  }
+});
+
 // 🏢 Rota de empresas admin
 app.get("/api/admin/empresas", async (req, res) => {
   console.log('🏢 Admin/empresas: Endpoint acessado');
@@ -433,6 +466,119 @@ app.get("/api/admin/empresas", async (req, res) => {
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       message: 'Erro ao buscar empresas'
+    });
+  }
+});
+
+// 🏢 Rota para buscar empresa específica
+app.get("/api/empresas/:id", async (req, res) => {
+  console.log('🏢 Empresas: Buscar empresa específica', req.params.id);
+  
+  try {
+    const { id } = req.params;
+    
+    const { data: empresa, error } = await supabase
+      .from('empresas')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao buscar empresa:', error);
+      return res.status(404).json({ 
+        error: 'Empresa não encontrada',
+        message: error.message 
+      });
+    }
+    
+    console.log('✅ Empresa encontrada:', empresa.nome);
+    res.json(empresa);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar empresa:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar empresa'
+    });
+  }
+});
+
+// 📋 Rota para buscar candidaturas do candidato
+app.get("/api/candidaturas/candidato/:id", async (req, res) => {
+  console.log('📋 Candidaturas: Buscar por candidato', req.params.id);
+  
+  try {
+    const { id } = req.params;
+    
+    const { data: candidaturas, error } = await supabase
+      .from('candidaturas')
+      .select(`
+        *,
+        vagas!inner(titulo, empresa_id),
+        empresas!inner(nome)
+      `)
+      .eq('candidato_id', id)
+      .order('data_candidatura', { ascending: false });
+    
+    if (error) {
+      console.error('❌ Erro ao buscar candidaturas:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao buscar candidaturas',
+        message: error.message 
+      });
+    }
+    
+    console.log(`✅ Candidaturas: Retornando ${candidaturas?.length || 0} candidaturas`);
+    res.json(candidaturas || []);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar candidaturas:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar candidaturas'
+    });
+  }
+});
+
+// 📋 Rota para buscar candidaturas da empresa
+app.get("/api/candidaturas/empresa", async (req, res) => {
+  console.log('📋 Candidaturas: Buscar por empresa');
+  
+  try {
+    const { empresaId } = req.query;
+    
+    if (!empresaId) {
+      return res.status(400).json({ 
+        error: 'Parâmetro empresaId é obrigatório' 
+      });
+    }
+    
+    const { data: candidaturas, error } = await supabase
+      .from('candidaturas')
+      .select(`
+        *,
+        vagas!inner(titulo, empresa_id),
+        candidatos!inner(nome, email)
+      `)
+      .eq('vagas.empresa_id', empresaId)
+      .order('data_candidatura', { ascending: false });
+    
+    if (error) {
+      console.error('❌ Erro ao buscar candidaturas da empresa:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao buscar candidaturas',
+        message: error.message 
+      });
+    }
+    
+    console.log(`✅ Candidaturas: Retornando ${candidaturas?.length || 0} candidaturas da empresa`);
+    res.json(candidaturas || []);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar candidaturas da empresa:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar candidaturas'
     });
   }
 });
@@ -1839,6 +1985,41 @@ app.get('*', (req, res) => {
     res.status(404).json({ 
       error: "Frontend não encontrado",
       message: "Execute 'npm run build' primeiro"
+    });
+  }
+});
+
+// 🔌 Rota para status online
+app.get("/api/comunicacao/status-online", async (req, res) => {
+  console.log('🔌 Comunicacao/status-online: Endpoint acessado');
+  
+  try {
+    const { userId, userType } = req.query;
+    
+    if (!userId || !userType) {
+      return res.status(400).json({ 
+        error: 'Parâmetros obrigatórios: userId e userType' 
+      });
+    }
+
+    // Por enquanto, retornar status simulado
+    // Em implementação futura, usar Redis ou WebSocket para status real
+    const statusOnline = {
+      userId,
+      userType,
+      online: true,
+      ultimaAtividade: new Date().toISOString(),
+      statusTexto: 'Disponível'
+    };
+    
+    console.log('✅ Status online retornado');
+    res.json(statusOnline);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao verificar status online:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao verificar status online'
     });
   }
 });
