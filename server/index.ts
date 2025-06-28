@@ -588,12 +588,10 @@ app.get("/api/admin/servicos", async (req, res) => {
   console.log('🛠️ Admin/servicos: Endpoint acessado');
   
   try {
+    // Primeiro, verificar sem JOIN para debug
     const { data: servicos, error } = await supabase
       .from('servicos')
-      .select(`
-        *,
-        empresas!inner(nome)
-      `)
+      .select('*')
       .order('criado_em', { ascending: false });
     
     if (error) {
@@ -604,14 +602,9 @@ app.get("/api/admin/servicos", async (req, res) => {
       });
     }
     
-    // Transformar dados para o formato esperado
-    const servicosFormatados = servicos?.map((servico: any) => ({
-      ...servico,
-      empresa: servico.empresas?.nome || 'Empresa não encontrada'
-    })) || [];
-    
-    console.log(`✅ Admin/servicos: Retornando ${servicosFormatados.length} serviços`);
-    res.json(servicosFormatados);
+    console.log(`✅ Admin/servicos: Retornando ${servicos?.length || 0} serviços`);
+    console.log('🔍 Serviços encontrados:', servicos);
+    res.json(servicos || []);
     
   } catch (error) {
     console.error('💥 Erro interno ao buscar serviços:', error);
@@ -627,12 +620,10 @@ app.get("/api/admin/propostas", async (req, res) => {
   console.log('📋 Admin/propostas: Endpoint acessado');
   
   try {
+    // Primeiro, verificar sem JOIN para debug
     const { data: propostas, error } = await supabase
       .from('propostas')
-      .select(`
-        *,
-        empresas!inner(nome)
-      `)
+      .select('*')
       .order('criado_em', { ascending: false });
     
     if (error) {
@@ -643,14 +634,9 @@ app.get("/api/admin/propostas", async (req, res) => {
       });
     }
     
-    // Transformar dados para o formato esperado
-    const propostasFormatadas = propostas?.map((proposta: any) => ({
-      ...proposta,
-      empresa: proposta.empresas?.nome || 'Empresa não encontrada'
-    })) || [];
-    
-    console.log(`✅ Admin/propostas: Retornando ${propostasFormatadas.length} propostas`);
-    res.json(propostasFormatadas);
+    console.log(`✅ Admin/propostas: Retornando ${propostas?.length || 0} propostas`);
+    console.log('🔍 Propostas encontradas:', propostas);
+    res.json(propostas || []);
     
   } catch (error) {
     console.error('💥 Erro interno ao buscar propostas:', error);
@@ -664,6 +650,7 @@ app.get("/api/admin/propostas", async (req, res) => {
 // 🆕 Rota para criar serviços
 app.post("/api/admin/servicos", async (req, res) => {
   console.log('🆕 Admin/servicos: Criando novo serviço');
+  console.log('📝 Dados recebidos:', req.body);
   
   try {
     // Mapear campos específicos do frontend para o banco
@@ -680,6 +667,8 @@ app.post("/api/admin/servicos", async (req, res) => {
       criado_em: new Date().toISOString()
     };
     
+    console.log('📝 Dados formatados para inserção:', servicoData);
+    
     const { data: servico, error } = await supabase
       .from('servicos')
       .insert(servicoData)
@@ -688,13 +677,15 @@ app.post("/api/admin/servicos", async (req, res) => {
     
     if (error) {
       console.error('❌ Erro ao criar serviço:', error);
+      console.error('❌ Detalhes do erro:', JSON.stringify(error, null, 2));
       return res.status(500).json({ 
         error: 'Erro ao criar serviço',
-        message: error.message 
+        message: error.message,
+        details: error
       });
     }
     
-    console.log('✅ Serviço criado com sucesso:', servico.id);
+    console.log('✅ Serviço criado com sucesso:', servico);
     res.status(201).json(servico);
     
   } catch (error) {
@@ -709,6 +700,7 @@ app.post("/api/admin/servicos", async (req, res) => {
 // 🆕 Rota para criar propostas
 app.post("/api/admin/propostas", async (req, res) => {
   console.log('🆕 Admin/propostas: Criando nova proposta');
+  console.log('📝 Dados recebidos:', req.body);
   
   try {
     // Mapear campos específicos do frontend para o banco
@@ -723,6 +715,8 @@ app.post("/api/admin/propostas", async (req, res) => {
       criado_em: new Date().toISOString()
     };
     
+    console.log('📝 Dados formatados para inserção:', propostaData);
+    
     const { data: proposta, error } = await supabase
       .from('propostas')
       .insert(propostaData)
@@ -731,13 +725,15 @@ app.post("/api/admin/propostas", async (req, res) => {
     
     if (error) {
       console.error('❌ Erro ao criar proposta:', error);
+      console.error('❌ Detalhes do erro:', JSON.stringify(error, null, 2));
       return res.status(500).json({ 
         error: 'Erro ao criar proposta',
-        message: error.message 
+        message: error.message,
+        details: error
       });
     }
     
-    console.log('✅ Proposta criada com sucesso:', proposta.id);
+    console.log('✅ Proposta criada com sucesso:', proposta);
     res.status(201).json(proposta);
     
   } catch (error) {
@@ -2058,4 +2054,102 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - POST /api/parsing/upload - Upload e parsing de currículos");
   console.log("🖥️ Frontend React disponível em: /");
   console.log("✨ Isabel RH v5.0 - Sistema completo funcionando!");
+});
+
+// 🧪 Rota de teste para criar proposta com dados fixos
+app.post("/api/admin/propostas/teste", async (req, res) => {
+  console.log('🧪 Teste: Criando proposta com dados fixos');
+  
+  try {
+    const propostaTestData = {
+      empresa_id: '786d45c8-dcbe-45f8-be80-83aafb4d3a57', // ID da empresa existente
+      tipo_servico: 'consultoria',
+      descricao: 'Proposta de teste criada automaticamente',
+      valor_proposto: 'R$ 5.000,00',
+      prazo_entrega: '30 dias',
+      observacoes: 'Teste de funcionamento do sistema',
+      aprovada: 'pendente',
+      criado_em: new Date().toISOString()
+    };
+    
+    console.log('📝 Dados de teste para inserção:', propostaTestData);
+    
+    const { data: proposta, error } = await supabase
+      .from('propostas')
+      .insert(propostaTestData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao criar proposta de teste:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao criar proposta de teste',
+        message: error.message,
+        details: error
+      });
+    }
+    
+    console.log('✅ Proposta de teste criada com sucesso:', proposta);
+    res.status(201).json({ 
+      message: 'Proposta de teste criada com sucesso',
+      data: proposta 
+    });
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao criar proposta de teste:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao criar proposta de teste'
+    });
+  }
+});
+
+// 🧪 Rota de teste para criar serviço com dados fixos
+app.post("/api/admin/servicos/teste", async (req, res) => {
+  console.log('🧪 Teste: Criando serviço com dados fixos');
+  
+  try {
+    const servicoTestData = {
+      empresa_id: '786d45c8-dcbe-45f8-be80-83aafb4d3a57', // ID da empresa existente
+      candidato_id: null, // Pode ser null
+      tipo_servico: 'consultoria',
+      descricao: 'Serviço de teste criado automaticamente',
+      valor: 'R$ 3.000,00',
+      status: 'pendente',
+      data_inicio: new Date().toISOString(),
+      data_fim: null,
+      observacoes: 'Teste de funcionamento do sistema',
+      criado_em: new Date().toISOString()
+    };
+    
+    console.log('📝 Dados de teste para inserção:', servicoTestData);
+    
+    const { data: servico, error } = await supabase
+      .from('servicos')
+      .insert(servicoTestData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao criar serviço de teste:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao criar serviço de teste',
+        message: error.message,
+        details: error
+      });
+    }
+    
+    console.log('✅ Serviço de teste criado com sucesso:', servico);
+    res.status(201).json({ 
+      message: 'Serviço de teste criado com sucesso',
+      data: servico 
+    });
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao criar serviço de teste:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao criar serviço de teste'
+    });
+  }
 });
