@@ -34,7 +34,8 @@ import {
   Shield,
   MessageCircle,
   Search,
-  Users as UsersIcon
+  Users as UsersIcon,
+  MessageSquare
 } from "lucide-react";
 import type { Candidato, Empresa, Vaga, Servico, Proposta, Relatorio } from "@shared/schema";
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -54,7 +55,7 @@ export default function Admin() {
   useEffect(() => {
     console.log('🛠️ Admin: Verificando autenticação...');
     const storedUser = localStorage.getItem("auth-user");
-    console.log('��️ Admin: storedUser existe =', !!storedUser);
+    console.log('🛠️ Admin: storedUser existe =', !!storedUser);
     
     if (!storedUser) {
       console.log('🛠️ Admin: Sem usuário, redirecionando para admin-login');
@@ -127,9 +128,8 @@ export default function Admin() {
     title: "",
     description: "",
     action: () => {},
-    variant: "destructive" as const,
-    icon: "delete" as const,
-    loading: false
+    loading: false,
+    variant: "destructive" as "destructive" | "default"
   });
 
   // Estados dos formulários
@@ -150,6 +150,9 @@ export default function Admin() {
     prazoEntrega: "",
     observacoes: "",
   });
+
+  const [showEmpresaDetails, setShowEmpresaDetails] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
 
   // Mutations
   const createServiceMutation = useMutation({
@@ -364,18 +367,10 @@ export default function Admin() {
     setConfirmDialog({
       open: true,
       title: `Remover ${type === 'candidato' ? 'Candidato' : 'Empresa'}`,
-      description: `Tem certeza que deseja remover "${name}"? Esta ação não pode ser desfeita.`,
-      action: () => {
-        setConfirmDialog(prev => ({ ...prev, loading: true }));
-        deleteUserMutation.mutate({ id, type }, {
-          onSettled: () => {
-            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
-          }
-        });
-      },
+      description: `Tem certeza que deseja remover ${type === 'candidato' ? 'o candidato' : 'a empresa'} "${name}"? Esta ação não pode ser desfeita.`,
       variant: "destructive",
-      icon: type === 'candidato' ? 'delete' : 'delete',
-      loading: false
+      action: () => deleteUserMutation.mutate(id),
+      loading: deleteUserMutation.isPending
     });
   };
 
@@ -384,17 +379,9 @@ export default function Admin() {
       open: true,
       title: "Remover Serviço",
       description: `Tem certeza que deseja remover o serviço "${name}"? Esta ação não pode ser desfeita.`,
-      action: () => {
-        setConfirmDialog(prev => ({ ...prev, loading: true }));
-        deleteServiceMutation.mutate(id, {
-          onSettled: () => {
-            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
-          }
-        });
-      },
       variant: "destructive",
-      icon: 'delete',
-      loading: false
+      action: () => deleteServiceMutation.mutate(id),
+      loading: deleteServiceMutation.isPending
     });
   };
 
@@ -403,17 +390,9 @@ export default function Admin() {
       open: true,
       title: "Remover Proposta",
       description: `Tem certeza que deseja remover a proposta para "${empresa}"? Esta ação não pode ser desfeita.`,
-      action: () => {
-        setConfirmDialog(prev => ({ ...prev, loading: true }));
-        deleteProposalMutation.mutate(id, {
-          onSettled: () => {
-            setConfirmDialog(prev => ({ ...prev, open: false, loading: false }));
-          }
-        });
-      },
       variant: "destructive",
-      icon: 'delete',
-      loading: false
+      action: () => deleteProposalMutation.mutate(id),
+      loading: deleteProposalMutation.isPending
     });
   };
 
@@ -702,7 +681,10 @@ export default function Admin() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setLocation(`/empresa/${empresa.id}`)}
+                            onClick={() => {
+                              setSelectedEmpresa(empresa);
+                              setShowEmpresaDetails(true);
+                            }}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             Ver
@@ -1134,11 +1116,11 @@ export default function Admin() {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">24</div>
+                          <div className="text-2xl font-bold text-blue-600">0</div>
                           <div className="text-sm text-blue-700">Conversas Ativas</div>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">89</div>
+                          <div className="text-2xl font-bold text-green-600">0</div>
                           <div className="text-sm text-green-700">Mensagens Hoje</div>
                         </div>
                       </div>
@@ -1211,11 +1193,11 @@ export default function Admin() {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-pink-50 rounded-lg">
-                          <div className="text-2xl font-bold text-pink-600">2</div>
+                          <div className="text-2xl font-bold text-pink-600">0</div>
                           <div className="text-sm text-pink-700">Campanhas Ativas</div>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">37</div>
+                          <div className="text-2xl font-bold text-green-600">0</div>
                           <div className="text-sm text-green-700">Candidatos Contactados</div>
                         </div>
                       </div>
@@ -1286,11 +1268,11 @@ export default function Admin() {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-orange-50 rounded-lg">
-                          <div className="text-2xl font-bold text-orange-600">3</div>
+                          <div className="text-2xl font-bold text-orange-600">0</div>
                           <div className="text-sm text-orange-700">Clientes Ativos</div>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-2xl font-bold text-green-600">R$ 11.9k</div>
+                          <div className="text-2xl font-bold text-green-600">R$ 0</div>
                           <div className="text-sm text-green-700">Receita Mensal</div>
                         </div>
                       </div>
@@ -1358,10 +1340,154 @@ export default function Admin() {
         confirmText="Sim, remover"
         cancelText="Cancelar"
         variant={confirmDialog.variant}
-        icon={confirmDialog.icon}
         onConfirm={confirmDialog.action}
         loading={confirmDialog.loading}
       />
+
+      {/* Modal de Detalhes da Empresa */}
+      {showEmpresaDetails && selectedEmpresa && (
+        <Dialog open={showEmpresaDetails} onOpenChange={setShowEmpresaDetails}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-green-600" />
+                {selectedEmpresa.nome}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Informações Básicas */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Informações Básicas</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">CNPJ:</span>
+                    <p>{selectedEmpresa.cnpj || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Setor:</span>
+                    <p>{selectedEmpresa.setor || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Porte:</span>
+                    <p>{selectedEmpresa.porte || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Funcionários:</span>
+                    <p>{selectedEmpresa.numeroFuncionarios || 'Não informado'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contato */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Contato</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Telefone:</span>
+                    <p>{selectedEmpresa.telefone || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Email:</span>
+                    <p>{selectedEmpresa.email || 'Não informado'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Website:</span>
+                    {selectedEmpresa.website ? (
+                      <a href={selectedEmpresa.website} target="_blank" rel="noopener noreferrer" 
+                         className="text-blue-600 hover:underline">
+                        {selectedEmpresa.website}
+                      </a>
+                    ) : (
+                      <p>Não informado</p>
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">LinkedIn:</span>
+                    {selectedEmpresa.linkedin ? (
+                      <a href={selectedEmpresa.linkedin} target="_blank" rel="noopener noreferrer" 
+                         className="text-blue-600 hover:underline">
+                        LinkedIn
+                      </a>
+                    ) : (
+                      <p>Não informado</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Endereço */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Endereço</h3>
+                <div className="text-sm space-y-2">
+                  <div>
+                    <span className="font-medium text-gray-600">Endereço:</span>
+                    <p>{selectedEmpresa.endereco || 'Não informado'}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium text-gray-600">Cidade:</span>
+                      <p>{selectedEmpresa.cidade || 'Não informado'}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Estado:</span>
+                      <p>{selectedEmpresa.estado || 'Não informado'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">CEP:</span>
+                    <p>{selectedEmpresa.cep || 'Não informado'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              {selectedEmpresa.descricao && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">Descrição</h3>
+                  <p className="text-sm text-gray-700">{selectedEmpresa.descricao}</p>
+                </div>
+              )}
+
+              {/* Data de Cadastro */}
+              <div>
+                <h3 className="font-semibold text-lg mb-3">Informações do Sistema</h3>
+                <div className="text-sm">
+                  <span className="font-medium text-gray-600">Cadastrado em:</span>
+                  <p>
+                    {selectedEmpresa.criado_em ? 
+                      new Date(selectedEmpresa.criado_em).toLocaleDateString('pt-BR') : 
+                      'Data não disponível'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => setShowEmpresaDetails(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Fechar
+              </Button>
+              <Button 
+                onClick={() => {
+                  setShowEmpresaDetails(false);
+                  toast({
+                    title: "Funcionalidade em desenvolvimento",
+                    description: "Em breve você poderá enviar mensagens diretamente para a empresa."
+                  });
+                }}
+                className="flex-1"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Contatar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   );
 }

@@ -650,49 +650,60 @@ app.get("/api/admin/propostas", async (req, res) => {
 // 🆕 Rota para criar serviços
 app.post("/api/admin/servicos", async (req, res) => {
   console.log('🆕 Admin/servicos: Criando novo serviço');
-  console.log('📝 Dados recebidos:', req.body);
+  console.log('📝 Dados recebidos do frontend:', JSON.stringify(req.body, null, 2));
   
   try {
-    // Mapear campos específicos do frontend para o banco
-    const servicoData = {
-      empresa_id: req.body.empresa_id,
-      candidato_id: req.body.candidato_id,
-      tipo_servico: req.body.tipo_servico,
-      descricao: req.body.descricao,
-      valor: req.body.valor,
+    // Mapear campos do frontend para o banco corretamente
+    const dadosServico = {
+      empresa_id: req.body.empresaId || req.body.empresa_id || null,
+      candidato_id: req.body.candidatoId || req.body.candidato_id || null,
+      tipo_servico: req.body.tipoServico || req.body.tipo_servico || 'recrutamento',
+      descricao: req.body.descricao || '',
+      valor: req.body.valor || '',
       status: req.body.status || 'pendente',
-      data_inicio: req.body.data_inicio,
-      data_fim: req.body.data_fim,
-      observacoes: req.body.observacoes,
+      data_inicio: req.body.dataInicio || req.body.data_inicio || null,
+      data_fim: req.body.dataFim || req.body.data_fim || null,
+      observacoes: req.body.observacoes || '',
       criado_em: new Date().toISOString()
     };
     
-    console.log('📝 Dados formatados para inserção:', servicoData);
+    console.log('📝 Dados processados para inserção:', JSON.stringify(dadosServico, null, 2));
     
-    const { data: servico, error } = await supabase
+    const { data: novoServico, error: erroInsercao } = await supabase
       .from('servicos')
-      .insert(servicoData)
-      .select()
+      .insert(dadosServico)
+      .select('*')
       .single();
     
-    if (error) {
-      console.error('❌ Erro ao criar serviço:', error);
-      console.error('❌ Detalhes do erro:', JSON.stringify(error, null, 2));
+    if (erroInsercao) {
+      console.error('❌ ERRO CRÍTICO ao inserir serviço:');
+      console.error('❌ Código do erro:', erroInsercao.code);
+      console.error('❌ Mensagem:', erroInsercao.message);
+      console.error('❌ Detalhes completos:', JSON.stringify(erroInsercao, null, 2));
+      
       return res.status(500).json({ 
+        success: false,
         error: 'Erro ao criar serviço',
-        message: error.message,
-        details: error
+        message: erroInsercao.message,
+        code: erroInsercao.code,
+        details: erroInsercao
       });
     }
     
-    console.log('✅ Serviço criado com sucesso:', servico);
-    res.status(201).json(servico);
+    console.log('✅ SUCESSO: Serviço criado:', JSON.stringify(novoServico, null, 2));
     
-  } catch (error) {
-    console.error('💥 Erro interno ao criar serviço:', error);
+    res.status(201).json({
+      success: true,
+      message: 'Serviço criado com sucesso',
+      data: novoServico
+    });
+    
+  } catch (erroGeral: any) {
+    console.error('💥 ERRO GERAL na criação de serviço:', erroGeral);
     res.status(500).json({ 
+      success: false,
       error: 'Erro interno do servidor',
-      message: 'Erro ao criar serviço'
+      message: 'Falha ao processar criação de serviço'
     });
   }
 });
@@ -700,47 +711,58 @@ app.post("/api/admin/servicos", async (req, res) => {
 // 🆕 Rota para criar propostas
 app.post("/api/admin/propostas", async (req, res) => {
   console.log('🆕 Admin/propostas: Criando nova proposta');
-  console.log('📝 Dados recebidos:', req.body);
+  console.log('📝 Dados recebidos do frontend:', JSON.stringify(req.body, null, 2));
   
   try {
-    // Mapear campos específicos do frontend para o banco
-    const propostaData = {
-      empresa_id: req.body.empresa_id,
-      tipo_servico: req.body.tipo_servico,
-      descricao: req.body.descricao,
-      valor_proposto: req.body.valor_proposto,
-      prazo_entrega: req.body.prazo_entrega,
-      observacoes: req.body.observacoes,
+    // Mapear campos do frontend para o banco corretamente
+    const dadosProposta = {
+      empresa_id: req.body.empresaId || req.body.empresa_id || null,
+      tipo_servico: req.body.tipoServico || req.body.tipo_servico || 'recrutamento',
+      descricao: req.body.descricao || '',
+      valor_proposto: req.body.valorProposto || req.body.valor_proposto || '',
+      prazo_entrega: req.body.prazoEntrega || req.body.prazo_entrega || '',
+      observacoes: req.body.observacoes || '',
       aprovada: req.body.aprovada || 'pendente',
       criado_em: new Date().toISOString()
     };
     
-    console.log('📝 Dados formatados para inserção:', propostaData);
+    console.log('📝 Dados processados para inserção:', JSON.stringify(dadosProposta, null, 2));
     
-    const { data: proposta, error } = await supabase
+    const { data: novaProposta, error: erroInsercao } = await supabase
       .from('propostas')
-      .insert(propostaData)
-      .select()
+      .insert(dadosProposta)
+      .select('*')
       .single();
     
-    if (error) {
-      console.error('❌ Erro ao criar proposta:', error);
-      console.error('❌ Detalhes do erro:', JSON.stringify(error, null, 2));
+    if (erroInsercao) {
+      console.error('❌ ERRO CRÍTICO ao inserir proposta:');
+      console.error('❌ Código do erro:', erroInsercao.code);
+      console.error('❌ Mensagem:', erroInsercao.message);
+      console.error('❌ Detalhes completos:', JSON.stringify(erroInsercao, null, 2));
+      
       return res.status(500).json({ 
+        success: false,
         error: 'Erro ao criar proposta',
-        message: error.message,
-        details: error
+        message: erroInsercao.message,
+        code: erroInsercao.code,
+        details: erroInsercao
       });
     }
     
-    console.log('✅ Proposta criada com sucesso:', proposta);
-    res.status(201).json(proposta);
+    console.log('✅ SUCESSO: Proposta criada:', JSON.stringify(novaProposta, null, 2));
     
-  } catch (error) {
-    console.error('💥 Erro interno ao criar proposta:', error);
+    res.status(201).json({
+      success: true,
+      message: 'Proposta criada com sucesso',
+      data: novaProposta
+    });
+    
+  } catch (erroGeral: any) {
+    console.error('💥 ERRO GERAL na criação de proposta:', erroGeral);
     res.status(500).json({ 
+      success: false,
       error: 'Erro interno do servidor',
-      message: 'Erro ao criar proposta'
+      message: 'Falha ao processar criação de proposta'
     });
   }
 });
@@ -1445,13 +1467,10 @@ app.get("/api/comunicacao/conversas", async (req, res) => {
       });
     }
 
-    // Buscar conversas do usuário no Supabase
-    let query = supabase.from('conversas').select(`
-      *,
-      candidatos:candidato_id(nome, email),
-      empresas:empresa_id(nome, email),
-      vagas:vaga_id(titulo)
-    `);
+    // ✅ Buscar conversas simples primeiro, sem JOINs para evitar erros de foreign key
+    let query = supabase
+      .from('conversas')
+      .select('*');
 
     if (userType === 'candidato') {
       query = query.eq('candidato_id', userId);
@@ -1600,7 +1619,7 @@ app.get("/api/comunicacao/notificacoes", async (req, res) => {
     const { data: notificacoes, error } = await supabase
       .from('notificacoes')
       .select('*')
-      .eq('user_id', userId)
+      .eq('usuario_id', userId)  // ✅ Corrigido: user_id → usuario_id
       .order('criado_em', { ascending: false });
     
     if (error) {
@@ -1859,11 +1878,12 @@ app.delete("/api/admin/servicos/:id", async (req, res) => {
     // Verificar se o serviço existe
     const { data: servico, error: checkError } = await supabase
       .from('servicos')
-      .select('id, tipoServico')
+      .select('id, tipo_servico')
       .eq('id', id)
       .single();
 
     if (checkError || !servico) {
+      console.error('❌ Serviço não encontrado:', checkError);
       return res.status(404).json({ error: 'Serviço não encontrado' });
     }
 
@@ -1874,15 +1894,78 @@ app.delete("/api/admin/servicos/:id", async (req, res) => {
       .eq('id', id);
 
     if (deleteError) {
-      throw deleteError;
+      console.error('❌ Erro ao deletar serviço:', deleteError);
+      return res.status(500).json({ error: 'Erro ao deletar serviço' });
     }
 
+    console.log('✅ Serviço deletado com sucesso:', id);
     res.json({ 
       message: 'Serviço removido com sucesso',
       servicoId: id
     });
   } catch (error) {
-    console.error('❌ Erro ao deletar serviço:', error);
+    console.error('❌ Erro interno ao deletar serviço:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// ✏️ ROTA PUT SERVIÇOS (EDITAR)
+app.put("/api/admin/servicos/:id", async (req, res) => {
+  console.log('✏️ Admin: Editar serviço', req.params.id);
+  console.log('📝 Dados recebidos:', JSON.stringify(req.body, null, 2));
+  
+  try {
+    const { id } = req.params;
+    
+    // Mapear campos do frontend para o banco
+    const dadosAtualizacao = {
+      empresa_id: req.body.empresaId || req.body.empresa_id,
+      candidato_id: req.body.candidatoId || req.body.candidato_id,
+      tipo_servico: req.body.tipoServico || req.body.tipo_servico,
+      descricao: req.body.descricao,
+      valor: req.body.valor,
+      status: req.body.status,
+      data_inicio: req.body.dataInicio || req.body.data_inicio,
+      data_fim: req.body.dataFim || req.body.data_fim,
+      observacoes: req.body.observacoes,
+      atualizado_em: new Date().toISOString()
+    };
+
+    // Remover campos undefined
+    Object.keys(dadosAtualizacao).forEach(key => 
+      (dadosAtualizacao as any)[key] === undefined && delete (dadosAtualizacao as any)[key]
+    );
+    
+    console.log('📝 Dados para atualização:', JSON.stringify(dadosAtualizacao, null, 2));
+
+    const { data: servicoAtualizado, error: updateError } = await supabase
+      .from('servicos')
+      .update(dadosAtualizacao)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar serviço:', updateError);
+      return res.status(500).json({ 
+        error: 'Erro ao atualizar serviço',
+        message: updateError.message
+      });
+    }
+
+    if (!servicoAtualizado) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
+    }
+
+    console.log('✅ Serviço atualizado com sucesso:', JSON.stringify(servicoAtualizado, null, 2));
+    res.json({
+      success: true,
+      message: 'Serviço atualizado com sucesso',
+      data: servicoAtualizado
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro interno ao editar serviço:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -1897,11 +1980,12 @@ app.delete("/api/admin/propostas/:id", async (req, res) => {
     // Verificar se a proposta existe
     const { data: proposta, error: checkError } = await supabase
       .from('propostas')
-      .select('id, tipoServico')
+      .select('id, tipo_servico')
       .eq('id', id)
       .single();
 
     if (checkError || !proposta) {
+      console.error('❌ Proposta não encontrada:', checkError);
       return res.status(404).json({ error: 'Proposta não encontrada' });
     }
 
@@ -1912,15 +1996,76 @@ app.delete("/api/admin/propostas/:id", async (req, res) => {
       .eq('id', id);
 
     if (deleteError) {
-      throw deleteError;
+      console.error('❌ Erro ao deletar proposta:', deleteError);
+      return res.status(500).json({ error: 'Erro ao deletar proposta' });
     }
 
+    console.log('✅ Proposta deletada com sucesso:', id);
     res.json({ 
       message: 'Proposta removida com sucesso',
       propostaId: id
     });
   } catch (error) {
-    console.error('❌ Erro ao deletar proposta:', error);
+    console.error('❌ Erro interno ao deletar proposta:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// ✏️ ROTA PUT PROPOSTAS (EDITAR)
+app.put("/api/admin/propostas/:id", async (req, res) => {
+  console.log('✏️ Admin: Editar proposta', req.params.id);
+  console.log('📝 Dados recebidos:', JSON.stringify(req.body, null, 2));
+  
+  try {
+    const { id } = req.params;
+    
+    // Mapear campos do frontend para o banco
+    const dadosAtualizacao = {
+      empresa_id: req.body.empresaId || req.body.empresa_id,
+      tipo_servico: req.body.tipoServico || req.body.tipo_servico,
+      descricao: req.body.descricao,
+      valor_proposto: req.body.valorProposto || req.body.valor_proposto,
+      prazo_entrega: req.body.prazoEntrega || req.body.prazo_entrega,
+      observacoes: req.body.observacoes,
+      aprovada: req.body.aprovada,
+      atualizado_em: new Date().toISOString()
+    };
+
+    // Remover campos undefined
+    Object.keys(dadosAtualizacao).forEach(key => 
+      (dadosAtualizacao as any)[key] === undefined && delete (dadosAtualizacao as any)[key]
+    );
+    
+    console.log('📝 Dados para atualização:', JSON.stringify(dadosAtualizacao, null, 2));
+
+    const { data: propostaAtualizada, error: updateError } = await supabase
+      .from('propostas')
+      .update(dadosAtualizacao)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar proposta:', updateError);
+      return res.status(500).json({ 
+        error: 'Erro ao atualizar proposta',
+        message: updateError.message
+      });
+    }
+
+    if (!propostaAtualizada) {
+      return res.status(404).json({ error: 'Proposta não encontrada' });
+    }
+
+    console.log('✅ Proposta atualizada com sucesso:', JSON.stringify(propostaAtualizada, null, 2));
+    res.json({
+      success: true,
+      message: 'Proposta atualizada com sucesso',
+      data: propostaAtualizada
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro interno ao editar proposta:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -2040,8 +2185,12 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - DELETE /api/admin/empresas/:id - Deletar empresa (admin)");
   console.log("   - GET /api/admin/servicos - Lista de serviços (admin)");
   console.log("   - POST /api/admin/servicos - Criar serviço (admin)");
+  console.log("   - PUT /api/admin/servicos/:id - Editar serviço (admin)");
+  console.log("   - DELETE /api/admin/servicos/:id - Deletar serviço (admin)");
   console.log("   - GET /api/admin/propostas - Lista de propostas (admin)");
   console.log("   - POST /api/admin/propostas - Criar proposta (admin)");
+  console.log("   - PUT /api/admin/propostas/:id - Editar proposta (admin)");
+  console.log("   - DELETE /api/admin/propostas/:id - Deletar proposta (admin)");
   console.log("   - PATCH /api/admin/propostas/:id - Atualizar proposta (admin)");
   console.log("   - GET /api/multicliente/clientes - Lista de clientes");
   console.log("   - GET /api/multicliente/usuarios - Lista de usuários");
@@ -2052,104 +2201,10 @@ app.listen(port, "0.0.0.0", () => {
   console.log("   - GET /api/hunting/integracoes - Lista de integrações");
   console.log("   - POST /api/hunting/campanhas - Criar campanha");
   console.log("   - POST /api/parsing/upload - Upload e parsing de currículos");
+  console.log("   - GET /api/admin/diagnostico - Diagnóstico do Supabase");
+  console.log("   - GET /api/admin/enum/tipos-servico - Valores do enum tipo_servico");
+  console.log("   - POST /api/admin/propostas/teste - Teste criação proposta");
+  console.log("   - POST /api/admin/servicos/teste - Teste criação serviço");
   console.log("🖥️ Frontend React disponível em: /");
   console.log("✨ Isabel RH v5.0 - Sistema completo funcionando!");
-});
-
-// 🧪 Rota de teste para criar proposta com dados fixos
-app.post("/api/admin/propostas/teste", async (req, res) => {
-  console.log('🧪 Teste: Criando proposta com dados fixos');
-  
-  try {
-    const propostaTestData = {
-      empresa_id: '786d45c8-dcbe-45f8-be80-83aafb4d3a57', // ID da empresa existente
-      tipo_servico: 'consultoria',
-      descricao: 'Proposta de teste criada automaticamente',
-      valor_proposto: 'R$ 5.000,00',
-      prazo_entrega: '30 dias',
-      observacoes: 'Teste de funcionamento do sistema',
-      aprovada: 'pendente',
-      criado_em: new Date().toISOString()
-    };
-    
-    console.log('📝 Dados de teste para inserção:', propostaTestData);
-    
-    const { data: proposta, error } = await supabase
-      .from('propostas')
-      .insert(propostaTestData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('❌ Erro ao criar proposta de teste:', error);
-      return res.status(500).json({ 
-        error: 'Erro ao criar proposta de teste',
-        message: error.message,
-        details: error
-      });
-    }
-    
-    console.log('✅ Proposta de teste criada com sucesso:', proposta);
-    res.status(201).json({ 
-      message: 'Proposta de teste criada com sucesso',
-      data: proposta 
-    });
-    
-  } catch (error) {
-    console.error('💥 Erro interno ao criar proposta de teste:', error);
-    res.status(500).json({ 
-      error: 'Erro interno do servidor',
-      message: 'Erro ao criar proposta de teste'
-    });
-  }
-});
-
-// 🧪 Rota de teste para criar serviço com dados fixos
-app.post("/api/admin/servicos/teste", async (req, res) => {
-  console.log('🧪 Teste: Criando serviço com dados fixos');
-  
-  try {
-    const servicoTestData = {
-      empresa_id: '786d45c8-dcbe-45f8-be80-83aafb4d3a57', // ID da empresa existente
-      candidato_id: null, // Pode ser null
-      tipo_servico: 'consultoria',
-      descricao: 'Serviço de teste criado automaticamente',
-      valor: 'R$ 3.000,00',
-      status: 'pendente',
-      data_inicio: new Date().toISOString(),
-      data_fim: null,
-      observacoes: 'Teste de funcionamento do sistema',
-      criado_em: new Date().toISOString()
-    };
-    
-    console.log('📝 Dados de teste para inserção:', servicoTestData);
-    
-    const { data: servico, error } = await supabase
-      .from('servicos')
-      .insert(servicoTestData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('❌ Erro ao criar serviço de teste:', error);
-      return res.status(500).json({ 
-        error: 'Erro ao criar serviço de teste',
-        message: error.message,
-        details: error
-      });
-    }
-    
-    console.log('✅ Serviço de teste criado com sucesso:', servico);
-    res.status(201).json({ 
-      message: 'Serviço de teste criado com sucesso',
-      data: servico 
-    });
-    
-  } catch (error) {
-    console.error('💥 Erro interno ao criar serviço de teste:', error);
-    res.status(500).json({ 
-      error: 'Erro interno do servidor',
-      message: 'Erro ao criar serviço de teste'
-    });
-  }
 });

@@ -23,9 +23,19 @@ import {
   CheckCircle,
   Activity,
   DollarSign,
-  Clock
+  Clock,
+  Copy,
+  Download
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+
+interface PlanoEditavel {
+  nome: string;
+  preco: number;
+  usuarios: number;
+  vagas: number;
+  recursos: string[];
+}
 
 export default function MultiCliente() {
   const [, setLocation] = useLocation();
@@ -38,6 +48,40 @@ export default function MultiCliente() {
   const [planos, setPlanos] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [newClientForm, setNewClientForm] = useState({
+    nome: '',
+    dominio: '',
+    plano: '',
+    adminEmail: ''
+  });
+
+  // Estado para edição de planos
+  const [planosEditaveis, setPlanosEditaveis] = useState<PlanoEditavel[]>([
+    {
+      nome: 'Básico',
+      preco: 500.00,
+      usuarios: 5,
+      vagas: 10,
+      recursos: ['Gestão básica', 'Suporte email', '1 usuário admin']
+    },
+    {
+      nome: 'Premium',
+      preco: 2500.00,
+      usuarios: 20,
+      vagas: 100,
+      recursos: ['Gestão completa', 'Suporte prioritário', '5 usuários admin', 'Relatórios avançados', 'API access']
+    },
+    {
+      nome: 'Enterprise',
+      preco: 8900.00,
+      usuarios: 100,
+      vagas: 1000,
+      recursos: ['Gestão ilimitada', 'Suporte 24/7', 'Usuários ilimitados', 'White label', 'Custom integrations', 'Dedicated manager']
+    }
+  ]);
+
+  const [showSqlGenerated, setShowSqlGenerated] = useState(false);
 
   // Carregar dados quando o componente montar
   useEffect(() => {
@@ -101,23 +145,197 @@ export default function MultiCliente() {
     }
   };
 
-  const criarCliente = async (dadosCliente: any) => {
+  const criarCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newClientForm.nome || !newClientForm.dominio || !newClientForm.plano || !newClientForm.adminEmail) {
+      setError('Todos os campos são obrigatórios');
+      return;
+    }
+
     try {
+      setLoading(true);
       const response = await fetch('/api/multicliente/clientes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(dadosCliente)
+        body: JSON.stringify({
+          nome: newClientForm.nome,
+          dominio: newClientForm.dominio,
+          plano: newClientForm.plano,
+          admin_email: newClientForm.adminEmail,
+          status: 'ativo'
+        })
       });
       
       if (!response.ok) throw new Error('Erro ao criar cliente');
       
       setShowNewClientDialog(false);
+      setNewClientForm({ nome: '', dominio: '', plano: '', adminEmail: '' });
       carregarClientes(); // Recarregar lista
     } catch (error) {
       console.error('Erro ao criar cliente:', error);
       setError('Erro ao criar cliente. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Funções para edição de planos
+  const atualizarPlano = (index: number, campo: keyof PlanoEditavel, valor: any) => {
+    const novosPlanos = [...planosEditaveis];
+    if (campo === 'recursos') {
+      novosPlanos[index].recursos = valor.split(',').map((r: string) => r.trim());
+    } else if (campo === 'nome') {
+      novosPlanos[index].nome = valor;
+    } else if (campo === 'preco') {
+      novosPlanos[index].preco = parseFloat(valor) || 0;
+    } else if (campo === 'usuarios') {
+      novosPlanos[index].usuarios = parseInt(valor) || 0;
+    } else if (campo === 'vagas') {
+      novosPlanos[index].vagas = parseInt(valor) || 0;
+    }
+    setPlanosEditaveis(novosPlanos);
+  };
+
+  const gerarSqlPersonalizado = () => {
+    const sqlBase = `-- Script personalizado para criar tabelas do sistema Multi-Cliente
+-- Execute este script no Supabase SQL Editor
+
+-- 1. Tabela de planos
+CREATE TABLE IF NOT EXISTS planos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome VARCHAR(100) NOT NULL,
+  preco DECIMAL(10,2) NOT NULL,
+  usuarios INTEGER NOT NULL DEFAULT 0,
+  vagas INTEGER NOT NULL DEFAULT 0,
+  recursos JSONB DEFAULT '[]',
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Tabela de clientes
+CREATE TABLE IF NOT EXISTS clientes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome VARCHAR(255) NOT NULL,
+  dominio VARCHAR(255) UNIQUE NOT NULL,
+  plano_id UUID REFERENCES planos(id),
+  plano VARCHAR(50) DEFAULT 'basico',
+  status VARCHAR(50) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'suspenso')),
+  usuarios INTEGER DEFAULT 0,
+  limite_usuarios INTEGER DEFAULT 10,
+  vagas_usadas INTEGER DEFAULT 0,
+  limite_vagas INTEGER DEFAULT 50,
+  valor_mensal DECIMAL(10,2) DEFAULT 500.00,
+  faturamento VARCHAR(50) DEFAULT 'Mensal',
+  admin_email VARCHAR(255),
+  configuracoes JSONB DEFAULT '{}',
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Tabela de usuários dos clientes
+CREATE TABLE IF NOT EXISTS usuarios_clientes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
+  nome VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  permissao VARCHAR(50) DEFAULT 'usuario' CHECK (permissao IN ('admin', 'usuario', 'viewer')),
+  status VARCHAR(50) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo')),
+  ultimo_acesso TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(cliente_id, email)
+);
+
+-- 4. Tabela de campanhas hunting
+CREATE TABLE IF NOT EXISTS campanhas_hunting (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vaga_id UUID REFERENCES vagas(id) ON DELETE CASCADE,
+  nome VARCHAR(255) NOT NULL,
+  descricao TEXT,
+  status VARCHAR(50) DEFAULT 'ativa' CHECK (status IN ('ativa', 'pausada', 'encerrada')),
+  total_encontrados INTEGER DEFAULT 0,
+  total_contactados INTEGER DEFAULT 0,
+  total_interessados INTEGER DEFAULT 0,
+  total_contratados INTEGER DEFAULT 0,
+  criterios JSONB DEFAULT '{}',
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Tabela de templates hunting
+CREATE TABLE IF NOT EXISTS templates_hunting (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome VARCHAR(255) NOT NULL,
+  tipo VARCHAR(100) NOT NULL,
+  assunto VARCHAR(255),
+  conteudo TEXT NOT NULL,
+  variaveis JSONB DEFAULT '[]',
+  ativo BOOLEAN DEFAULT true,
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. Tabela de integrações hunting
+CREATE TABLE IF NOT EXISTS integracoes_hunting (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome VARCHAR(255) NOT NULL,
+  tipo VARCHAR(100) NOT NULL,
+  configuracao JSONB DEFAULT '{}',
+  ativo BOOLEAN DEFAULT true,
+  ultima_sincronizacao TIMESTAMP WITH TIME ZONE,
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. Inserir dados personalizados dos planos
+INSERT INTO planos (nome, preco, usuarios, vagas, recursos) VALUES 
+${planosEditaveis.map(plano => 
+  `('${plano.nome}', ${plano.preco}, ${plano.usuarios}, ${plano.vagas}, '${JSON.stringify(plano.recursos)}')`
+).join(',\n')}
+ON CONFLICT (nome) DO NOTHING;
+
+-- Clientes de exemplo
+INSERT INTO clientes (nome, dominio, plano, status, usuarios, limite_usuarios, vagas_usadas, limite_vagas, valor_mensal, admin_email) VALUES 
+('Tech Solutions', 'techsolutions.com', 'premium', 'ativo', 1, ${planosEditaveis.find(p => p.nome === 'Premium')?.usuarios || 20}, 5, ${planosEditaveis.find(p => p.nome === 'Premium')?.vagas || 100}, ${planosEditaveis.find(p => p.nome === 'Premium')?.preco || 2500.00}, 'admin@techsolutions.com'),
+('StartupXYZ', 'startupxyz.com', 'basico', 'ativo', 1, ${planosEditaveis.find(p => p.nome === 'Básico')?.usuarios || 5}, 2, ${planosEditaveis.find(p => p.nome === 'Básico')?.vagas || 10}, ${planosEditaveis.find(p => p.nome === 'Básico')?.preco || 500.00}, 'admin@startupxyz.com')
+ON CONFLICT (dominio) DO NOTHING;
+
+-- Resto do script...
+INSERT INTO usuarios_clientes (cliente_id, nome, email, permissao, status) 
+SELECT c.id, 'Admin ' || c.nome, c.admin_email, 'admin', 'ativo'
+FROM clientes c WHERE c.admin_email IS NOT NULL
+ON CONFLICT (cliente_id, email) DO NOTHING;
+
+INSERT INTO campanhas_hunting (nome, descricao, status, total_contactados, total_interessados) VALUES 
+('Busca Desenvolvedores Senior', 'Campanha para encontrar desenvolvedores senior', 'ativa', 15, 3),
+('Hunting Analistas de Dados', 'Busca de profissionais em análise de dados', 'ativa', 22, 5),
+('Especialistas em DevOps', 'Procura por especialistas em DevOps e Cloud', 'pausada', 8, 2)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO templates_hunting (nome, tipo, assunto, conteudo, variaveis) VALUES 
+('Primeiro Contato LinkedIn', 'linkedin', 'Oportunidade de carreira interessante', 'Olá {{nome}}, vi seu perfil e gostaria de conversar sobre uma oportunidade...', '["nome", "empresa", "cargo"]'),
+('Follow-up Email', 'email', 'Sobre nossa conversa - {{empresa}}', 'Olá {{nome}}, dando sequência à nossa conversa...', '["nome", "empresa", "vaga"]'),
+('Convite WhatsApp', 'whatsapp', '', 'Oi {{nome}}! Tenho uma oportunidade que pode te interessar...', '["nome", "cargo"]')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO integracoes_hunting (nome, tipo, configuracao, ativo) VALUES 
+('LinkedIn Sales Navigator', 'linkedin', '{"api_key": "", "configurado": false}', false),
+('GitHub Integration', 'github', '{"token": "", "configurado": false}', false),
+('Email SMTP', 'email', '{"smtp_host": "", "smtp_port": 587, "configurado": false}', false)
+ON CONFLICT DO NOTHING;`;
+
+    return sqlBase;
+  };
+
+  const copiarSqlParaClipboard = async () => {
+    const sql = gerarSqlPersonalizado();
+    try {
+      await navigator.clipboard.writeText(sql);
+      // Aqui você poderia adicionar um toast de sucesso
+      alert('SQL copiado para o clipboard!');
+    } catch (err) {
+      console.error('Erro ao copiar SQL:', err);
+      alert('Erro ao copiar SQL. Use Ctrl+C manualmente.');
     }
   };
 
@@ -171,18 +389,30 @@ export default function MultiCliente() {
                     <DialogHeader>
                       <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <form onSubmit={criarCliente} className="space-y-4">
                       <div>
                         <Label htmlFor="nomeCliente">Nome da Empresa</Label>
-                        <Input id="nomeCliente" placeholder="Ex: TechCorp Solutions" />
+                        <Input 
+                          id="nomeCliente" 
+                          placeholder="Ex: TechCorp Solutions"
+                          value={newClientForm.nome}
+                          onChange={(e) => setNewClientForm(prev => ({ ...prev, nome: e.target.value }))}
+                          required
+                        />
                       </div>
                       <div>
                         <Label htmlFor="dominio">Domínio</Label>
-                        <Input id="dominio" placeholder="techcorp.com" />
+                        <Input 
+                          id="dominio" 
+                          placeholder="techcorp.com"
+                          value={newClientForm.dominio}
+                          onChange={(e) => setNewClientForm(prev => ({ ...prev, dominio: e.target.value }))}
+                          required
+                        />
                       </div>
                       <div>
                         <Label htmlFor="plano">Plano</Label>
-                        <Select>
+                        <Select value={newClientForm.plano} onValueChange={(value) => setNewClientForm(prev => ({ ...prev, plano: value }))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o plano" />
                           </SelectTrigger>
@@ -195,10 +425,24 @@ export default function MultiCliente() {
                       </div>
                       <div>
                         <Label htmlFor="adminEmail">Email do Admin</Label>
-                        <Input id="adminEmail" type="email" placeholder="admin@techcorp.com" />
+                        <Input 
+                          id="adminEmail" 
+                          type="email" 
+                          placeholder="admin@techcorp.com"
+                          value={newClientForm.adminEmail}
+                          onChange={(e) => setNewClientForm(prev => ({ ...prev, adminEmail: e.target.value }))}
+                          required
+                        />
                       </div>
-                      <Button className="w-full">Criar Cliente</Button>
-                    </div>
+                      {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                          {error}
+                        </div>
+                      )}
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? 'Criando...' : 'Criar Cliente'}
+                      </Button>
+                    </form>
                   </DialogContent>
                 </Dialog>
               </CardHeader>
@@ -241,7 +485,7 @@ export default function MultiCliente() {
                             <h3 className="font-medium">{cliente.nome}</h3>
                             <p className="text-sm text-gray-600">{cliente.dominio}</p>
                             <p className="text-xs text-gray-500">
-                              Cliente desde {new Date(cliente.criadoEm).toLocaleDateString('pt-BR')}
+                              Cliente desde {cliente.criado_em ? new Date(cliente.criado_em).toLocaleDateString('pt-BR') : 'Data não disponível'}
                             </p>
                           </div>
                         </div>
@@ -259,20 +503,20 @@ export default function MultiCliente() {
                       
                       <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div className="text-center p-2 bg-blue-50 rounded">
-                          <div className="font-medium text-blue-700">{cliente.usuarios}/{cliente.limiteUsuarios}</div>
+                          <div className="font-medium text-blue-700">{cliente.usuarios || 0}/{cliente.limite_usuarios || 0}</div>
                           <div className="text-blue-600">Usuários</div>
                         </div>
                         <div className="text-center p-2 bg-green-50 rounded">
-                          <div className="font-medium text-green-700">{cliente.vagasUsadas}/{cliente.limiteVagas}</div>
+                          <div className="font-medium text-green-700">{cliente.vagas_usadas || 0}/{cliente.limite_vagas || 0}</div>
                           <div className="text-green-600">Vagas</div>
                         </div>
                         <div className="text-center p-2 bg-purple-50 rounded">
-                          <div className="font-medium text-purple-700">{cliente.faturamento}</div>
+                          <div className="font-medium text-purple-700">{cliente.faturamento || 'Mensal'}</div>
                           <div className="text-purple-600">Mensal</div>
                         </div>
                         <div className="text-center p-2 bg-gray-50 rounded">
                           <div className="font-medium text-gray-700">
-                            {Math.round((cliente.vagasUsadas / cliente.limiteVagas) * 100)}%
+                            {cliente.limite_vagas > 0 ? Math.round((cliente.vagas_usadas / cliente.limite_vagas) * 100) : 0}%
                           </div>
                           <div className="text-gray-600">Uso</div>
                         </div>
@@ -514,96 +758,199 @@ export default function MultiCliente() {
           </TabsContent>
 
           <TabsContent value="configuracoes" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configurações Globais</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Registro de novos clientes</Label>
-                    <input type="checkbox" defaultChecked className="rounded" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Editor de Planos
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Configure os valores dos planos antes de executar o script SQL.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {planosEditaveis.map((plano, index) => (
+                  <div key={plano.nome} className="p-4 border rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">{plano.nome}</h3>
+                      <Badge variant={plano.nome === 'Premium' ? 'default' : 'secondary'}>
+                        {plano.nome}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <Label htmlFor={`preco-${index}`}>Preço (R$)</Label>
+                        <Input
+                          id={`preco-${index}`}
+                          type="number"
+                          step="0.01"
+                          value={plano.preco}
+                          onChange={(e) => atualizarPlano(index, 'preco', e.target.value)}
+                          placeholder="500.00"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`usuarios-${index}`}>Limite de Usuários</Label>
+                        <Input
+                          id={`usuarios-${index}`}
+                          type="number"
+                          value={plano.usuarios}
+                          onChange={(e) => atualizarPlano(index, 'usuarios', e.target.value)}
+                          placeholder="5"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`vagas-${index}`}>Limite de Vagas</Label>
+                        <Input
+                          id={`vagas-${index}`}
+                          type="number"
+                          value={plano.vagas}
+                          onChange={(e) => atualizarPlano(index, 'vagas', e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor={`nome-${index}`}>Nome do Plano</Label>
+                        <Input
+                          id={`nome-${index}`}
+                          type="text"
+                          value={plano.nome}
+                          onChange={(e) => atualizarPlano(index, 'nome', e.target.value)}
+                          placeholder="Básico"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor={`recursos-${index}`}>Recursos (separados por vírgula)</Label>
+                      <Input
+                        id={`recursos-${index}`}
+                        type="text"
+                        value={plano.recursos.join(', ')}
+                        onChange={(e) => atualizarPlano(index, 'recursos', e.target.value)}
+                        placeholder="Gestão básica, Suporte email, 1 usuário admin"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 rounded text-sm">
+                      <strong>Preview:</strong> {plano.nome} - R$ {plano.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
+                      ({plano.usuarios} usuários, {plano.vagas} vagas)
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Aprovação manual de usuários</Label>
-                    <input type="checkbox" className="rounded" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>Notificações de limite</Label>
-                    <input type="checkbox" defaultChecked className="rounded" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Limites de Sistema</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                ))}
+                
+                <div className="flex gap-4 pt-6 border-t">
+                  <Button onClick={copiarSqlParaClipboard} className="flex items-center gap-2">
+                    <Copy className="h-4 w-4" />
+                    Copiar SQL Personalizado
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowSqlGenerated(!showSqlGenerated)}
+                    className="flex items-center gap-2"
+                  >
+                    <Database className="h-4 w-4" />
+                    {showSqlGenerated ? 'Ocultar' : 'Visualizar'} SQL
+                  </Button>
+                </div>
+                
+                {showSqlGenerated && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        SQL Gerado Automaticamente
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto max-h-96 overflow-y-auto">
+                        <pre>{gerarSqlPersonalizado()}</pre>
+                      </div>
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+                          <div>
+                            <strong>Como usar:</strong>
+                            <ol className="list-decimal list-inside mt-1 space-y-1">
+                              <li>Copie o SQL acima (botão "Copiar SQL Personalizado")</li>
+                              <li>Acesse o Supabase SQL Editor</li>
+                              <li>Cole o código e execute</li>
+                              <li>Recarregue a página Multi-Cliente</li>
+                            </ol>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Configurações Gerais
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Limite de tentativas de login</Label>
-                    <Input type="number" defaultValue="5" className="mt-1" />
+                    <Label htmlFor="moeda">Moeda Padrão</Label>
+                    <Select defaultValue="BRL">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
+                        <SelectItem value="BRL">Real (R$)</SelectItem>
+                        <SelectItem value="USD">Dólar ($)</SelectItem>
+                        <SelectItem value="EUR">Euro (€)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  
                   <div>
-                    <Label>Tempo de sessão (minutos)</Label>
-                    <Input type="number" defaultValue="480" className="mt-1" />
+                    <Label htmlFor="timezone">Fuso Horário</Label>
+                    <Select defaultValue="America/Sao_Paulo">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
+                        <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
+                        <SelectItem value="America/New_York">Nova York (GMT-5)</SelectItem>
+                        <SelectItem value="Europe/London">Londres (GMT+0)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
                   <div>
-                    <Label>Taxa de API (requests/min)</Label>
-                    <Input type="number" defaultValue="1000" className="mt-1" />
+                    <h4 className="font-medium">Notificações por Email</h4>
+                    <p className="text-sm text-gray-600">Receber notificações sobre novos clientes</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Backup e Segurança</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded">
-                    <span className="text-sm">Backup automático</span>
-                    <Badge variant="default">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Ativo
-                    </Badge>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div>
+                    <h4 className="font-medium">Backup Automático</h4>
+                    <p className="text-sm text-gray-600">Backup diário dos dados</p>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded">
-                    <span className="text-sm">SSL/TLS</span>
-                    <Badge variant="default">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Configurado
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded">
-                    <span className="text-sm">2FA obrigatório</span>
-                    <Badge variant="secondary">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Pendente
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monitoramento</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Uptime do sistema</span>
-                    <span className="font-medium text-green-600">99.9%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Usuários online</span>
-                    <span className="font-medium text-blue-600">23</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Uso de armazenamento</span>
-                    <span className="font-medium text-orange-600">45%</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <input type="checkbox" defaultChecked className="rounded" />
+                </div>
+                
+                <Button className="w-full">
+                  Salvar Configurações
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
