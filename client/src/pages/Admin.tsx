@@ -479,7 +479,7 @@ export default function Admin() {
           </div>
 
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-1">
+            <TabsList className="flex overflow-x-auto whitespace-nowrap gap-2 sm:gap-4 text-xs sm:text-base px-1 sm:px-0 py-2 border-b border-gray-200 mb-4">
               <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
               <TabsTrigger value="candidatos" className="text-xs sm:text-sm">Candidatos</TabsTrigger>
               <TabsTrigger value="banco-talentos" className="text-xs sm:text-sm">Banco Talentos</TabsTrigger>
