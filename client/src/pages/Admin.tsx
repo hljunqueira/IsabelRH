@@ -618,30 +618,35 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredCandidatos.map((candidato) => (
-                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-start sm:items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Users className="h-6 w-6 text-blue-600" />
+                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm sm:text-base">{candidato.nome}</h3>
-                              <p className="text-xs sm:text-sm text-gray-500 break-all">{candidato.telefone}</p>
-                              {candidato.cidade && (
-                                <p className="text-xs sm:text-sm text-gray-400">📍 {candidato.cidade}</p>
+                              <h3 className="font-medium truncate">{candidato.nome}</h3>
+                              <p className="text-gray-500 break-all">{candidato.email || "-"}</p>
+                              {candidato.telefone && (
+                                <p className="text-gray-400">📞 {candidato.telefone}</p>
                               )}
-                              {candidato.linkedin && (
-                                <p className="text-xs sm:text-sm text-blue-600 truncate">LinkedIn: {candidato.linkedin}</p>
-                              )}
+                              <div className="flex flex-wrap items-center gap-1 mt-1">
+                                <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-0.5">
+                                  {candidato.area_interesse || candidato.areasInteresse?.[0] || "-"}
+                                </Badge>
+                                <span className="text-gray-400 text-[10px] sm:text-xs">
+                                  {new Date(candidato.criado_em || candidato.criadoEm).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 justify-end sm:justify-start">
+                        <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setLocation(`/candidato/${candidato.id}`)}
-                            className="text-xs sm:text-sm"
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                           >
                             <Eye className="h-4 w-4 sm:mr-1" />
                             <span className="hidden sm:inline">Ver</span>
@@ -651,6 +656,7 @@ export default function Admin() {
                             size="sm"
                             onClick={() => showDeleteConfirmation(candidato.id, 'candidato', candidato.nome)}
                             disabled={deleteUserMutation.isPending}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                           >
                             {deleteUserMutation.isPending ? (
                               <LoadingSpinner size="sm" />
@@ -717,36 +723,36 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredBancoTalentos.map((candidato: any) => (
-                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-start sm:items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <UserCheck className="h-6 w-6 text-green-600" />
+                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm sm:text-base">{candidato.nome}</h3>
-                              <p className="text-xs sm:text-sm text-gray-500 break-all">{candidato.email}</p>
+                              <h3 className="font-medium truncate">{candidato.nome}</h3>
+                              <p className="text-gray-500 break-all">{candidato.email || "-"}</p>
                               {candidato.telefone && (
-                                <p className="text-xs sm:text-sm text-gray-400">📞 {candidato.telefone}</p>
+                                <p className="text-gray-400">📞 {candidato.telefone}</p>
                               )}
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {candidato.area_interesse}
+                              <div className="flex flex-wrap items-center gap-1 mt-1">
+                                <Badge variant="outline" className="text-[10px] sm:text-xs px-2 py-0.5">
+                                  {candidato.area_interesse || candidato.areasInteresse?.[0] || "-"}
                                 </Badge>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(candidato.criado_em).toLocaleDateString('pt-BR')}
+                                <span className="text-gray-400 text-[10px] sm:text-xs">
+                                  {new Date(candidato.criado_em || candidato.criadoEm).toLocaleDateString('pt-BR')}
                                 </span>
                               </div>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 justify-end sm:justify-start">
+                        <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
                           {candidato.curriculo_url && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(candidato.curriculo_url, '_blank')}
-                              className="text-xs sm:text-sm"
+                              className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                             >
                               <Eye className="h-4 w-4 sm:mr-1" />
                               <span className="hidden sm:inline">Ver Currículo</span>
@@ -757,6 +763,7 @@ export default function Admin() {
                             size="sm"
                             onClick={() => showBancoTalentosDeleteConfirmation(candidato.id, candidato.nome)}
                             disabled={deleteBancoTalentosMutation.isPending}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                           >
                             {deleteBancoTalentosMutation.isPending ? (
                               <LoadingSpinner size="sm" />
@@ -847,25 +854,25 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredEmpresas.map((empresa) => (
-                      <div key={empresa.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-start sm:items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Building className="h-6 w-6 text-green-600" />
+                      <div key={empresa.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Building className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-medium text-sm sm:text-base">{empresa.nome}</h3>
-                              <p className="text-xs sm:text-sm text-gray-500 break-all">CNPJ: {empresa.cnpj}</p>
+                              <h3 className="font-medium truncate">{empresa.nome}</h3>
+                              <p className="text-gray-500 break-all">CNPJ: {empresa.cnpj}</p>
                               {empresa.setor && (
-                                <p className="text-xs sm:text-sm text-gray-400">🏢 {empresa.setor}</p>
+                                <p className="text-gray-400">🏢 {empresa.setor}</p>
                               )}
                               {empresa.cidade && (
-                                <p className="text-xs sm:text-sm text-gray-400">📍 {empresa.cidade}</p>
+                                <p className="text-gray-400">📍 {empresa.cidade}</p>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 justify-end sm:justify-start">
+                        <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
                           <Button
                             variant="outline"
                             size="sm"
@@ -873,7 +880,7 @@ export default function Admin() {
                               setSelectedEmpresa(empresa);
                               setShowEmpresaDetails(true);
                             }}
-                            className="text-xs sm:text-sm"
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                           >
                             <Eye className="h-4 w-4 sm:mr-1" />
                             <span className="hidden sm:inline">Ver</span>
@@ -883,6 +890,7 @@ export default function Admin() {
                             size="sm"
                             onClick={() => showDeleteConfirmation(empresa.id, 'empresa', empresa.nome)}
                             disabled={deleteUserMutation.isPending}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                           >
                             {deleteUserMutation.isPending ? (
                               <LoadingSpinner size="sm" />
@@ -1006,53 +1014,56 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {servicos.map((servico) => (
-                      <div key={servico.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-medium capitalize">{String(servico.tipoServico || '').replace('_', ' ')}</h3>
-                            <p className="text-sm text-gray-600 mt-1">{servico.descricao}</p>
-                            {servico.valor && (
-                              <p className="text-sm font-medium text-green-600 mt-2">{servico.valor}</p>
+                      <div key={servico.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium truncate capitalize">{String(servico.tipoServico || '').replace('_', ' ')}</h3>
+                              <p className="text-gray-600 mt-1">{servico.descricao}</p>
+                              {servico.valor && (
+                                <p className="font-medium text-green-600 mt-2">{servico.valor}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
+                          <Badge variant={
+                            servico.status === 'concluida' ? 'default' :
+                            servico.status === 'em_andamento' ? 'secondary' : 'outline'
+                          } className="text-[10px] sm:text-xs px-2 py-0.5">
+                            {String(servico.status || '').replace('_', ' ')}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              toast({ 
+                                title: "Funcionalidade de edição", 
+                                description: "Em desenvolvimento. Use 'Novo Serviço' por enquanto.",
+                                variant: "default"
+                              });
+                            }}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => showServiceDeleteConfirmation(servico.id, String(servico.tipoServico || '').replace('_', ' '))}
+                            disabled={deleteServiceMutation.isPending}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                          >
+                            {deleteServiceMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
                             )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={
-                              servico.status === 'concluida' ? 'default' :
-                              servico.status === 'em_andamento' ? 'secondary' : 'outline'
-                            }>
-                              {String(servico.status || '').replace('_', ' ')}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // Funcionalidade de editar - pode ser implementada depois
-                                toast({ 
-                                  title: "Funcionalidade de edição", 
-                                  description: "Em desenvolvimento. Use 'Novo Serviço' por enquanto.",
-                                  variant: "default"
-                                });
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Editar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => showServiceDeleteConfirmation(
-                                servico.id, 
-                                String(servico.tipoServico || '').replace('_', ' ')
-                              )}
-                              disabled={deleteServiceMutation.isPending}
-                            >
-                              {deleteServiceMutation.isPending ? (
-                                <LoadingSpinner size="sm" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -1170,76 +1181,81 @@ export default function Admin() {
                     {propostas.map((proposta) => {
                       const empresa = empresas.find(e => e.id === proposta.empresaId);
                       return (
-                        <div key={proposta.id} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-medium">{empresa?.nome}</h3>
-                              <p className="text-sm text-gray-600 capitalize">{String(proposta.tipoServico || '').replace('_', ' ')}</p>
-                              <p className="text-sm text-gray-600 mt-1">{proposta.descricao}</p>
-                              <p className="text-sm font-medium text-green-600 mt-2">{proposta.valorProposto}</p>
-                              {proposta.prazoEntrega && (
-                                <p className="text-sm text-gray-500">Prazo: {proposta.prazoEntrega}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {proposta.aprovada === 'pendente' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'sim' })}
-                                    title="Aprovar proposta"
-                                  >
-                                    <CheckCircle className="h-4 w-4 text-green-600" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'nao' })}
-                                    title="Rejeitar proposta"
-                                  >
-                                    <XCircle className="h-4 w-4 text-red-600" />
-                                  </Button>
-                                </>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  // Funcionalidade de editar - pode ser implementada depois
-                                  toast({ 
-                                    title: "Funcionalidade de edição", 
-                                    description: "Em desenvolvimento. Use 'Nova Proposta' por enquanto.",
-                                    variant: "default"
-                                  });
-                                }}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Editar
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => showProposalDeleteConfirmation(
-                                  proposta.id, 
-                                  empresa?.nome || 'Empresa'
+                        <div key={proposta.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-2 sm:gap-3 text-xs sm:text-sm">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-medium truncate">{empresa?.nome}</h3>
+                                <p className="capitalize text-gray-600">{String(proposta.tipoServico || '').replace('_', ' ')}</p>
+                                <p className="text-gray-600 mt-1">{proposta.descricao}</p>
+                                <p className="font-medium text-green-600 mt-2">{proposta.valorProposto}</p>
+                                {proposta.prazoEntrega && (
+                                  <p className="text-gray-500">Prazo: {proposta.prazoEntrega}</p>
                                 )}
-                                disabled={deleteProposalMutation.isPending}
-                              >
-                                {deleteProposalMutation.isPending ? (
-                                  <LoadingSpinner size="sm" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                              <Badge variant={
-                                proposta.aprovada === 'sim' ? 'default' :
-                                proposta.aprovada === 'nao' ? 'destructive' : 'outline'
-                              }>
-                                {proposta.aprovada === 'sim' ? 'Aprovada' :
-                                 proposta.aprovada === 'nao' ? 'Rejeitada' : 'Pendente'}
-                              </Badge>
+                              </div>
                             </div>
+                          </div>
+                          <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
+                            {proposta.aprovada === 'pendente' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'sim' })}
+                                  title="Aprovar proposta"
+                                  className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateProposalMutation.mutate({ id: proposta.id, aprovada: 'nao' })}
+                                  title="Rejeitar proposta"
+                                  className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                                >
+                                  <XCircle className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                toast({ 
+                                  title: "Funcionalidade de edição", 
+                                  description: "Em desenvolvimento. Use 'Nova Proposta' por enquanto.",
+                                  variant: "default"
+                                });
+                              }}
+                              className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => showProposalDeleteConfirmation(proposta.id, empresa?.nome || 'Empresa')}
+                              disabled={deleteProposalMutation.isPending}
+                              className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                            >
+                              {deleteProposalMutation.isPending ? (
+                                <LoadingSpinner size="sm" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Badge variant={
+                              proposta.aprovada === 'sim' ? 'default' :
+                              proposta.aprovada === 'nao' ? 'destructive' : 'outline'
+                            } className="text-[10px] sm:text-xs px-2 py-0.5">
+                              {proposta.aprovada === 'sim' ? 'Aprovada' :
+                               proposta.aprovada === 'nao' ? 'Rejeitada' : 'Pendente'}
+                            </Badge>
                           </div>
                         </div>
                       );
