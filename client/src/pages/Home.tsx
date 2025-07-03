@@ -154,7 +154,6 @@ export default function Home() {
     
     try {
       const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
       
       // Pegar valores dos campos pelo ID
       const nome = (document.getElementById('bt-nome') as HTMLInputElement)?.value;
