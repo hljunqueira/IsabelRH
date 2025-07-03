@@ -53,6 +53,7 @@ import {
 import type { Candidato, Vaga, Candidatura } from "@shared/schema";
 import TesteDISC from "@/components/TesteDISC";
 import ChatComponent, { ChatComponentRef } from "@/components/ChatComponent";
+import { uploadCertificado } from "@/lib/supabase";
 
 export default function AreaCandidato() {
   const { user, logout } = useAuth();
@@ -71,6 +72,16 @@ export default function AreaCandidato() {
   const [showFilters, setShowFilters] = useState(false);
   const [favoriteVagas, setFavoriteVagas] = useState<string[]>([]);
   const [vagasTab, setVagasTab] = useState("todas");
+  const [novaHabilidade, setNovaHabilidade] = useState("");
+  const [novaCertificacao, setNovaCertificacao] = useState({
+    nome: "",
+    instituicao: "",
+    cargaHoraria: "",
+    periodoInicio: "",
+    periodoFim: "",
+    arquivo: null as File | null,
+  });
+  const [uploadingCertificado, setUploadingCertificado] = useState(false);
   
   useEffect(() => {
     if (!user || user.type !== "candidato") {
@@ -122,6 +133,7 @@ export default function AreaCandidato() {
     curriculoUrl: "",
     areasInteresse: [] as string[],
     fotoPerfil: "",
+    habilidadesLivres: "",
   });
 
   // Fetch candidate profile
@@ -221,6 +233,7 @@ export default function AreaCandidato() {
         curriculoUrl: candidato.curriculoUrl || "",
         areasInteresse: candidato.areasInteresse || [],
         fotoPerfil: candidato.fotoPerfil || "",
+        habilidadesLivres: candidato.habilidadesLivres || "",
       });
     }
   }, [candidato, user]);
@@ -382,6 +395,36 @@ export default function AreaCandidato() {
     }
   };
 
+  const adicionarCertificacao = async () => {
+    if (novaCertificacao.nome && novaCertificacao.instituicao) {
+      setUploadingCertificado(true);
+      let arquivoUrl = null;
+      if (novaCertificacao.arquivo && user?.id) {
+        arquivoUrl = await uploadCertificado(novaCertificacao.arquivo, user.id);
+      }
+      setProfileData(prev => ({
+        ...prev,
+        certificacoes: [...(prev.certificacoes || []), { ...novaCertificacao, id: Date.now(), arquivoUrl }]
+      }));
+      setNovaCertificacao({
+        nome: "",
+        instituicao: "",
+        cargaHoraria: "",
+        periodoInicio: "",
+        periodoFim: "",
+        arquivo: null,
+      });
+      setUploadingCertificado(false);
+    }
+  };
+
+  const removerCertificacao = (id) => {
+    setProfileData(prev => ({
+      ...prev,
+      certificacoes: (prev.certificacoes || []).filter(cert => cert.id !== id)
+    }));
+  };
+
   if (loadingProfile) {
     return (
       <Layout>
@@ -398,20 +441,20 @@ export default function AreaCandidato() {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="relative">
-                <Avatar className="h-16 w-16">
+                <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
                   <AvatarImage src={profileData.fotoPerfil} alt={profileData.nome} />
-                  <AvatarFallback className="bg-isabel-orange text-white text-lg">
+                  <AvatarFallback className="bg-isabel-orange text-white text-sm sm:text-lg">
                     {profileData.nome ? profileData.nome.charAt(0).toUpperCase() : 'C'}
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
-                  <label className="absolute -bottom-2 -right-2 bg-isabel-blue text-white rounded-full p-1 cursor-pointer hover:bg-isabel-blue/80">
-                    <Camera className="h-4 w-4" />
+                  <label className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-isabel-blue text-white rounded-full p-1 cursor-pointer hover:bg-isabel-blue/80">
+                    <Camera className="h-3 w-3 sm:h-4 sm:w-4" />
                     <input
                       type="file"
                       className="hidden"
@@ -422,10 +465,10 @@ export default function AreaCandidato() {
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Área do Candidato
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600 truncate max-w-[200px] sm:max-w-none">
                   Bem-vindo(a), {profileData.nome || user?.email}
                 </p>
               </div>
@@ -433,7 +476,8 @@ export default function AreaCandidato() {
             <Button 
               onClick={handleLogout}
               variant="outline"
-              className="flex items-center space-x-2"
+              size="sm"
+              className="flex items-center space-x-2 w-full sm:w-auto justify-center"
             >
               <LogOut className="h-4 w-4" />
               <span>Sair</span>
@@ -442,12 +486,12 @@ export default function AreaCandidato() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="perfil">Meu Perfil</TabsTrigger>
-              <TabsTrigger value="vagas">Vagas Disponíveis</TabsTrigger>
-              <TabsTrigger value="disc">Teste DISC</TabsTrigger>
-              <TabsTrigger value="chat">💬 Chat</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="perfil" className="text-xs sm:text-sm">Meu Perfil</TabsTrigger>
+              <TabsTrigger value="vagas" className="text-xs sm:text-sm">Vagas</TabsTrigger>
+              <TabsTrigger value="disc" className="text-xs sm:text-sm">Teste DISC</TabsTrigger>
+              <TabsTrigger value="chat" className="text-xs sm:text-sm">💬 Chat</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}
@@ -827,15 +871,105 @@ export default function AreaCandidato() {
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="certificacoes">Certificações</Label>
-                        <Textarea
-                          id="certificacoes"
-                          value={profileData.certificacoes}
-                          onChange={(e) => setProfileData(prev => ({ ...prev, certificacoes: e.target.value }))}
-                          disabled={!isEditing}
-                          placeholder="Liste suas certificações, cursos complementares..."
-                          rows={3}
-                        />
+                        <Label>Certificações e Cursos Complementares</Label>
+                        {(profileData.certificacoes || []).map((cert, index) => (
+                          <div key={cert.id || index} className="flex flex-col md:flex-row md:items-center gap-2 border-b py-2">
+                            <div className="flex-1 flex items-center gap-2">
+                              {cert.arquivoUrl && (
+                                cert.arquivoUrl.endsWith('.pdf') ? (
+                                  <a href={cert.arquivoUrl} target="_blank" rel="noopener noreferrer" title="Ver PDF">
+                                    <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm6 1.414L18.586 10H14a2 2 0 0 1-2-2V3.414z"/></svg>
+                                  </a>
+                                ) : (
+                                  <a href={cert.arquivoUrl} target="_blank" rel="noopener noreferrer" title="Ver imagem">
+                                    <img src={cert.arquivoUrl} alt="Certificado" className="w-8 h-8 object-cover rounded border" />
+                                  </a>
+                                )
+                              )}
+                              <span className="font-semibold">{cert.nome}</span> — {cert.instituicao} | {cert.cargaHoraria}h
+                              <span className="ml-2 text-xs text-gray-500">
+                                {cert.periodoInicio && cert.periodoFim ? `${cert.periodoInicio.replace(/-/, "/")} a ${cert.periodoFim.replace(/-/, "/")}` : null}
+                              </span>
+                            </div>
+                            {isEditing && (
+                              <Button size="sm" variant="ghost" className="text-red-600" onClick={() => removerCertificacao(cert.id)}>
+                                Remover
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        {isEditing && (
+                          <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg mt-2">
+                            <h4 className="font-semibold mb-4">Adicionar Certificação ou Curso</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label>Nome do Curso/Certificação</Label>
+                                <Input
+                                  value={novaCertificacao.nome}
+                                  onChange={(e) => setNovaCertificacao(prev => ({ ...prev, nome: e.target.value }))}
+                                  placeholder="Ex: Excel Avançado, AWS Cloud Practitioner"
+                                />
+                              </div>
+                              <div>
+                                <Label>Instituição</Label>
+                                <Input
+                                  value={novaCertificacao.instituicao}
+                                  onChange={(e) => setNovaCertificacao(prev => ({ ...prev, instituicao: e.target.value }))}
+                                  placeholder="Ex: Udemy, Amazon Web Services"
+                                />
+                              </div>
+                              <div>
+                                <Label>Carga horária (horas)</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={novaCertificacao.cargaHoraria}
+                                  onChange={(e) => setNovaCertificacao(prev => ({ ...prev, cargaHoraria: e.target.value }))}
+                                  placeholder="Ex: 40"
+                                />
+                              </div>
+                              <div className="md:col-span-2">
+                                <Label>Arquivo do Certificado (imagem ou PDF)</Label>
+                                <Input
+                                  type="file"
+                                  accept="image/*,application/pdf"
+                                  onChange={e => {
+                                    const file = e.target.files && e.target.files[0];
+                                    setNovaCertificacao(prev => ({ ...prev, arquivo: file || null }));
+                                  }}
+                                />
+                                {novaCertificacao.arquivo && (
+                                  <span className="text-xs text-gray-600 mt-1 block">{novaCertificacao.arquivo.name}</span>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <div className="flex-1">
+                                  <Label>Período início (mês/ano)</Label>
+                                  <Input
+                                    type="month"
+                                    value={novaCertificacao.periodoInicio}
+                                    onChange={(e) => setNovaCertificacao(prev => ({ ...prev, periodoInicio: e.target.value }))}
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <Label>Período fim (mês/ano)</Label>
+                                  <Input
+                                    type="month"
+                                    value={novaCertificacao.periodoFim}
+                                    onChange={(e) => setNovaCertificacao(prev => ({ ...prev, periodoFim: e.target.value }))}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              onClick={adicionarCertificacao}
+                              className="mt-4 bg-isabel-orange hover:bg-isabel-orange/90"
+                              disabled={uploadingCertificado}
+                            >
+                              {uploadingCertificado ? "Enviando..." : "Adicionar Certificação"}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </TabsContent>
 
@@ -872,8 +1006,30 @@ export default function AreaCandidato() {
                                   <SelectItem value="Marketing Digital">Marketing Digital</SelectItem>
                                   <SelectItem value="Excel Avançado">Excel Avançado</SelectItem>
                                   <SelectItem value="Adobe Photoshop">Adobe Photoshop</SelectItem>
+                                  <SelectItem value="Power BI">Power BI</SelectItem>
+                                  <SelectItem value="Inglês Avançado">Inglês Avançado</SelectItem>
+                                  <SelectItem value="Gestão de Projetos">Gestão de Projetos</SelectItem>
+                                  <SelectItem value="Comunicação">Comunicação</SelectItem>
+                                  <SelectItem value="Trabalho em Equipe">Trabalho em Equipe</SelectItem>
+                                  <SelectItem value="Resolução de Problemas">Resolução de Problemas</SelectItem>
+                                  <SelectItem value="Proatividade">Proatividade</SelectItem>
+                                  <SelectItem value="Atendimento ao Cliente">Atendimento ao Cliente</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <Input
+                                className="flex-1"
+                                placeholder="Digite uma habilidade e pressione Enter"
+                                value={novaHabilidade || ''}
+                                onChange={e => setNovaHabilidade(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter' && novaHabilidade?.trim()) {
+                                    e.preventDefault();
+                                    addHabilidade(novaHabilidade.trim());
+                                    setNovaHabilidade('');
+                                  }
+                                }}
+                                disabled={!isEditing}
+                              />
                             </div>
                           )}
                           <div className="flex flex-wrap gap-2">
@@ -890,6 +1046,19 @@ export default function AreaCandidato() {
                             ))}
                           </div>
                         </div>
+                        {isEditing && (
+                          <div className="mt-2">
+                            <Label htmlFor="habilidadesLivres">Descreva outras habilidades técnicas ou diferenciais:</Label>
+                            <Textarea
+                              id="habilidadesLivres"
+                              value={profileData.habilidadesLivres || ''}
+                              onChange={e => setProfileData(prev => ({ ...prev, habilidadesLivres: e.target.value }))}
+                              placeholder="Ex: Soft skills, ferramentas, metodologias, competências não listadas acima..."
+                              rows={2}
+                              disabled={!isEditing}
+                            />
+                          </div>
+                        )}
                       </div>
                       
                       <div>

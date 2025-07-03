@@ -35,7 +35,8 @@ import {
   MessageCircle,
   Search,
   Users as UsersIcon,
-  MessageSquare
+  MessageSquare,
+  UserCheck
 } from "lucide-react";
 import type { Candidato, Empresa, Vaga, Servico, Proposta, Relatorio } from "@shared/schema";
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -116,11 +117,18 @@ export default function Admin() {
     enabled: !!user,
   });
 
+  const { data: bancoTalentos = [] } = useQuery<any[]>({
+    queryKey: ['/api/admin/banco-talentos'],
+    enabled: !!user,
+  });
+
   // Estados dos filtros
   const [candidatoFilter, setCandidatoFilter] = useState("");
   const [candidatoFilterCity, setCandidatoFilterCity] = useState("all");
   const [empresaFilter, setEmpresaFilter] = useState("");
   const [empresaFilterSetor, setEmpresaFilterSetor] = useState("all");
+  const [bancoTalentosFilter, setBancoTalentosFilter] = useState("");
+  const [bancoTalentosFilterArea, setBancoTalentosFilterArea] = useState("all");
 
   // Estados de confirmação
   const [confirmDialog, setConfirmDialog] = useState({
@@ -281,6 +289,25 @@ export default function Admin() {
     }
   });
 
+  const deleteBancoTalentosMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/banco-talentos/${id}`, {
+        method: 'DELETE',
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/banco-talentos'] });
+      toast({ title: "Candidato removido do banco de talentos!" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Erro ao remover candidato", 
+        variant: "destructive" 
+      });
+    }
+  });
+
   const handleCreateService = () => {
     if (!newService.tipoServico || !newService.descricao) {
       toast({ 
@@ -344,6 +371,14 @@ export default function Admin() {
     return matchesSearch && matchesSetor;
   });
 
+  const filteredBancoTalentos = bancoTalentos.filter((candidato: any) => {
+    const matchesName = candidato.nome?.toLowerCase().includes(bancoTalentosFilter.toLowerCase()) ?? false;
+    const matchesEmail = candidato.email?.toLowerCase().includes(bancoTalentosFilter.toLowerCase()) ?? false;
+    const matchesSearch = bancoTalentosFilter === "" || matchesName || matchesEmail;
+    const matchesArea = bancoTalentosFilterArea === "all" || candidato.area_interesse === bancoTalentosFilterArea;
+    return matchesSearch && matchesArea;
+  });
+
   // Estatísticas do dashboard
   const stats = {
     totalCandidatos: candidatos.length,
@@ -369,7 +404,7 @@ export default function Admin() {
       title: `Remover ${type === 'candidato' ? 'Candidato' : 'Empresa'}`,
       description: `Tem certeza que deseja remover ${type === 'candidato' ? 'o candidato' : 'a empresa'} "${name}"? Esta ação não pode ser desfeita.`,
       variant: "destructive",
-      action: () => deleteUserMutation.mutate(id),
+      action: () => deleteUserMutation.mutate({ id, type }),
       loading: deleteUserMutation.isPending
     });
   };
@@ -396,6 +431,17 @@ export default function Admin() {
     });
   };
 
+  const showBancoTalentosDeleteConfirmation = (id: string, nome: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Remover do Banco de Talentos",
+      description: `Tem certeza que deseja remover "${nome}" do banco de talentos? Esta ação não pode ser desfeita.`,
+      variant: "destructive",
+      action: () => deleteBancoTalentosMutation.mutate(id),
+      loading: deleteBancoTalentosMutation.isPending
+    });
+  };
+
   if (!user) {
     return <PageLoader text="Carregando área administrativa..." />;
   }
@@ -403,14 +449,14 @@ export default function Admin() {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-8">
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-isabel-blue">Área Administrativa</h1>
-                <p className="text-gray-600 mt-2">Gerencie candidatos, empresas e serviços de consultoria</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="order-2 sm:order-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-isabel-blue">Área Administrativa</h1>
+                <p className="text-gray-600 mt-2 text-sm sm:text-base">Gerencie candidatos, empresas e serviços de consultoria</p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between sm:justify-end gap-4 order-1 sm:order-2">
                 <Button
                   onClick={() => {
                     localStorage.removeItem("auth-user");
@@ -418,30 +464,32 @@ export default function Admin() {
                     setLocation("/login");
                   }}
                   variant="outline"
+                  size="sm"
                   className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
+                  <LogOut className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Sair</span>
                 </Button>
                 
-                <div className="w-16 h-16 bg-isabel-blue rounded-full flex items-center justify-center">
-                  <Shield className="text-white h-8 w-8" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-isabel-blue rounded-full flex items-center justify-center">
+                  <Shield className="text-white h-6 w-6 sm:h-8 sm:w-8" />
                 </div>
               </div>
             </div>
           </div>
 
           <Tabs defaultValue="dashboard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="candidatos">Candidatos</TabsTrigger>
-              <TabsTrigger value="empresas">Empresas</TabsTrigger>
-              <TabsTrigger value="servicos">Serviços</TabsTrigger>
-              <TabsTrigger value="propostas">Propostas</TabsTrigger>
-              <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-              <TabsTrigger value="comunicacao">Comunicação</TabsTrigger>
-              <TabsTrigger value="hunting">Hunting</TabsTrigger>
-              <TabsTrigger value="multi-cliente">Multi-Cliente</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-1">
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="candidatos" className="text-xs sm:text-sm">Candidatos</TabsTrigger>
+              <TabsTrigger value="banco-talentos" className="text-xs sm:text-sm">Banco Talentos</TabsTrigger>
+              <TabsTrigger value="empresas" className="text-xs sm:text-sm">Empresas</TabsTrigger>
+              <TabsTrigger value="servicos" className="text-xs sm:text-sm">Serviços</TabsTrigger>
+              <TabsTrigger value="propostas" className="text-xs sm:text-sm">Propostas</TabsTrigger>
+              <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
+              <TabsTrigger value="comunicacao" className="text-xs sm:text-sm">Comunicação</TabsTrigger>
+              <TabsTrigger value="hunting" className="text-xs sm:text-sm">Hunting</TabsTrigger>
+              <TabsTrigger value="multi-cliente" className="text-xs sm:text-sm">Multi-Cliente</TabsTrigger>
             </TabsList>
 
             {/* Dashboard */}
@@ -540,20 +588,20 @@ export default function Admin() {
             {/* Candidatos */}
             <TabsContent value="candidatos">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Gestão de Candidatos</CardTitle>
-                  <div className="flex items-center gap-2">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg sm:text-xl">Gestão de Candidatos</CardTitle>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Buscar candidatos..."
-                        className="pl-8 w-64"
+                        className="pl-8 w-full sm:w-64"
                         value={candidatoFilter}
                         onChange={(e) => setCandidatoFilter(e.target.value)}
                       />
                     </div>
                     <Select value={candidatoFilterCity} onValueChange={setCandidatoFilterCity}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Filtrar por cidade" />
                       </SelectTrigger>
                       <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
@@ -570,32 +618,33 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredCandidatos.map((candidato) => (
-                      <div key={candidato.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <Users className="h-6 w-6 text-blue-600" />
                             </div>
-                            <div>
-                              <h3 className="font-medium">{candidato.nome}</h3>
-                              <p className="text-sm text-gray-500">{candidato.telefone}</p>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm sm:text-base">{candidato.nome}</h3>
+                              <p className="text-xs sm:text-sm text-gray-500 break-all">{candidato.telefone}</p>
                               {candidato.cidade && (
-                                <p className="text-sm text-gray-400">📍 {candidato.cidade}</p>
+                                <p className="text-xs sm:text-sm text-gray-400">📍 {candidato.cidade}</p>
                               )}
                               {candidato.linkedin && (
-                                <p className="text-sm text-blue-600">LinkedIn: {candidato.linkedin}</p>
+                                <p className="text-xs sm:text-sm text-blue-600 truncate">LinkedIn: {candidato.linkedin}</p>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end sm:justify-start">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setLocation(`/candidato/${candidato.id}`)}
+                            className="text-xs sm:text-sm"
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
+                            <Eye className="h-4 w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Ver</span>
                           </Button>
                           <Button
                             variant="destructive"
@@ -626,23 +675,162 @@ export default function Admin() {
               </Card>
             </TabsContent>
 
+            {/* Banco de Talentos */}
+            <TabsContent value="banco-talentos">
+              <Card>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg sm:text-xl">Banco de Talentos</CardTitle>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nome ou email..."
+                        className="pl-8 w-full sm:w-64"
+                        value={bancoTalentosFilter}
+                        onChange={(e) => setBancoTalentosFilter(e.target.value)}
+                      />
+                    </div>
+                    <Select value={bancoTalentosFilterArea} onValueChange={setBancoTalentosFilterArea}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Filtrar por área" />
+                      </SelectTrigger>
+                      <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
+                        <SelectItem value="all">Todas as áreas</SelectItem>
+                        <SelectItem value="tecnologia">Tecnologia</SelectItem>
+                        <SelectItem value="vendas">Vendas</SelectItem>
+                        <SelectItem value="marketing">Marketing</SelectItem>
+                        <SelectItem value="financeiro">Financeiro</SelectItem>
+                        <SelectItem value="rh">Recursos Humanos</SelectItem>
+                        <SelectItem value="operacoes">Operações</SelectItem>
+                        <SelectItem value="logistica">Logística</SelectItem>
+                        <SelectItem value="juridico">Jurídico</SelectItem>
+                        <SelectItem value="educacao">Educação</SelectItem>
+                        <SelectItem value="saude">Saúde</SelectItem>
+                        <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="engenharia">Engenharia</SelectItem>
+                        <SelectItem value="consultoria">Consultoria</SelectItem>
+                        <SelectItem value="outros">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {filteredBancoTalentos.map((candidato: any) => (
+                      <div key={candidato.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <UserCheck className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm sm:text-base">{candidato.nome}</h3>
+                              <p className="text-xs sm:text-sm text-gray-500 break-all">{candidato.email}</p>
+                              {candidato.telefone && (
+                                <p className="text-xs sm:text-sm text-gray-400">📞 {candidato.telefone}</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {candidato.area_interesse}
+                                </Badge>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(candidato.criado_em).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 justify-end sm:justify-start">
+                          {candidato.curriculo_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(candidato.curriculo_url, '_blank')}
+                              className="text-xs sm:text-sm"
+                            >
+                              <Eye className="h-4 w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Ver Currículo</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => showBancoTalentosDeleteConfirmation(candidato.id, candidato.nome)}
+                            disabled={deleteBancoTalentosMutation.isPending}
+                          >
+                            {deleteBancoTalentosMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredBancoTalentos.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <UserCheck className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>Nenhum candidato encontrado no banco de talentos</p>
+                        {bancoTalentosFilter && (
+                          <p className="text-sm">Tente ajustar os filtros de busca</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Estatísticas do Banco de Talentos */}
+                  {bancoTalentos.length > 0 && (
+                    <div className="mt-6 pt-6 border-t">
+                      <h4 className="font-medium text-gray-900 mb-4">Estatísticas do Banco de Talentos</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-lg font-bold text-green-600">{bancoTalentos.length}</div>
+                          <div className="text-xs text-gray-600">Total de Candidatos</div>
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-lg font-bold text-blue-600">
+                            {new Set(bancoTalentos.map((c: any) => c.area_interesse)).size}
+                          </div>
+                          <div className="text-xs text-gray-600">Áreas Diferentes</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <div className="text-lg font-bold text-purple-600">
+                            {bancoTalentos.filter((c: any) => c.curriculo_url).length}
+                          </div>
+                          <div className="text-xs text-gray-600">Com Currículo</div>
+                        </div>
+                        <div className="text-center p-3 bg-orange-50 rounded-lg">
+                          <div className="text-lg font-bold text-orange-600">
+                            {bancoTalentos.filter((c: any) => 
+                              new Date(c.criado_em) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                            ).length}
+                          </div>
+                          <div className="text-xs text-gray-600">Últimos 30 dias</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Empresas */}
             <TabsContent value="empresas">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Gestão de Empresas</CardTitle>
-                  <div className="flex items-center gap-2">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg sm:text-xl">Gestão de Empresas</CardTitle>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Buscar empresas..."
-                        className="pl-8 w-64"
+                        className="pl-8 w-full sm:w-64"
                         value={empresaFilter}
                         onChange={(e) => setEmpresaFilter(e.target.value)}
                       />
                     </div>
                     <Select value={empresaFilterSetor} onValueChange={setEmpresaFilterSetor}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Filtrar por setor" />
                       </SelectTrigger>
                       <SelectContent className="select-content-white bg-white border border-gray-200 shadow-lg">
@@ -659,25 +847,25 @@ export default function Admin() {
                 <CardContent>
                   <div className="space-y-4">
                     {filteredEmpresas.map((empresa) => (
-                      <div key={empresa.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div key={empresa.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <Building className="h-6 w-6 text-green-600" />
                             </div>
-                            <div>
-                              <h3 className="font-medium">{empresa.nome}</h3>
-                              <p className="text-sm text-gray-500">CNPJ: {empresa.cnpj}</p>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-medium text-sm sm:text-base">{empresa.nome}</h3>
+                              <p className="text-xs sm:text-sm text-gray-500 break-all">CNPJ: {empresa.cnpj}</p>
                               {empresa.setor && (
-                                <p className="text-sm text-gray-400">🏢 {empresa.setor}</p>
+                                <p className="text-xs sm:text-sm text-gray-400">🏢 {empresa.setor}</p>
                               )}
                               {empresa.cidade && (
-                                <p className="text-sm text-gray-400">📍 {empresa.cidade}</p>
+                                <p className="text-xs sm:text-sm text-gray-400">📍 {empresa.cidade}</p>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end sm:justify-start">
                           <Button
                             variant="outline"
                             size="sm"
@@ -685,9 +873,10 @@ export default function Admin() {
                               setSelectedEmpresa(empresa);
                               setShowEmpresaDetails(true);
                             }}
+                            className="text-xs sm:text-sm"
                           >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Ver
+                            <Eye className="h-4 w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Ver</span>
                           </Button>
                           <Button
                             variant="destructive"
@@ -721,13 +910,14 @@ export default function Admin() {
             {/* Serviços */}
             <TabsContent value="servicos">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Gestão de Serviços</CardTitle>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg sm:text-xl">Gestão de Serviços</CardTitle>
                   <Dialog open={showNewServiceDialog} onOpenChange={setShowNewServiceDialog}>
                     <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Novo Serviço
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Novo Serviço</span>
+                        <span className="sm:hidden">Novo</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -881,13 +1071,14 @@ export default function Admin() {
             {/* Propostas */}
             <TabsContent value="propostas">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Gestão de Propostas</CardTitle>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-lg sm:text-xl">Gestão de Propostas</CardTitle>
                   <Dialog open={showNewProposalDialog} onOpenChange={setShowNewProposalDialog}>
                     <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Proposta
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Nova Proposta</span>
+                        <span className="sm:hidden">Nova</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent>

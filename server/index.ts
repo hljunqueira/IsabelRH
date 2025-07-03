@@ -345,6 +345,166 @@ app.post("/api/vagas", async (req, res) => {
   }
 });
 
+// 🎯 ROTAS DO BANCO DE TALENTOS
+
+// Listar candidatos do banco de talentos (admin)
+app.get("/api/admin/banco-talentos", async (req, res) => {
+  console.log('🎯 Admin/banco-talentos: Endpoint acessado');
+  
+  try {
+    const { search, area, limit } = req.query;
+    
+    // Query base
+    let query = supabase
+      .from('banco_talentos')
+      .select('*')
+      .order('criado_em', { ascending: false });
+    
+    // Busca por texto
+    if (search) {
+      query = query.or(`nome.ilike.%${search}%,email.ilike.%${search}%,area_interesse.ilike.%${search}%`);
+    }
+    
+    // Filtro por área
+    if (area && area !== 'all') {
+      query = query.eq('area_interesse', area);
+    }
+    
+    // Aplicar limit
+    if (limit) {
+      const limitNum = parseInt(limit as string);
+      query = query.limit(limitNum);
+    }
+    
+    const { data: candidatos, error } = await query;
+    
+    if (error) {
+      console.error('❌ Erro ao buscar candidatos do banco de talentos:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao buscar candidatos do banco de talentos',
+        message: error.message 
+      });
+    }
+    
+    console.log(`✅ Admin/banco-talentos: Retornando ${candidatos?.length || 0} candidatos`);
+    res.json(candidatos || []);
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao buscar candidatos do banco de talentos:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao buscar candidatos do banco de talentos'
+    });
+  }
+});
+
+// Cadastrar no banco de talentos
+app.post("/api/banco-talentos", async (req, res) => {
+  console.log('🎯 Banco de Talentos: Novo cadastro');
+  
+  try {
+    const { nome, email, telefone, areaInteresse, curriculoUrl } = req.body;
+
+    // Validação básica
+    if (!nome || !email || !areaInteresse) {
+      return res.status(400).json({
+        error: 'Campos obrigatórios: nome, email, areaInteresse'
+      });
+    }
+
+    // Verificar se já existe cadastro com este email
+    const { data: existente, error: checkError } = await supabase
+      .from('banco_talentos')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Erro ao verificar email existente:', checkError);
+      return res.status(500).json({
+        error: 'Erro interno do servidor',
+        message: checkError.message
+      });
+    }
+
+    if (existente) {
+      return res.status(409).json({
+        error: 'Email já cadastrado',
+        message: 'Este email já está cadastrado no nosso banco de talentos'
+      });
+    }
+
+    // Dados do candidato
+    const candidatoData = {
+      nome,
+      email,
+      telefone: telefone || null,
+      area_interesse: areaInteresse,
+      curriculo_url: curriculoUrl || null,
+      criado_em: new Date().toISOString()
+    };
+
+    const { data: candidato, error } = await supabase
+      .from('banco_talentos')
+      .insert(candidatoData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao cadastrar no banco de talentos:', error);
+      return res.status(500).json({
+        error: 'Erro ao cadastrar no banco de talentos',
+        message: error.message
+      });
+    }
+
+    console.log('✅ Candidato cadastrado no banco de talentos:', candidato.id);
+    res.status(201).json({
+      message: 'Cadastro realizado com sucesso!',
+      candidato: candidato
+    });
+
+  } catch (error) {
+    console.error('💥 Erro interno ao cadastrar no banco de talentos:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      message: 'Erro ao cadastrar no banco de talentos'
+    });
+  }
+});
+
+// Remover candidato do banco de talentos (admin)
+app.delete("/api/admin/banco-talentos/:id", async (req, res) => {
+  console.log('🗑️ Banco de Talentos: Removendo candidato', req.params.id);
+  
+  try {
+    const { id } = req.params;
+    
+    const { error } = await supabase
+      .from('banco_talentos')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Erro ao remover candidato do banco de talentos:', error);
+      return res.status(500).json({ 
+        error: 'Erro ao remover candidato',
+        message: error.message 
+      });
+    }
+    
+    console.log('✅ Candidato removido do banco de talentos:', id);
+    res.json({ message: 'Candidato removido com sucesso' });
+    
+  } catch (error) {
+    console.error('💥 Erro interno ao remover candidato do banco de talentos:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      message: 'Erro ao remover candidato'
+    });
+  }
+});
+
 // 🎯 Rota de candidatos admin
 app.get("/api/admin/candidatos", async (req, res) => {
   console.log('👥 Admin/candidatos: Endpoint acessado');
@@ -2173,38 +2333,42 @@ app.listen(port, "0.0.0.0", () => {
   console.log("🎉 SERVIDOR COMPLETO RODANDO COM SUCESSO!");
   console.log("🌐 Porta:", port);
   console.log("🔗 APIs disponíveis:");
-  console.log("   - GET /api - Informações da API");
-  console.log("   - GET /api/test - Teste do servidor");
-  console.log("   - GET /api/health - Health check");
-  console.log("   - GET /api/auth/me - Dados do usuário autenticado");
-  console.log("   - POST /api/auth/forgot-password - Recuperação de senha");
-  console.log("   - GET /api/vagas - Lista de vagas");
-  console.log("   - GET /api/admin/candidatos - Lista de candidatos (admin)");
-  console.log("   - DELETE /api/admin/candidatos/:id - Deletar candidato (admin)");
-  console.log("   - GET /api/admin/empresas - Lista de empresas (admin)");
-  console.log("   - DELETE /api/admin/empresas/:id - Deletar empresa (admin)");
-  console.log("   - GET /api/admin/servicos - Lista de serviços (admin)");
-  console.log("   - POST /api/admin/servicos - Criar serviço (admin)");
-  console.log("   - PUT /api/admin/servicos/:id - Editar serviço (admin)");
-  console.log("   - DELETE /api/admin/servicos/:id - Deletar serviço (admin)");
-  console.log("   - GET /api/admin/propostas - Lista de propostas (admin)");
-  console.log("   - POST /api/admin/propostas - Criar proposta (admin)");
-  console.log("   - PUT /api/admin/propostas/:id - Editar proposta (admin)");
-  console.log("   - DELETE /api/admin/propostas/:id - Deletar proposta (admin)");
-  console.log("   - PATCH /api/admin/propostas/:id - Atualizar proposta (admin)");
-  console.log("   - GET /api/multicliente/clientes - Lista de clientes");
-  console.log("   - GET /api/multicliente/usuarios - Lista de usuários");
-  console.log("   - GET /api/multicliente/planos - Lista de planos");
-  console.log("   - POST /api/multicliente/clientes - Criar cliente");
-  console.log("   - GET /api/hunting/campanhas - Lista de campanhas hunting");
-  console.log("   - GET /api/hunting/templates - Lista de templates");
-  console.log("   - GET /api/hunting/integracoes - Lista de integrações");
-  console.log("   - POST /api/hunting/campanhas - Criar campanha");
-  console.log("   - POST /api/parsing/upload - Upload e parsing de currículos");
-  console.log("   - GET /api/admin/diagnostico - Diagnóstico do Supabase");
-  console.log("   - GET /api/admin/enum/tipos-servico - Valores do enum tipo_servico");
-  console.log("   - POST /api/admin/propostas/teste - Teste criação proposta");
-  console.log("   - POST /api/admin/servicos/teste - Teste criação serviço");
+console.log("   - GET /api - Informações da API");
+console.log("   - GET /api/test - Teste do servidor");
+console.log("   - GET /api/health - Health check");
+console.log("   - GET /api/auth/me - Dados do usuário autenticado");
+console.log("   - POST /api/auth/forgot-password - Recuperação de senha");
+console.log("   - GET /api/vagas - Lista de vagas");
+console.log("   - POST /api/vagas - Criar vaga");
+console.log("   - GET /api/admin/candidatos - Lista de candidatos (admin)");
+console.log("   - DELETE /api/admin/candidatos/:id - Deletar candidato (admin)");
+console.log("   - GET /api/admin/empresas - Lista de empresas (admin)");
+console.log("   - DELETE /api/admin/empresas/:id - Deletar empresa (admin)");
+console.log("   - GET /api/admin/banco-talentos - Lista candidatos banco de talentos (admin)");
+console.log("   - POST /api/banco-talentos - Cadastrar no banco de talentos");
+console.log("   - DELETE /api/admin/banco-talentos/:id - Remover do banco de talentos (admin)");
+console.log("   - GET /api/admin/servicos - Lista de serviços (admin)");
+console.log("   - POST /api/admin/servicos - Criar serviço (admin)");
+console.log("   - PUT /api/admin/servicos/:id - Editar serviço (admin)");
+console.log("   - DELETE /api/admin/servicos/:id - Deletar serviço (admin)");
+console.log("   - GET /api/admin/propostas - Lista de propostas (admin)");
+console.log("   - POST /api/admin/propostas - Criar proposta (admin)");
+console.log("   - PUT /api/admin/propostas/:id - Editar proposta (admin)");
+console.log("   - DELETE /api/admin/propostas/:id - Deletar proposta (admin)");
+console.log("   - PATCH /api/admin/propostas/:id - Atualizar proposta (admin)");
+console.log("   - GET /api/multicliente/clientes - Lista de clientes");
+console.log("   - GET /api/multicliente/usuarios - Lista de usuários");
+console.log("   - GET /api/multicliente/planos - Lista de planos");
+console.log("   - POST /api/multicliente/clientes - Criar cliente");
+console.log("   - GET /api/hunting/campanhas - Lista de campanhas hunting");
+console.log("   - GET /api/hunting/templates - Lista de templates");
+console.log("   - GET /api/hunting/integracoes - Lista de integrações");
+console.log("   - POST /api/hunting/campanhas - Criar campanha");
+console.log("   - POST /api/parsing/upload - Upload e parsing de currículos");
+console.log("   - GET /api/admin/diagnostico - Diagnóstico do Supabase");
+console.log("   - GET /api/admin/enum/tipos-servico - Valores do enum tipo_servico");
+console.log("   - POST /api/admin/propostas/teste - Teste criação proposta");
+console.log("   - POST /api/admin/servicos/teste - Teste criação serviço");
   console.log("🖥️ Frontend React disponível em: /");
   console.log("✨ Isabel RH v5.0 - Sistema completo funcionando!");
 });

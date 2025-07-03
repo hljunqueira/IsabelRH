@@ -94,6 +94,7 @@ export default function PerfilCandidato() {
     idiomas: [] as string[],
     habilidades: [] as string[],
     certificacoes: [] as any[],
+    habilidadesLivres: "",
     
     // Experiência Profissional
     experiencias: [] as any[],
@@ -121,8 +122,9 @@ export default function PerfilCandidato() {
   const [novaCertificacao, setNovaCertificacao] = useState({
     nome: "",
     instituicao: "",
-    dataObtencao: "",
-    validade: "",
+    cargaHoraria: "",
+    periodoInicio: "",
+    periodoFim: "",
   });
 
   const [novoIdioma, setNovoIdioma] = useState("");
@@ -190,8 +192,9 @@ export default function PerfilCandidato() {
       setNovaCertificacao({
         nome: "",
         instituicao: "",
-        dataObtencao: "",
-        validade: "",
+        cargaHoraria: "",
+        periodoInicio: "",
+        periodoFim: "",
       });
     }
   };
@@ -695,11 +698,11 @@ export default function PerfilCandidato() {
                         <Label htmlFor="atual">Trabalho atualmente nesta empresa</Label>
                       </div>
                       
-                      <Label>Descrição das Atividades</Label>
+                      <Label>Atividades realizadas</Label>
                       <Textarea
                         value={novaExperiencia.descricao}
                         onChange={(e) => setNovaExperiencia(prev => ({ ...prev, descricao: e.target.value }))}
-                        placeholder="Descreva suas principais atividades e responsabilidades..."
+                        placeholder="Descreva as atividades realizadas, principais responsabilidades, projetos, resultados, etc."
                         rows={3}
                       />
                     </div>
@@ -779,17 +782,31 @@ export default function PerfilCandidato() {
                       </Badge>
                     ))}
                   </div>
-                  
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-2">
                     <Input
                       value={novaHabilidade}
                       onChange={(e) => setNovaHabilidade(e.target.value)}
                       placeholder="Ex: JavaScript, Liderança, Excel..."
-                      onKeyPress={(e) => e.key === 'Enter' && adicionarHabilidade()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          adicionarHabilidade();
+                        }
+                      }}
                     />
                     <Button onClick={adicionarHabilidade}>
                       <Plus className="h-4 w-4" />
                     </Button>
+                  </div>
+                  <div className="mb-4">
+                    <Label htmlFor="habilidadesLivres">Descreva outras habilidades técnicas ou diferenciais:</Label>
+                    <Textarea
+                      id="habilidadesLivres"
+                      value={profileData.habilidadesLivres || ''}
+                      onChange={e => setProfileData(prev => ({ ...prev, habilidadesLivres: e.target.value }))}
+                      placeholder="Ex: Soft skills, ferramentas, metodologias, competências não listadas acima..."
+                      rows={2}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -829,45 +846,53 @@ export default function PerfilCandidato() {
 
                   {/* Adicionar nova certificação */}
                   <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                    <h4 className="font-semibold mb-4">Adicionar Certificação</h4>
+                    <h4 className="font-semibold mb-4">Adicionar Certificação ou Curso</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Nome da Certificação</Label>
+                        <Label>Nome do Curso/Certificação</Label>
                         <Input
                           value={novaCertificacao.nome}
                           onChange={(e) => setNovaCertificacao(prev => ({ ...prev, nome: e.target.value }))}
-                          placeholder="Ex: AWS Cloud Practitioner"
+                          placeholder="Ex: Excel Avançado, AWS Cloud Practitioner"
                         />
                       </div>
-                      
                       <div>
                         <Label>Instituição</Label>
                         <Input
                           value={novaCertificacao.instituicao}
                           onChange={(e) => setNovaCertificacao(prev => ({ ...prev, instituicao: e.target.value }))}
-                          placeholder="Ex: Amazon Web Services"
+                          placeholder="Ex: Udemy, Amazon Web Services"
                         />
                       </div>
-                      
                       <div>
-                        <Label>Data de Obtenção</Label>
+                        <Label>Carga horária (horas)</Label>
                         <Input
-                          type="date"
-                          value={novaCertificacao.dataObtencao}
-                          onChange={(e) => setNovaCertificacao(prev => ({ ...prev, dataObtencao: e.target.value }))}
+                          type="number"
+                          min="0"
+                          value={novaCertificacao.cargaHoraria}
+                          onChange={(e) => setNovaCertificacao(prev => ({ ...prev, cargaHoraria: e.target.value }))}
+                          placeholder="Ex: 40"
                         />
                       </div>
-                      
-                      <div>
-                        <Label>Validade (opcional)</Label>
-                        <Input
-                          type="date"
-                          value={novaCertificacao.validade}
-                          onChange={(e) => setNovaCertificacao(prev => ({ ...prev, validade: e.target.value }))}
-                        />
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Label>Período início (mês/ano)</Label>
+                          <Input
+                            type="month"
+                            value={novaCertificacao.periodoInicio}
+                            onChange={(e) => setNovaCertificacao(prev => ({ ...prev, periodoInicio: e.target.value }))}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label>Período fim (mês/ano)</Label>
+                          <Input
+                            type="month"
+                            value={novaCertificacao.periodoFim}
+                            onChange={(e) => setNovaCertificacao(prev => ({ ...prev, periodoFim: e.target.value }))}
+                          />
+                        </div>
                       </div>
                     </div>
-                    
                     <Button 
                       onClick={adicionarCertificacao}
                       className="mt-4 bg-isabel-orange hover:bg-isabel-orange/90"

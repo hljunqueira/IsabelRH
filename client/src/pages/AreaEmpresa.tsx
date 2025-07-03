@@ -355,16 +355,16 @@ export default function AreaEmpresa() {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto p-6 space-y-6">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Building2 className="h-8 w-8 text-isabel-blue" />
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-isabel-blue" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   Área da Empresa
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600 truncate max-w-[200px] sm:max-w-none">
                   Bem-vindo, {empresa?.nome || "Empresa"}
                 </p>
               </div>
@@ -372,7 +372,8 @@ export default function AreaEmpresa() {
             <Button 
               onClick={handleLogout}
               variant="outline"
-              className="flex items-center space-x-2"
+              size="sm"
+              className="w-full sm:w-auto flex items-center space-x-2 justify-center"
             >
               <LogOut className="h-4 w-4" />
               <span>Sair</span>
@@ -381,16 +382,16 @@ export default function AreaEmpresa() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-9">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="perfil">Perfil da Empresa</TabsTrigger>
-              <TabsTrigger value="vagas">Minhas Vagas</TabsTrigger>
-              <TabsTrigger value="candidatos">Candidatos</TabsTrigger>
-              <TabsTrigger value="ranking">Ranking</TabsTrigger>
-              <TabsTrigger value="triagem">Triagem</TabsTrigger>
-              <TabsTrigger value="parsing">Parsing</TabsTrigger>
-              <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-              <TabsTrigger value="chat">💬 Chat</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-1">
+              <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+              <TabsTrigger value="perfil" className="text-xs sm:text-sm">Perfil</TabsTrigger>
+              <TabsTrigger value="vagas" className="text-xs sm:text-sm">Vagas</TabsTrigger>
+              <TabsTrigger value="candidatos" className="text-xs sm:text-sm">Candidatos</TabsTrigger>
+              <TabsTrigger value="ranking" className="text-xs sm:text-sm">Ranking</TabsTrigger>
+              <TabsTrigger value="triagem" className="text-xs sm:text-sm">Triagem</TabsTrigger>
+              <TabsTrigger value="parsing" className="text-xs sm:text-sm">Parsing</TabsTrigger>
+              <TabsTrigger value="relatorios" className="text-xs sm:text-sm">Relatórios</TabsTrigger>
+              <TabsTrigger value="chat" className="text-xs sm:text-sm">💬 Chat</TabsTrigger>
             </TabsList>
 
             {/* Dashboard Tab */}

@@ -2,6 +2,8 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { 
   Search, 
@@ -52,6 +54,7 @@ interface Vaga {
 export default function Home() {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submittingBancoTalentos, setSubmittingBancoTalentos] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -141,68 +144,149 @@ export default function Home() {
     });
   };
 
+  // Função para cadastrar no banco de talentos
+  const handleBancoTalentosSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (submittingBancoTalentos) return;
+    
+    setSubmittingBancoTalentos(true);
+    
+    try {
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
+      // Pegar valores dos campos pelo ID
+      const nome = (document.getElementById('bt-nome') as HTMLInputElement)?.value;
+      const email = (document.getElementById('bt-email') as HTMLInputElement)?.value;
+      const telefone = (document.getElementById('bt-telefone') as HTMLInputElement)?.value;
+      const areaInteresse = (document.getElementById('bt-area') as HTMLSelectElement)?.value;
+      const curriculoUrl = (document.getElementById('bt-curriculo') as HTMLInputElement)?.value;
+      
+      if (!nome || !email || !areaInteresse) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha nome, e-mail e área de interesse.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const response = await fetch('/api/banco-talentos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nome,
+          email,
+          telefone,
+          areaInteresse,
+          curriculoUrl,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao cadastrar no banco de talentos');
+      }
+      
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Você foi adicionado ao nosso banco de talentos. Em breve entraremos em contato!",
+      });
+      
+      // Limpar formulário
+      (document.getElementById('banco-talentos-form') as HTMLFormElement)?.reset();
+      
+    } catch (error: any) {
+      console.error('Erro ao cadastrar no banco de talentos:', error);
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingBancoTalentos(false);
+    }
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-isabel-accent to-white py-20 lg:py-32">
+      <section className="bg-gradient-to-br from-isabel-accent to-white py-12 sm:py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-isabel-blue leading-tight mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="text-center lg:text-left order-2 lg:order-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-isabel-blue leading-tight mb-4 sm:mb-6">
                 Transformando o RH em um{" "}
                 <span className="text-isabel-orange">diferencial estratégico</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 Mais de 20 anos conectando empresas e pessoas certas, criando equipes de alta performance através de consultoria especializada em RH.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/candidato">
-                  <Button size="lg" className="bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold">
+                  <Button size="default" className="w-full sm:w-auto bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold text-sm sm:text-base">
                     Área do Candidato
                   </Button>
                 </Link>
                 <Link href="/empresa">
-                  <Button size="lg" variant="outline" className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white font-semibold">
+                  <Button size="default" variant="outline" className="w-full sm:w-auto border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white font-semibold text-sm sm:text-base">
                     Área da Empresa
                   </Button>
                 </Link>
+                <Button
+                  size="default"
+                  variant="outline"
+                  className="w-full sm:w-auto border-isabel-orange text-isabel-orange hover:bg-isabel-orange hover:text-white font-semibold text-sm sm:text-base"
+                  onClick={() => {
+                    const section = document.getElementById('banco-talentos-section');
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  Banco de Talentos
+                </Button>
               </div>
-              <div className="mt-8 flex items-center justify-center lg:justify-start space-x-6">
+              <div className="mt-6 sm:mt-8 flex items-center justify-center lg:justify-start space-x-4 sm:space-x-6">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-isabel-orange">20+</div>
-                  <div className="text-sm text-gray-600">Anos de Experiência</div>
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-isabel-orange">20+</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Anos de Experiência</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-isabel-orange">300+</div>
-                  <div className="text-sm text-gray-600">Empresas Atendidas</div>
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-isabel-orange">300+</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Empresas Atendidas</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-isabel-orange">DISC</div>
-                  <div className="text-sm text-gray-600">Especialista</div>
+                  <div className="text-lg sm:text-xl lg:text-2xl font-bold text-isabel-orange">DISC</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Especialista</div>
                 </div>
               </div>
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center order-1 lg:order-2">
               <img 
                 src={GNjPnSHd4wX4gM2H2En8qf} 
                 alt="Isabel Cunha - Especialista em RH" 
-                className="w-80 h-80 rounded-full object-cover shadow-2xl border-8 border-white"
+                className="w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full object-cover shadow-2xl border-4 sm:border-8 border-white"
               />
             </div>
           </div>
         </div>
       </section>
       {/* Services Preview */}
-      <section className="py-20 bg-isabel-accent">
+      <section className="py-12 sm:py-16 lg:py-20 bg-isabel-accent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-isabel-blue mb-4">Nossos Serviços</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-isabel-blue mb-4">Nossos Serviços</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
               Soluções completas em RH para impulsionar o crescimento da sua empresa
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <Card className="hover:shadow-xl transition-shadow">
               <CardHeader>
                 <div className="w-16 h-16 bg-isabel-orange rounded-full flex items-center justify-center mx-auto mb-4">
@@ -291,11 +375,11 @@ export default function Home() {
       </section>
       
       {/* Vagas em Destaque */}
-      <section className="py-20 bg-white">
+      <section className="py-12 sm:py-16 lg:py-20 bg-white" data-section="vagas">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-isabel-blue mb-4">Vagas em Destaque</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-isabel-blue mb-4">Vagas em Destaque</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
               Oportunidades exclusivas para impulsionar sua carreira
             </p>
           </div>
@@ -307,7 +391,7 @@ export default function Home() {
             </div>
           ) : vagas.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
                 {vagas.map((vaga) => (
                   <Card key={vaga.id} className="hover:shadow-xl transition-shadow border-l-4 border-isabel-orange">
                     <CardHeader>
@@ -364,9 +448,9 @@ export default function Home() {
                         </div>
                       )}
                       
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Link href={`/candidato?highlight=${vaga.id}`} className="flex-1">
-                          <Button className="w-full bg-isabel-orange hover:bg-isabel-orange/90">
+                          <Button className="w-full bg-isabel-orange hover:bg-isabel-orange/90 text-sm">
                             Candidatar-se
                           </Button>
                         </Link>
@@ -374,14 +458,15 @@ export default function Home() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white px-3"
+                          className="border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white px-3 text-xs sm:text-sm"
                           onClick={() => {
                             // Por enquanto, mostrar detalhes da vaga em um toast ou modal
                             alert(`Detalhes da vaga:\n\n${vaga.titulo}\n${vaga.empresa}\n\n${vaga.descricao}\n\nRequisitos:\n${vaga.requisitos.join(', ')}`);
                           }}
                         >
-                          Ver mais
-                          <ChevronRight className="h-4 w-4 ml-1" />
+                          <span className="hidden sm:inline">Ver mais</span>
+                          <span className="sm:hidden">Detalhes</span>
+                          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                         </Button>
                         
                         {/* Botão de Compartilhamento */}
@@ -488,16 +573,172 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Mission, Vision, Values */}
-      <section className="py-20 bg-white">
+      {/* Banco de Talentos */}
+      <section id="banco-talentos-section" className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-isabel-blue to-isabel-blue/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-isabel-blue mb-4">Nossa Essência</h2>
-            <p className="text-xl text-gray-600">Os valores que guiam nossa atuação</p>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black mb-4">
+              Faça Parte do Nosso Banco de Talentos
+            </h2>
+            <p className="text-base sm:text-lg lg:text-xl text-black max-w-3xl mx-auto">
+              Cadastre-se gratuitamente e seja notificado sobre oportunidades exclusivas que combinam com seu perfil
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center p-8 bg-gradient-to-br from-isabel-orange/10 to-isabel-orange/5">
+          <div className="max-w-2xl mx-auto">
+            <Card className="bg-white/95 backdrop-blur-sm shadow-2xl">
+              <CardContent className="p-6 sm:p-8">
+                <form id="banco-talentos-form" className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bt-nome" className="text-isabel-blue font-medium">
+                        Nome Completo *
+                      </Label>
+                      <Input
+                        id="bt-nome"
+                        type="text"
+                        placeholder="Seu nome completo"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bt-email" className="text-isabel-blue font-medium">
+                        E-mail *
+                      </Label>
+                      <Input
+                        id="bt-email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bt-telefone" className="text-isabel-blue font-medium">
+                        Telefone
+                      </Label>
+                      <Input
+                        id="bt-telefone"
+                        type="tel"
+                        placeholder="(47) 99999-9999"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bt-area" className="text-isabel-blue font-medium">
+                        Área de Interesse *
+                      </Label>
+                      <select
+                        id="bt-area"
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-isabel-blue focus:border-transparent"
+                        required
+                      >
+                        <option value="">Selecione uma área</option>
+                        <option value="tecnologia">Tecnologia</option>
+                        <option value="vendas">Vendas</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="financeiro">Financeiro</option>
+                        <option value="rh">Recursos Humanos</option>
+                        <option value="operacoes">Operações</option>
+                        <option value="logistica">Logística</option>
+                        <option value="juridico">Jurídico</option>
+                        <option value="educacao">Educação</option>
+                        <option value="saude">Saúde</option>
+                        <option value="design">Design</option>
+                        <option value="engenharia">Engenharia</option>
+                        <option value="consultoria">Consultoria</option>
+                        <option value="outros">Outros</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bt-curriculo" className="text-isabel-blue font-medium">
+                      Link do Currículo (LinkedIn, Google Drive, etc.)
+                    </Label>
+                    <Input
+                      id="bt-curriculo"
+                      type="url"
+                      placeholder="https://linkedin.com/in/seuperfil ou link do seu currículo"
+                      className="mt-1"
+                    />
+                  </div>
+
+                                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                     <Button
+                       type="submit"
+                       className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold py-3"
+                       onClick={(e) => handleBancoTalentosSubmit(e)}
+                       disabled={submittingBancoTalentos}
+                     >
+                       {submittingBancoTalentos ? "Cadastrando..." : "Cadastrar no Banco de Talentos"}
+                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:w-auto border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
+                      onClick={() => {
+                        // Rolar para a seção de vagas
+                        const vagasSection = document.querySelector('[data-section="vagas"]');
+                        if (vagasSection) {
+                          vagasSection.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                    >
+                      Ver Vagas Abertas
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-gray-600 text-center mt-4">
+                    * Campos obrigatórios. Seus dados são protegidos pela LGPD.
+                  </p>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="mt-8 sm:mt-12 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
+              <div className="text-isabel-blue">
+                <Target className="h-8 w-8 mx-auto mb-3 text-isabel-orange" />
+                <h3 className="text-lg font-semibold mb-2">Oportunidades Exclusivas</h3>
+                <p className="text-sm">
+                  Receba ofertas personalizadas antes mesmo delas serem publicadas
+                </p>
+              </div>
+              <div className="text-isabel-blue">
+                <Eye className="h-8 w-8 mx-auto mb-3 text-isabel-orange" />
+                <h3 className="text-lg font-semibold mb-2">Visibilidade Profissional</h3>
+                <p className="text-sm">
+                  Seu perfil fica visível para empresas que buscam profissionais como você
+                </p>
+              </div>
+              <div className="text-isabel-blue">
+                <Heart className="h-8 w-8 mx-auto mb-3 text-isabel-orange" />
+                <h3 className="text-lg font-semibold mb-2">Suporte Especializado</h3>
+                <p className="text-sm">
+                  Conte com nossa consultoria especializada durante todo o processo
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission, Vision, Values */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-isabel-blue mb-4">Nossa Essência</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-gray-600">Os valores que guiam nossa atuação</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <Card className="text-center p-6 sm:p-8 bg-gradient-to-br from-isabel-orange/10 to-isabel-orange/5">
               <CardHeader>
                 <div className="w-16 h-16 bg-isabel-orange rounded-full flex items-center justify-center mx-auto mb-4">
                   <Target className="text-white h-8 w-8" />

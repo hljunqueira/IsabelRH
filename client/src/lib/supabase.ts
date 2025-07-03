@@ -255,4 +255,27 @@ export const api = {
   async delete(endpoint: string) {
     return this.request(endpoint, { method: 'DELETE' });
   }
-}; 
+};
+
+/**
+ * Faz upload de um arquivo de certificado para o Supabase Storage e retorna a URL pública
+ * @param file Arquivo a ser enviado
+ * @param userId ID do usuário/candidato para organizar no bucket
+ * @returns URL pública do arquivo
+ */
+export async function uploadCertificado(file: File, userId: string): Promise<string | null> {
+  const ext = file.name.split('.').pop();
+  const filePath = `${userId}/${Date.now()}.${ext}`;
+  const { data, error } = await supabase.storage.from('certificados').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: file.type,
+  });
+  if (error) {
+    console.error('Erro ao fazer upload do certificado:', error.message);
+    return null;
+  }
+  // Gerar URL pública
+  const { data: publicUrlData } = supabase.storage.from('certificados').getPublicUrl(filePath);
+  return publicUrlData?.publicUrl || null;
+} 

@@ -331,26 +331,26 @@ export default function Login() {
 
   return (
     <Layout>
-      <section className="py-20 bg-isabel-accent min-h-screen">
-        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4">
+      <section className="py-8 sm:py-20 bg-isabel-accent min-h-screen">
+        <div className="max-w-sm sm:max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden mx-auto mb-4">
               <img 
                 src={logoImage} 
                 alt="Isabel Cunha RH" 
-                className="w-20 h-20 object-cover"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-cover"
               />
             </div>
-            <h1 className="text-3xl font-bold text-isabel-blue">Isabel Cunha RH</h1>
-            <p className="text-gray-600 mt-2">Acesse sua área exclusiva</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-isabel-blue">Isabel Cunha RH</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">Acesse sua área exclusiva</p>
           </div>
 
           <Card>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Cadastro</TabsTrigger>
-                <TabsTrigger value="admin">Admin</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+                <TabsTrigger value="login" className="px-2 sm:px-4">Login</TabsTrigger>
+                <TabsTrigger value="register" className="px-2 sm:px-4">Cadastro</TabsTrigger>
+                <TabsTrigger value="admin" className="px-2 sm:px-4">Admin</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
