@@ -35,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import CurriculoUpload from "@/components/CurriculoUpload";
 
 import GNjPnSHd4wX4gM2H2En8qf from "@assets/GNjPnSHd4wX4gM2H2En8qf.png";
 
@@ -56,9 +57,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [submittingBancoTalentos, setSubmittingBancoTalentos] = useState(false);
   const { toast } = useToast();
+  const [curriculoFileUrl, setCurriculoFileUrl] = useState("");
 
   useEffect(() => {
     fetchVagasDestaque();
+    if (window.location.hash === "#vagas") {
+      setTimeout(() => {
+        const vagasSection = document.querySelector('[data-section="vagas"]');
+        if (vagasSection) {
+          vagasSection.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 200);
+    }
   }, []);
 
   const fetchVagasDestaque = async () => {
@@ -144,24 +154,27 @@ export default function Home() {
     });
   };
 
+  // Adicionar função para upload do currículo
+  const handleCurriculoUpload = async (dados: any) => {
+    // Se o backend de upload retornar uma URL, salve-a
+    if (dados && dados.url) {
+      setCurriculoFileUrl(dados.url);
+    }
+  };
+
   // Função para cadastrar no banco de talentos
   const handleBancoTalentosSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (submittingBancoTalentos) return;
-    
     setSubmittingBancoTalentos(true);
-    
     try {
-      const form = e.target as HTMLFormElement;
-      
-      // Pegar valores dos campos pelo ID
       const nome = (document.getElementById('bt-nome') as HTMLInputElement)?.value;
       const email = (document.getElementById('bt-email') as HTMLInputElement)?.value;
       const telefone = (document.getElementById('bt-telefone') as HTMLInputElement)?.value;
       const areaInteresse = (document.getElementById('bt-area') as HTMLSelectElement)?.value;
       const curriculoUrl = (document.getElementById('bt-curriculo') as HTMLInputElement)?.value;
-      
+      // Usa a URL do arquivo anexado, se houver
+      const curriculoFinalUrl = curriculoFileUrl || curriculoUrl;
       if (!nome || !email || !areaInteresse) {
         toast({
           title: "Campos obrigatórios",
@@ -170,7 +183,6 @@ export default function Home() {
         });
         return;
       }
-      
       const response = await fetch('/api/banco-talentos', {
         method: 'POST',
         headers: {
@@ -181,24 +193,19 @@ export default function Home() {
           email,
           telefone,
           areaInteresse,
-          curriculoUrl,
+          curriculoUrl: curriculoFinalUrl,
         }),
       });
-      
       const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.message || 'Erro ao cadastrar no banco de talentos');
       }
-      
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Você foi adicionado ao nosso banco de talentos. Em breve entraremos em contato!",
       });
-      
-      // Limpar formulário
       (document.getElementById('banco-talentos-form') as HTMLFormElement)?.reset();
-      
+      setCurriculoFileUrl("");
     } catch (error: any) {
       console.error('Erro ao cadastrar no banco de talentos:', error);
       toast({
@@ -223,8 +230,7 @@ export default function Home() {
                 <span className="text-isabel-orange">diferencial estratégico</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-                Mais de 20 anos conectando empresas e pessoas certas, criando equipes de alta performance através de consultoria especializada em RH.
-              </p>
+              Mais de 20 anos conectando empresas e pessoas, desenvolvendo equipes de alta performance através de consultoria especializada.              </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/candidato">
                   <Button size="default" className="w-full sm:w-auto bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold text-sm sm:text-base">
@@ -667,21 +673,28 @@ export default function Home() {
                     />
                   </div>
 
-                                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                     <Button
-                       type="submit"
-                       className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold py-3"
-                       onClick={(e) => handleBancoTalentosSubmit(e)}
-                       disabled={submittingBancoTalentos}
-                     >
-                       {submittingBancoTalentos ? "Cadastrando..." : "Cadastrar no Banco de Talentos"}
-                     </Button>
+                  <div>
+                    <Label className="text-isabel-blue font-medium mb-1 block">Anexar Currículo (PDF, DOC, JPG, PNG)</Label>
+                    <CurriculoUpload onProcessamentoCompleto={handleCurriculoUpload} multiplos={false} />
+                    {curriculoFileUrl && (
+                      <p className="text-xs text-green-600 mt-1">Arquivo anexado com sucesso!</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-isabel-orange hover:bg-isabel-orange/90 text-white font-semibold py-3"
+                      onClick={(e) => handleBancoTalentosSubmit(e)}
+                      disabled={submittingBancoTalentos}
+                    >
+                      {submittingBancoTalentos ? "Cadastrando..." : "Cadastrar no Banco de Talentos"}
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
                       className="sm:w-auto border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
                       onClick={() => {
-                        // Rolar para a seção de vagas
                         const vagasSection = document.querySelector('[data-section="vagas"]');
                         if (vagasSection) {
                           vagasSection.scrollIntoView({ behavior: 'smooth' });
@@ -689,6 +702,14 @@ export default function Home() {
                       }}
                     >
                       Ver Vagas Abertas
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:w-auto border-isabel-blue text-isabel-blue hover:bg-isabel-blue hover:text-white"
+                      onClick={() => window.location.href = '/candidato'}
+                    >
+                      Cadastrar como Candidato
                     </Button>
                   </div>
 

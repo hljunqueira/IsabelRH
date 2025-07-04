@@ -21,7 +21,7 @@ export default function QuemSomos() {
           <div className="text-center mb-16">
             <h1 className="text-4xl font-bold text-isabel-blue mb-4">Quem Sou Eu</h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Uma jornada de 27 anos transformando empresas através das pessoas
+              
             </p>
           </div>
         </div>
@@ -40,8 +40,7 @@ export default function QuemSomos() {
                 <CardContent>
                   <p className="text-gray-700 leading-relaxed mb-6">
                     Sou Isabel Cunha, especialista em Recursos Humanos com mais de 20 anos de experiência. 
-                    Atuo como parceira estratégica de empresas que desejam estruturar ou evoluir seu RH com 
-                    eficiência, cultura organizacional sólida e foco em resultado.
+                    Atuo como parceira estratégica de empresas que buscam estruturar ou fortalecer seu RH com eficiência, cultura organizacional sólida e foco em resultados.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center">
@@ -50,7 +49,7 @@ export default function QuemSomos() {
                     </div>
                     <div className="flex items-center">
                       <Award className="text-isabel-orange mr-3 h-5 w-5" />
-                      <span className="text-gray-700">MBE em Recrutamento e Seleção</span>
+                      <span className="text-gray-700">Segunda graduação: MBA em Recrutamento e Seleção e consultoria de RH.</span>
                     </div>
                     <div className="flex items-center">
                       <UserRound className="text-isabel-orange mr-3 h-5 w-5" />

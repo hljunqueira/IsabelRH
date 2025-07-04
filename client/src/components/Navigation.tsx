@@ -128,7 +128,7 @@ export default function Navigation() {
                       className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 cursor-pointer"
                       onClick={() => {
                         if (result.type === 'vaga') {
-                          window.location.href = `/candidato?vaga=${result.id}`;
+                          window.location.href = `/candidato?highlight=${result.id}`;
                         } else if (result.type === 'candidato') {
                           window.location.href = '/admin?tab=candidatos';
                         } else if (result.type === 'empresa') {
@@ -160,11 +160,11 @@ export default function Navigation() {
                   ))}
                   {searchResults.length > 0 && (
                     <div className="p-3 text-center border-t bg-gray-50">
-                      <Link href="/admin">
+                      <a href="/#vagas">
                         <Button variant="ghost" size="sm" className="text-isabel-blue">
                           Ver todos os resultados
                         </Button>
-                      </Link>
+                      </a>
                     </div>
                   )}
                 </div>
@@ -253,7 +253,7 @@ export default function Navigation() {
                       className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 cursor-pointer"
                       onClick={() => {
                         if (result.type === 'vaga') {
-                          window.location.href = `/candidato?vaga=${result.id}`;
+                          window.location.href = `/candidato?highlight=${result.id}`;
                         } else if (result.type === 'candidato') {
                           window.location.href = '/admin?tab=candidatos';
                         } else if (result.type === 'empresa') {

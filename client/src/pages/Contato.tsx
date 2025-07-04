@@ -74,7 +74,7 @@ export default function Contato() {
       <section className="py-20 bg-gradient-to-br from-isabel-blue to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold mb-4">Vamos Trabalhar Juntos?</h1>
+            <h1 className="text-4xl font-bold mb-4 text-isabel-blue">Vamos Trabalhar Juntos?</h1>
             <p className="text-xl text-isabel-orange">
               Entre em contato e descubra como podemos transformar seu RH
             </p>
@@ -234,11 +234,7 @@ export default function Contato() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-gray-700">
-                    <p>Segunda a Sexta: 8h às 18h</p>
-                    <p>Sábado: 8h às 12h</p>
-                    <p className="mt-3 font-semibold text-isabel-orange">
-                      Atendimento por WhatsApp 24h
-                    </p>
+                    <p>Segunda a Sexta: 9h às 18h</p>
                   </div>
                 </CardContent>
               </Card>

@@ -185,8 +185,7 @@ export default function Servicos() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 text-center mb-6">
-                  Desenvolvemos competências específicas para sua equipe através de treinamentos 
-                  personalizados que atendem às necessidades reais da sua empresa.
+                Potencialize os resultados da sua empresa com treinamentos personalizados, focados no desenvolvimento de competências comportamentais alinhadas à sua cultura e aos desafios reais do seu negócio.
                 </p>
                 
                 <div className="mb-6">
@@ -194,7 +193,8 @@ export default function Servicos() {
                   <ul className="space-y-2">
                     <li className="flex items-center">
                       <Check className="text-isabel-blue mr-2 h-4 w-4" />
-                      <span className="text-gray-700">Liderança e gestão de equipes</span>
+                      <span className="text-gray-700">Liderança e gestão de equipes
+                      </span>
                     </li>
                     <li className="flex items-center">
                       <Check className="text-isabel-blue mr-2 h-4 w-4" />
@@ -202,11 +202,7 @@ export default function Servicos() {
                     </li>
                     <li className="flex items-center">
                       <Check className="text-isabel-blue mr-2 h-4 w-4" />
-                      <span className="text-gray-700">Trabalho em equipe</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="text-isabel-blue mr-2 h-4 w-4" />
-                      <span className="text-gray-700">Desenvolvimento pessoal e profissional</span>
+                      <span className="text-gray-700">Inteligência Emocional</span>
                     </li>
                   </ul>
                 </div>
