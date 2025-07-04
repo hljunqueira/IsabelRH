@@ -486,7 +486,7 @@ export default function AreaCandidato() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+            <TabsList className="w-full overflow-x-auto flex whitespace-nowrap gap-2 px-1">
               <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil" className="text-xs sm:text-sm">Meu Perfil</TabsTrigger>
               <TabsTrigger value="vagas" className="text-xs sm:text-sm">Vagas</TabsTrigger>
@@ -496,7 +496,7 @@ export default function AreaCandidato() {
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Candidaturas Enviadas</CardTitle>
@@ -628,7 +628,7 @@ export default function AreaCandidato() {
                     </TabsList>
 
                     <TabsContent value="pessoais" className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="nome">Nome Completo *</Label>
                           <Input
@@ -764,8 +764,8 @@ export default function AreaCandidato() {
                     </TabsContent>
 
                     <TabsContent value="endereco" className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="sm:col-span-2">
                           <Label htmlFor="endereco">Endereço</Label>
                           <Input
                             id="endereco"
@@ -818,7 +818,7 @@ export default function AreaCandidato() {
                     </TabsContent>
 
                     <TabsContent value="formacao" className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="nivelEscolaridade">Nível de Escolaridade</Label>
                           <Select 
@@ -901,7 +901,7 @@ export default function AreaCandidato() {
                         {isEditing && (
                           <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg mt-2">
                             <h4 className="font-semibold mb-4">Adicionar Certificação ou Curso</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                               <div>
                                 <Label>Nome do Curso/Certificação</Label>
                                 <Input
@@ -928,7 +928,7 @@ export default function AreaCandidato() {
                                   placeholder="Ex: 40"
                                 />
                               </div>
-                              <div className="md:col-span-2">
+                              <div className="sm:col-span-2">
                                 <Label>Arquivo do Certificado (imagem ou PDF)</Label>
                                 <Input
                                   type="file"
@@ -1114,7 +1114,7 @@ export default function AreaCandidato() {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="pretensaoSalarial">Pretensão Salarial</Label>
                           <Input
@@ -1266,7 +1266,7 @@ export default function AreaCandidato() {
               {/* Sistema de Vagas Melhorado */}
               <div className="space-y-6">
                 {/* Header com estatísticas */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Vagas Disponíveis</CardTitle>
@@ -1352,7 +1352,7 @@ export default function AreaCandidato() {
 
                   {showFilters && (
                     <CardContent className="pt-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label className="text-sm font-medium">Área</Label>
                           <Select value={filterArea} onValueChange={setFilterArea}>
@@ -1390,7 +1390,7 @@ export default function AreaCandidato() {
 
                 {/* Tabs de categorias */}
                 <Tabs value={vagasTab} onValueChange={setVagasTab}>
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="w-full overflow-x-auto flex whitespace-nowrap gap-2 px-1">
                     <TabsTrigger value="todas">
                       Todas ({Array.isArray(vagas) ? vagas.length : 0})
                     </TabsTrigger>
@@ -1452,7 +1452,7 @@ export default function AreaCandidato() {
                             return true;
                           })
                           .map((vaga: Vaga) => (
-                            <Card key={vaga.id} className="p-6 hover:shadow-lg transition-shadow border-l-4 border-l-isabel-orange">
+                            <Card key={vaga.id} className="p-3 sm:p-4 text-sm sm:text-base">
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className="flex items-start justify-between mb-2">

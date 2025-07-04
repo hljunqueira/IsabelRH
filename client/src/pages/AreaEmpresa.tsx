@@ -382,7 +382,7 @@ export default function AreaEmpresa() {
 
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-1">
+            <TabsList className="w-full overflow-x-auto flex whitespace-nowrap gap-2 px-1">
               <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
               <TabsTrigger value="perfil" className="text-xs sm:text-sm">Perfil</TabsTrigger>
               <TabsTrigger value="vagas" className="text-xs sm:text-sm">Vagas</TabsTrigger>
@@ -396,7 +396,7 @@ export default function AreaEmpresa() {
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Vagas Ativas</CardTitle>
@@ -444,7 +444,7 @@ export default function AreaEmpresa() {
 
             {/* Company Profile Tab */}
             <TabsContent value="perfil" className="space-y-6">
-              <Card>
+              <Card className="p-3 sm:p-4 text-sm sm:text-base">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center space-x-2">
                     <Building2 className="h-5 w-5" />
@@ -490,7 +490,7 @@ export default function AreaEmpresa() {
                     </TabsList>
 
                     <TabsContent value="basicos" className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="nome">Nome da Empresa *</Label>
                           <Input
@@ -603,7 +603,7 @@ export default function AreaEmpresa() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="telefone">Telefone</Label>
                           <Input
@@ -636,7 +636,7 @@ export default function AreaEmpresa() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="website">Website</Label>
                           <Input
@@ -661,8 +661,8 @@ export default function AreaEmpresa() {
                     </TabsContent>
 
                     <TabsContent value="endereco" className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="md:col-span-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="sm:col-span-2">
                           <Label htmlFor="endereco">Endereço</Label>
                           <Input
                             id="endereco"
@@ -683,7 +683,7 @@ export default function AreaEmpresa() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="cidade">Cidade</Label>
                           <Input
@@ -728,7 +728,7 @@ export default function AreaEmpresa() {
                           rows={4}
                         />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="missao">Missão</Label>
                           <Textarea
@@ -763,7 +763,7 @@ export default function AreaEmpresa() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <Label htmlFor="contato">Pessoa de Contato</Label>
                           <Input
@@ -891,8 +891,8 @@ export default function AreaEmpresa() {
                         </TabsList>
 
                         <TabsContent value="basico" className="space-y-4 mt-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="md:col-span-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="sm:col-span-2">
                               <Label htmlFor="titulo">Título da Vaga *</Label>
                               <Input
                                 id="titulo"
@@ -968,7 +968,7 @@ export default function AreaEmpresa() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             <div>
                               <Label htmlFor="cidade">Cidade</Label>
                               <Input
@@ -1004,7 +1004,7 @@ export default function AreaEmpresa() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
                               <Label htmlFor="salario">Faixa Salarial</Label>
                               <Input
@@ -1141,7 +1141,7 @@ export default function AreaEmpresa() {
                 <div className="space-y-4">
                   {Array.isArray(vagas) && vagas.length > 0 ? (
                     vagas.map((vaga: Vaga) => (
-                      <Card key={vaga.id} className="p-6">
+                      <Card key={vaga.id} className="p-3 sm:p-4 text-sm sm:text-base">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
