@@ -1293,26 +1293,47 @@ app.post("/api/hunting/campanhas", async (req, res) => {
 // 📄 ROTAS PARSING
 app.post("/api/parsing/upload", async (req, res) => {
   console.log('📄 Parsing/upload: Endpoint acessado');
-  
+
   try {
-    // Por enquanto retornar estrutura vazia - será implementado parsing real depois
-    const dadosVazios = {
-      sucesso: true,
-      dados: null,
-      confianca: 0,
-      camposDetectados: [],
-      camposFaltantes: ['Todos os campos - implementar parsing real']
-    };
-    
-    console.log('⚠️ Parsing: Sistema preparado - implementar integração real');
-    res.json(dadosVazios);
-    
-  } catch (error) {
-    console.error('💥 Erro interno no parsing:', error);
-    res.status(500).json({ 
-      error: 'Erro interno do servidor',
-      message: 'Erro no parsing de arquivo'
+    if (!req.headers['content-type']?.includes('multipart/form-data')) {
+      return res.status(400).json({ erro: 'Envie o arquivo via multipart/form-data' });
+    }
+
+    // Usar formidable para parsear o arquivo
+    const formidable = require('formidable');
+    const form = formidable({ multiples: false });
+    form.parse(req, async (err: any, fields: any, files: any) => {
+      if (err) {
+        console.error('Erro ao processar upload:', err);
+        return res.status(500).json({ erro: 'Erro ao processar upload' });
+      }
+      const file = files.arquivo;
+      if (!file) {
+        return res.status(400).json({ erro: 'Arquivo não enviado' });
+      }
+      // Upload para Supabase Storage
+      const fs = require('fs');
+      const path = require('path');
+      const fileData = fs.readFileSync(file.filepath);
+      const ext = path.extname(file.originalFilename || file.newFilename || '');
+      const nomeArquivo = `curriculo_${Date.now()}${ext}`;
+      const { data, error } = await supabase.storage.from('curriculos').upload(nomeArquivo, fileData, {
+        contentType: file.mimetype,
+        upsert: false
+      });
+      if (error) {
+        console.error('Erro ao fazer upload no Supabase Storage:', error);
+        return res.status(500).json({ erro: 'Erro ao salvar arquivo no storage' });
+      }
+      // Gerar URL pública
+      const { data: publicData } = supabase.storage.from('curriculos').getPublicUrl(nomeArquivo);
+      const urlPublica = publicData.publicUrl;
+      console.log('✅ Upload realizado:', urlPublica);
+      return res.json({ sucesso: true, url: urlPublica });
     });
+  } catch (error) {
+    console.error('💥 Erro interno no upload:', error);
+    res.status(500).json({ erro: 'Erro interno no upload de arquivo' });
   }
 });
 

@@ -34,6 +34,7 @@ interface ArquivoCurriculo {
     resumo: string;
   };
   erro?: string;
+  url?: string;
 }
 
 interface CurriculoUploadProps {
@@ -146,37 +147,21 @@ export default function CurriculoUpload({
 
       const resultado = await response.json();
 
-      if (resultado.sucesso && resultado.dados) {
-        // Parsing bem-sucedido
-        const dadosExtraidos = {
-          nome: resultado.dados.nome || 'Nome não detectado',
-          email: resultado.dados.email || 'Email não detectado',
-          telefone: resultado.dados.telefone || 'Telefone não detectado',
-          experiencia: resultado.dados.experiencia?.map((exp: any) => 
-            `${exp.cargo} - ${exp.empresa} (${exp.periodo})`
-          ) || ['Experiência não detectada'],
-          educacao: resultado.dados.educacao?.map((edu: any) => 
-            `${edu.curso} - ${edu.instituicao} (${edu.periodo})`
-          ) || ['Educação não detectada'],
-          habilidades: resultado.dados.habilidades?.map((hab: any) => hab.nome) || [],
-          resumo: resultado.dados.resumo || 'Resumo não detectado'
-        };
-
+      if (resultado.sucesso && resultado.url) {
+        // Upload bem-sucedido, retorna a URL pública
         setArquivos(prev => prev.map(a => 
           a.id === arquivo.id 
             ? { 
                 ...a, 
                 status: 'concluido', 
                 progresso: 100, 
-                dadosExtraidos 
+                url: resultado.url
               }
             : a
         ));
-
-        onProcessamentoCompleto(dadosExtraidos);
+        onProcessamentoCompleto({ url: resultado.url });
       } else {
-        // Parsing não implementado ou falhou
-        throw new Error(resultado.erro || 'Sistema de parsing ainda não implementado');
+        throw new Error(resultado.erro || 'Erro ao processar upload');
       }
     } catch (error) {
       const mensagemErro = error instanceof Error ? error.message : 'Erro desconhecido';
