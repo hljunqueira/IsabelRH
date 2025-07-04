@@ -162,6 +162,9 @@ export default function Admin() {
   const [showEmpresaDetails, setShowEmpresaDetails] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
 
+  const [showBancoTalentosDetails, setShowBancoTalentosDetails] = useState(false);
+  const [selectedBancoTalento, setSelectedBancoTalento] = useState<any>(null);
+
   // Mutations
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -747,6 +750,15 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="flex flex-row flex-wrap items-center gap-2 justify-end sm:justify-start mt-2 sm:mt-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setSelectedBancoTalento(candidato); setShowBancoTalentosDetails(true); }}
+                            className="text-xs sm:text-sm px-2 sm:px-3 py-1"
+                          >
+                            <Eye className="h-4 w-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Ver</span>
+                          </Button>
                           {candidato.curriculo_url && (
                             <Button
                               variant="outline"
@@ -754,7 +766,7 @@ export default function Admin() {
                               onClick={() => window.open(candidato.curriculo_url, '_blank')}
                               className="text-xs sm:text-sm px-2 sm:px-3 py-1"
                             >
-                              <Eye className="h-4 w-4 sm:mr-1" />
+                              <FileText className="h-4 w-4 sm:mr-1" />
                               <span className="hidden sm:inline">Ver Currículo</span>
                             </Button>
                           )}
@@ -819,6 +831,30 @@ export default function Admin() {
                   )}
                 </CardContent>
               </Card>
+              {/* Modal de detalhes do Banco de Talentos */}
+              <Dialog open={showBancoTalentosDetails} onOpenChange={setShowBancoTalentosDetails}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Detalhes do Candidato</DialogTitle>
+                  </DialogHeader>
+                  {selectedBancoTalento && (
+                    <div className="space-y-2">
+                      <div><b>Nome:</b> {selectedBancoTalento.nome}</div>
+                      <div><b>Telefone:</b> {selectedBancoTalento.telefone || '-'}</div>
+                      <div><b>Área de Interesse:</b> {selectedBancoTalento.areasInteresse ? selectedBancoTalento.areasInteresse.join(', ') : '-'}</div>
+                      <div><b>Habilidades:</b> {selectedBancoTalento.habilidades || '-'}</div>
+                      <div><b>Experiência Profissional:</b> {selectedBancoTalento.experiencia || '-'}</div>
+                      <div><b>Certificações:</b> {selectedBancoTalento.certificacoes || '-'}</div>
+                      <div><b>Data de Cadastro:</b> {selectedBancoTalento.criadoEm ? new Date(selectedBancoTalento.criadoEm).toLocaleDateString('pt-BR') : '-'}</div>
+                      {selectedBancoTalento.curriculo_url && (
+                        <div>
+                          <b>Currículo Anexado:</b> <a href={selectedBancoTalento.curriculo_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Ver Currículo</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* Empresas */}
